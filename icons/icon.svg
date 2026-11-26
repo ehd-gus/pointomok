@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+<radialGradient id="bg" cx=".5" cy=".35" r=".85"><stop offset="0" stop-color="#3a2023"/><stop offset=".6" stop-color="#1c1112"/><stop offset="1" stop-color="#110a0b"/></radialGradient>
+<radialGradient id="skin" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#f0565c"/><stop offset=".6" stop-color="#c22d36"/><stop offset="1" stop-color="#7d1820"/></radialGradient>
+<radialGradient id="blk" cx=".35" cy=".3"><stop offset="0" stop-color="#7a7a7a"/><stop offset=".55" stop-color="#121212"/><stop offset="1" stop-color="#000"/></radialGradient>
+<radialGradient id="wht" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#e6e0d3"/><stop offset="1" stop-color="#b9b2a2"/></radialGradient>
+<radialGradient id="gld" cx=".35" cy=".3"><stop offset="0" stop-color="#fdeab0"/><stop offset=".65" stop-color="#d9a940"/><stop offset="1" stop-color="#8f6a1c"/></radialGradient>
+<linearGradient id="horn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e8d3a6"/><stop offset="1" stop-color="#fff6dc"/></linearGradient>
+</defs>
+<rect width="512" height="512" fill="url(#bg)"/>
+<g transform="translate(256 256) scale(.88) translate(-256 -286)">
+<!-- 저글링 궤적 -->
+<path d="M150 262 C 150 120, 362 120, 362 262" fill="none" stroke="#d8b26a" stroke-opacity=".45" stroke-width="6" stroke-dasharray="4 16" stroke-linecap="round"/>
+<!-- 꼬리 -->
+<path d="M318 432 C 380 440, 402 400, 384 368" fill="none" stroke="#a3232b" stroke-width="12" stroke-linecap="round"/>
+<path d="M384 368 l-20 -6 l28 -22 l4 34 z" fill="#c22d36"/>
+<!-- 몸 -->
+<ellipse cx="256" cy="440" rx="74" ry="46" fill="url(#skin)"/>
+<!-- 팔 -->
+<path d="M196 404 C 168 380, 150 320, 150 282" fill="none" stroke="#b92a33" stroke-width="22" stroke-linecap="round"/>
+<path d="M316 404 C 344 380, 362 320, 362 282" fill="none" stroke="#b92a33" stroke-width="22" stroke-linecap="round"/>
+<circle cx="150" cy="276" r="17" fill="#d23a43"/><circle cx="362" cy="276" r="17" fill="#d23a43"/>
+<!-- 뿔 -->
+<path d="M196 304 C 180 276, 182 252, 198 234 C 204 258, 216 268, 232 284 Z" fill="url(#horn)" stroke="#8a6d3a" stroke-width="3"/>
+<path d="M316 304 C 332 276, 330 252, 314 234 C 308 258, 296 268, 280 284 Z" fill="url(#horn)" stroke="#8a6d3a" stroke-width="3"/>
+<!-- 머리 -->
+<circle cx="256" cy="350" r="86" fill="url(#skin)"/>
+<!-- 눈: 위를 봄 -->
+<ellipse cx="224" cy="334" rx="19" ry="24" fill="#fff"/><ellipse cx="288" cy="334" rx="19" ry="24" fill="#fff"/>
+<circle cx="227" cy="324" r="10" fill="#1a0b0c"/><circle cx="291" cy="324" r="10" fill="#1a0b0c"/>
+<circle cx="230" cy="320" r="3.5" fill="#fff"/><circle cx="294" cy="320" r="3.5" fill="#fff"/>
+<!-- 눈썹 -->
+<path d="M200 300 L 240 310" stroke="#5a0f15" stroke-width="7" stroke-linecap="round"/><path d="M312 300 L 272 310" stroke="#5a0f15" stroke-width="7" stroke-linecap="round"/>
+<!-- 웃는 입 + 송곳니 -->
+<path d="M222 378 Q 256 408 290 378" fill="#5a0f15" stroke="#5a0f15" stroke-width="6" stroke-linejoin="round"/>
+<path d="M238 384 l6 12 l6 -10 z" fill="#fff"/><path d="M262 386 l6 10 l6 -12 z" fill="#fff"/>
+<!-- 볼 -->
+<ellipse cx="198" cy="370" rx="13" ry="8" fill="#ff8a8f" opacity=".55"/><ellipse cx="314" cy="370" rx="13" ry="8" fill="#ff8a8f" opacity=".55"/>
+<!-- 오목알 3개 -->
+<circle cx="168" cy="190" r="36" fill="url(#blk)" stroke="#5a5a5a" stroke-width="3"/>
+<circle cx="256" cy="134" r="36" fill="url(#wht)" stroke="#8d8676" stroke-width="2"/>
+<circle cx="344" cy="190" r="36" fill="url(#gld)" stroke="#6b4f12" stroke-width="2"/>
+</g>
+</svg>
