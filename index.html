@@ -188,6 +188,7 @@ header nav button{background:none;border:0;text-decoration:underline;text-underl
  <p class="msg" id="lobbyMsg">온라인 연결을 확인하는 중…</p>
 </div></div>
 <div class="modal" id="mWait"><div class="mbox" style="text-align:center"><h2>친구를 기다리는 중</h2><div class="code" id="waitCode"></div><p style="color:var(--dim)" id="waitP">친구가 '방에 들어가기'에 이 코드를 넣으면 바로 시작합니다.</p><button class="btn" id="bCancel">취소</button></div></div>
+<div class="modal" id="mVisit"><div class="mbox"><h2>접속 기록</h2><p style="color:var(--dim);font-size:14px;margin:0 0 8px">최근 접속이 위에 나옵니다. 기록 서버는 12시간이 지난 기록을 지우지만, 이 기기에서 한 번 연 기록은 계속 남아요.</p><div id="visitList" style="max-height:55vh;overflow:auto;font-size:15px;border-top:1px solid #4a3d3d"></div><div class="row" style="margin-top:12px"><button class="btn" id="bVisitRe">새로고침</button><button class="btn" id="bVisitX">닫기</button></div></div></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 {
@@ -296,11 +297,30 @@ function goNet(code,side){MODE='net';MY=side;P={app:'pomok',code,side,name:myNam
  $('myName').textContent=P.name;setTimeout(sync,300)}
 function leave(){stopT();clearTimeout(autoT);clearTimeout(aiT);if(MODE==='net'){P.code=null;P.h={};killNet()}MODE='ai';MY=1;S.phase='lobby';
  ['mWait','mEnd','mExit'].forEach(m=>$(m).classList.remove('on'));$('mLobby').classList.add('on');render()}
+
+/* ---- 접속 기록 (제목을 5번 연속 누르면 열림) ---- */
+const LOGT='https://ntfy.sh/pomok-log-7f3a9c2e51b84d06';
+function logVisit(kind,name){try{fetch(LOGT,{method:'POST',body:JSON.stringify({k:kind,n:name||'(이름 없음)'})}).catch(()=>{})}catch(e){}}
+const fmtT=t=>new Date(t*1000).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const escH=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function showVisits(){const box=$('visitList');box.innerHTML='<p style="color:var(--dim)">불러오는 중…</p>';
+ let saved={},fail=false;try{saved=JSON.parse(localStorage.getItem('pomok-visits')||'{}')}catch(e){}
+ try{const r=await fetch(LOGT+'/json?poll=1&since=all');const txt=await r.text();
+  for(const line of txt.split('\n')){if(!line.trim())continue;try{const o=JSON.parse(line);if(o.event!=='message')continue;let m={};try{m=JSON.parse(o.message)}catch(e){m={k:'접속',n:o.message}}saved[o.id]={t:o.time,k:m.k,n:m.n}}catch(e){}}
+  try{localStorage.setItem('pomok-visits',JSON.stringify(saved))}catch(e){}
+ }catch(e){fail=true}
+ const list=Object.values(saved).sort((a,b)=>b.t-a.t);
+ const warn=fail?'<p style="color:var(--red);margin:8px 0">새 기록을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.</p>':'';
+ if(!list.length){box.innerHTML=warn||'<p style="color:var(--dim)">아직 기록이 없습니다.</p>';return}
+ box.innerHTML=warn+'<p style="margin:8px 0;color:var(--gold)">총 '+list.length+'건 · 이름 '+new Set(list.map(v=>v.n)).size+'명</p>'+list.map(v=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid #3a2f30"><span><b>'+escH(v.n)+'</b> <span style="color:var(--dim);font-size:13px">'+escH(v.k)+'</span></span><span style="color:var(--dim);white-space:nowrap;font-size:13px">'+fmtT(v.t)+'</span></div>').join('')}
+{let taps=0,tapT=null;document.querySelector('header h1').addEventListener('click',()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;$('mVisit').classList.add('on');showVisits()}})}
+$('bVisitRe').onclick=showVisits;$('bVisitX').onclick=()=>$('mVisit').classList.remove('on');
+logVisit('페이지 접속',(()=>{try{return localStorage.getItem('pomok-name')}catch(e){return ''}})());
 function saveName(){try{localStorage.setItem('pomok-name',$('nick').value.trim())}catch(e){}}
 function needName(){if($('nick').value.trim())return true;$('lobbyMsg').textContent='먼저 이름을 정해 주세요.';$('nick').focus();return false}
-$('bSolo').onclick=()=>{if(!needName())return;saveName();MODE='ai';MY=1;$('myName').textContent=myName();$('oName').textContent='수석 악마';$('oSub').textContent='계산으로 둡니다';newGame()};
+$('bSolo').onclick=()=>{if(!needName())return;saveName();logVisit('혼자 연습',$('nick').value.trim());MODE='ai';MY=1;$('myName').textContent=myName();$('oName').textContent='수석 악마';$('oSub').textContent='계산으로 둡니다';newGame()};
 const noNet=()=>typeof Peer==='undefined';
-$('bCreate').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent='온라인 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.';return}saveName();killNet();
+$('bCreate').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent='온라인 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.';return}saveName();logVisit('방 만들기',$('nick').value.trim());killNet();
  const code=String(Math.floor(1000+Math.random()*9000));$('lobbyMsg').textContent='방을 여는 중…';
  peer=new Peer(PID(code));
  peer.on('open',()=>{$('lobbyMsg').textContent='';goNet(code,1)});
@@ -308,7 +328,7 @@ $('bCreate').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textCo
  peer.on('error',e=>{if(e.type==='unavailable-id'){killNet();$('bCreate').onclick()}else $('lobbyMsg').textContent='연결 오류: '+e.type})};
 $('bJoin').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent='온라인 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.';return}
  const code=$('codeIn').value.trim();if(!/^\d{4}$/.test(code)){$('lobbyMsg').textContent='방 코드 4자리를 넣어 주세요.';return}
- saveName();killNet();$('lobbyMsg').textContent='방에 연결하는 중…';
+ saveName();logVisit('방 참가',$('nick').value.trim());killNet();$('lobbyMsg').textContent='방에 연결하는 중…';
  peer=new Peer();
  peer.on('open',()=>{const c=peer.connect(PID(code),{reliable:true});setupConn(c);c.on('open',()=>{$('lobbyMsg').textContent='';goNet(code,2)})});
  peer.on('error',e=>{$('lobbyMsg').textContent=e.type==='peer-unavailable'?'그 코드의 방이 없습니다. 코드를 다시 확인해 주세요.':'연결 오류: '+e.type;killNet()})};
