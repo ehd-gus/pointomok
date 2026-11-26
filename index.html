@@ -317,8 +317,14 @@ async function showVisits(){const box=$('visitList');box.innerHTML='<p style="co
  const list=Object.values(saved).sort((a,b)=>b.t-a.t);
  const warn=fail?'<p style="color:var(--red);margin:8px 0">새 기록을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.</p>':'';
  if(!list.length){box.innerHTML=warn||'<p style="color:var(--dim)">아직 기록이 없습니다.</p>';return}
- box.innerHTML=warn+'<p style="margin:8px 0;color:var(--gold)">총 '+list.length+'건 · 이름 '+new Set(list.map(v=>v.n)).size+'명</p>'+list.map(v=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid #3a2f30"><span><b>'+escH(v.n)+'</b> <span style="color:var(--dim);font-size:13px">'+escH(v.k)+'</span></span><span style="color:var(--dim);white-space:nowrap;font-size:13px">'+fmtT(v.t)+'</span></div>').join('')}
-{let taps=0,tapT=null;document.querySelector('header h1').addEventListener('click',()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;$('mVisit').classList.add('on');showVisits()}})}
+ const groups={};for(const v of list)(groups[v.n]=groups[v.n]||[]).push(v);
+ const people=Object.entries(groups).sort((a,b)=>b[1][0].t-a[1][0].t);
+ box.innerHTML=warn+'<p style="margin:8px 0;color:var(--gold)">'+people.length+'명 · 총 '+list.length+'건 · 이름을 누르면 자세히 보여요</p>'+people.map(([n,vs])=>{
+  const kinds={};vs.forEach(v=>kinds[v.k]=(kinds[v.k]||0)+1);
+  return '<details style="border-bottom:1px solid #3a2f30"><summary style="display:flex;justify-content:space-between;gap:10px;padding:9px 2px;cursor:pointer;list-style:none"><span><b>'+escH(n)+'</b> <span style="color:var(--gold);font-size:14px">'+vs.length+'건</span></span><span style="color:var(--dim);white-space:nowrap;font-size:13px">최근 '+fmtT(vs[0].t)+'</span></summary>'
+   +'<div style="padding:0 2px 8px 12px;font-size:13px;color:var(--dim)"><div style="margin-bottom:4px">'+Object.entries(kinds).map(([k,c])=>escH(k)+' '+c).join(' · ')+'</div>'
+   +vs.map(v=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0"><span>'+escH(v.k)+'</span><span style="white-space:nowrap">'+fmtT(v.t)+'</span></div>').join('')+'</div></details>'}).join('')}
+{let taps=0,tapT=null;const tap=()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;$('mVisit').classList.add('on');showVisits()}};document.querySelectorAll('header h1, #mLobby h2').forEach(e=>e.addEventListener('click',tap))}
 $('bVisitRe').onclick=showVisits;$('bVisitX').onclick=()=>$('mVisit').classList.remove('on');
 logVisit('페이지 접속',(()=>{try{return localStorage.getItem('pomok-name')}catch(e){return ''}})());
 function saveName(){try{localStorage.setItem('pomok-name',$('nick').value.trim())}catch(e){}}
