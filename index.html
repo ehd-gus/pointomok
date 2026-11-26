@@ -184,10 +184,14 @@ header nav button{background:none;border:0;text-decoration:underline;text-underl
  <button class="btn red wide" id="bCreate">방 만들기 · 친구와 온라인 대전</button>
  <div class="or">친구가 만든 방에 들어가기</div>
  <div class="row"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="방 코드 4자리" class="field" style="margin:0;font:inherit;font-size:18px;padding:10px 12px;min-height:48px;background:#120e0f;color:var(--ink);border:1px solid #4a3d3d"><button class="btn" id="bJoin">참가</button></div>
- <button class="btn wide" id="bSolo">혼자 연습 · 수석 악마와 대결</button>
- <a class="btn wide" href="3p.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink)">3인 대전 (온라인)</a>
+ <button class="btn wide" id="bSolo">혼자 연습</button>
+ <a class="btn wide" href="3p.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink)">3인 대전 (온라인) <b style="color:var(--gold);margin-left:6px">4목</b></a>
  <p class="msg" id="lobbyMsg">온라인 연결을 확인하는 중…</p>
 </div></div>
+<div class="modal" id="mSoloPick"><div class="mbox" style="text-align:center"><h2>혼자 연습</h2><p style="color:var(--dim);margin:0 0 14px">몇 명이서 두시겠습니까?</p>
+ <button class="btn red wide" id="bSolo2">2인 · 수석 악마와 1:1</button>
+ <button class="btn wide" id="bSolo3">3인 · 악마 둘과 대결 <b style="color:var(--gold)">(4목)</b></button>
+ <button class="btn wide" data-close>취소</button></div></div>
 <div class="modal" id="mWait"><div class="mbox" style="text-align:center"><h2>친구를 기다리는 중</h2><div class="code" id="waitCode"></div><p style="color:var(--dim)" id="waitP">친구가 '방에 들어가기'에 이 코드를 넣으면 바로 시작합니다.</p><button class="btn" id="bCancel">취소</button></div></div>
 <div class="modal" id="mVisit"><div class="mbox"><h2>접속 기록</h2><p style="color:var(--dim);font-size:14px;margin:0 0 8px">최근 접속이 위에 나옵니다. 기록 서버는 12시간이 지난 기록을 지우지만, 이 기기에서 한 번 연 기록은 계속 남아요.</p><div id="visitList" style="max-height:55vh;overflow:auto;font-size:15px;border-top:1px solid #4a3d3d"></div><div class="row" style="margin-top:12px"><button class="btn" id="bVisitRe">새로고침</button><button class="btn" id="bVisitX">닫기</button></div></div></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -319,7 +323,9 @@ $('bVisitRe').onclick=showVisits;$('bVisitX').onclick=()=>$('mVisit').classList.
 logVisit('페이지 접속',(()=>{try{return localStorage.getItem('pomok-name')}catch(e){return ''}})());
 function saveName(){try{localStorage.setItem('pomok-name',$('nick').value.trim())}catch(e){}}
 function needName(){if($('nick').value.trim())return true;$('lobbyMsg').textContent='먼저 이름을 정해 주세요.';$('nick').focus();return false}
-$('bSolo').onclick=()=>{if(!needName())return;saveName();logVisit('혼자 연습',$('nick').value.trim());MODE='ai';MY=1;$('myName').textContent=myName();$('oName').textContent='수석 악마';$('oSub').textContent='계산으로 둡니다';newGame()};
+$('bSolo').onclick=()=>{if(!needName())return;saveName();$('mSoloPick').classList.add('on')};
+$('bSolo3').onclick=()=>{location.href='3p.html#solo'};
+$('bSolo2').onclick=()=>{$('mSoloPick').classList.remove('on');logVisit('혼자 연습',$('nick').value.trim());MODE='ai';MY=1;$('myName').textContent=myName();$('oName').textContent='수석 악마';$('oSub').textContent='계산으로 둡니다';newGame()};
 const noNet=()=>typeof Peer==='undefined';
 $('bCreate').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent='온라인 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.';return}saveName();logVisit('방 만들기',$('nick').value.trim());killNet();
  const code=String(Math.floor(1000+Math.random()*9000));$('lobbyMsg').textContent='방을 여는 중…';
