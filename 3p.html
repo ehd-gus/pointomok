@@ -328,7 +328,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  </div>
 </main>
 <div class="modal" id="mRule"><div class="mbox"><h2>3인 규칙</h2><div class="goalbox">3인 게임은 5목이 아니라 4목입니다</div><ul>
- <li>15×15 판에서 <b>흑·백·적</b> 세 사람이 겨룹니다. 가로·세로·대각선으로 <b>네 개(4목)</b>를 먼저 잇는 사람이 이깁니다. 다섯 개 이상 이어도 이긴 것으로 칩니다.</li>
+ <li>15×15 판에서 <b>흑·백·적</b> 세 사람이 겨룹니다. 가로·세로·대각선으로 <b>네 개(4목)</b>를 먼저 잇는 사람이 이깁니다. <b>다섯 개 이상(장목)은 승리가 아니며</b> 게임이 그대로 이어집니다.</li>
  <li>선택된 세 점은 한 줄이라서, 한 사람이 세 점을 모두 가져가면 옆에 있는 자기 돌과 이어져 <b>바로 4목</b>이 되기 쉽습니다. 세 점 중 하나는 꼭 막으세요.</li>
  <li>선택권은 <b>흑 → 백 → 적</b> 순서로 돌아갑니다. 선택자는 한 줄로 이어진 빈 점 세 개(A·B·C)를 고릅니다.</li>
  <li>세 사람 모두 세 점에 포인트를 몰래 나눠 겁니다. 점마다 최소 1포인트입니다.</li>
@@ -397,11 +397,11 @@ function triple(r,c,d){const[dr,dc]=DIRS[d];return[[r-dr,c-dc],[r,c],[r+dr,c+dc]
 const okTri=t=>t.every(([r,c])=>inB(r,c)&&!S.b[r][c]);
 function hasMove(){for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(let d=0;d<4;d++)if(okTri(triple(r,c,d)))return true;return false}
 function lineVal(r,c,who){let s=0;for(const[dr,dc]of DIRS){let n=1,op=0;for(const k of[1,-1]){let i=1;while(inB(r+dr*i*k,c+dc*i*k)&&S.b[r+dr*i*k][c+dc*i*k]===who){n++;i++}const rr=r+dr*i*k,cc=c+dc*i*k;if(inB(rr,cc)&&!S.b[rr][cc])op++}
- const g=WIN-n;s+=g<=0?100000:g===1?(op===2?10000:op?1200:0):g===2?(op===2?900:op?120:0):g===3?(op===2?60:op?12:0):(op===2?3:1)}
+ const g=WIN-n;s+=g<0?-50:g===0?100000:g===1?(op===2?10000:op?1200:0):g===2?(op===2?900:op?120:0):g===3?(op===2?60:op?12:0):(op===2?3:1)}
  return s+(7-Math.max(Math.abs(r-7),Math.abs(c-7)))*.4}
 function bestTri(who){let best=null,bs=-1e9;const op=SIDES.filter(s=>s!==who);for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(let d=0;d<4;d++){const t=triple(r,c,d);if(!okTri(t))continue;
  let s=0;for(const[a,b]of t){s+=lineVal(a,b,who);for(const o of op)s-=.45*lineVal(a,b,o)}s+=Math.random()*25;if(s>bs){bs=s;best={r,c,d}}}return best}
-function five(who){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(S.b[r][c]!==who)continue;for(const[dr,dc]of DIRS){if(inB(r-dr,c-dc)&&S.b[r-dr][c-dc]===who)continue;let k=1;while(inB(r+dr*k,c+dc*k)&&S.b[r+dr*k][c+dc*k]===who)k++;if(k>=WIN)return true}}return false}
+function five(who){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(S.b[r][c]!==who)continue;for(const[dr,dc]of DIRS){if(inB(r-dr,c-dc)&&S.b[r-dr][c-dc]===who)continue;let k=1;while(inB(r+dr*k,c+dc*k)&&S.b[r+dr*k][c+dc*k]===who)k++;if(k===WIN)return true}}return false}
 const AIN=['','','수석 악마','차석 악마'];
 const nameOf=s=>MODE==='ai'&&s!==MY?AIN[s]:s===MY?(P.name||'나'):(ST[s]&&typeof ST[s].name==='string'&&ST[s].name.trim().slice(0,12))||CN[s];
 const present=s=>MODE==='ai'||s===MY||!!(ST[s]&&(host?conns[s]&&conns[s].open:hconn&&hconn.open));
@@ -611,7 +611,7 @@ async function loadRooms(){if(!$('mLobby').classList.contains('on'))return;const
  box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':''}">${m.g==='3p'?'3인 4목':'2인'}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,3)?m.p:1}/${m.g==='3p'?3:2}명</span><button class="btn red" data-g="${m.g}" data-c="${m.c}">들어가기</button></div>`).join('')}
 $('roomList').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b)joinRoom(b.dataset.g,b.dataset.c)});
 setInterval(loadRooms,6000);loadRooms();
-const TIPS=["3인 게임은 4목이에요. 네 개를 먼저 이으면 이겨요.", "선택자는 동점에서 항상 져요. 내가 고를 때는 확실히 이길 만큼 걸어야 해요.", "동점이면 A·C 점은 선택자 다음 사람, B 점은 그다음 사람이 가져가요.", "한 사람이 세 점을 다 가져가면 바로 4목이 되기 쉬워요. 세 점 중 하나는 꼭 막으세요.", "다른 사람이 막아 주겠지 하고 기다리다가 둘 다 못 막을 수 있어요.", "안 쓴 포인트는 절반만 다음 라운드로 넘어가요.", "다른 두 사람의 보유 포인트는 비공개예요. 결과를 보고 누가 크게 썼을지 추리해 보세요."];let tipI=Math.floor(Math.random()*TIPS.length);
+const TIPS=["3인 게임은 정확히 4목이에요. 다섯 개 이상 이어지면 승리가 아니고 게임이 계속돼요.", "선택자는 동점에서 항상 져요. 내가 고를 때는 확실히 이길 만큼 걸어야 해요.", "동점이면 A·C 점은 선택자 다음 사람, B 점은 그다음 사람이 가져가요.", "한 사람이 세 점을 다 가져가면 바로 4목이 되기 쉬워요. 세 점 중 하나는 꼭 막으세요.", "다른 사람이 막아 주겠지 하고 기다리다가 둘 다 못 막을 수 있어요.", "안 쓴 포인트는 절반만 다음 라운드로 넘어가요.", "다른 두 사람의 보유 포인트는 비공개예요. 결과를 보고 누가 크게 썼을지 추리해 보세요."];let tipI=Math.floor(Math.random()*TIPS.length);
 function showTip(){$('tipT').textContent=TIPS[tipI];$('tipN').textContent=(tipI+1)+'/'+TIPS.length}
 $('tipBox').onclick=()=>{tipI=(tipI+1)%TIPS.length;showTip()};showTip();
 $('bRuleW').onclick=()=>$('mRule').classList.add('on');
