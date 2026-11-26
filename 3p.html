@@ -177,7 +177,8 @@ header nav button{background:none;border:0;text-decoration:underline;text-underl
  <li>각 단계는 30초입니다. 시간이 다 되면 선택은 자동으로, 걸기는 현재 값으로 제출됩니다.</li>
  <li>같은 라운드에 두 사람 이상이 4목을 완성하면 <b>공동 우승</b>입니다.</li>
  <li>30라운드(한 사람당 선택 10번) 안에 4목이 없으면 판 위 돌이 가장 많은 사람이 이깁니다. 같으면 공동 우승입니다.</li>
- <li>방을 만든 사람이 흑, 먼저 들어온 사람이 백, 다음 사람이 적입니다. 세 명이 모이면 바로 시작합니다.</li>
+ <li>혼자 연습에서는 내가 흑, 수석 악마가 백, 차석 악마가 적입니다. 두 악마는 한 편이 아니라 서로도 경쟁합니다.</li>
+ <li>온라인에서는 방을 만든 사람이 흑, 먼저 들어온 사람이 백, 다음 사람이 적입니다. 세 명이 모이면 바로 시작합니다.</li>
  <li>거는 포인트는 암호화된 값으로 먼저 보내고, 세 명 모두 제출한 뒤에 공개되어 서로 몰래 볼 수 없습니다.</li>
  <li>게임 중 누가 나가면 그 사람이 돌아올 때까지 멈춥니다. 방을 만든 사람이 나가면 그 판은 끝납니다.</li>
 </ul><button class="btn red" data-close>닫기</button></div></div>
@@ -188,6 +189,7 @@ header nav button{background:none;border:0;text-decoration:underline;text-underl
  <button class="btn red wide" id="bCreate">3인 방 만들기</button>
  <div class="or">친구가 만든 방에 들어가기</div>
  <div class="row"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="방 코드 4자리" class="field" style="margin:0;font:inherit;font-size:18px;padding:10px 12px;min-height:48px;background:#120e0f;color:var(--ink);border:1px solid #4a3d3d"><button class="btn" id="bJoin">참가</button></div>
+ <button class="btn wide" id="bSolo">혼자 연습 · 악마 둘과 대결</button>
  <button class="btn wide" id="bRule2">3인 규칙 보기</button>
  <a class="btn wide linkbtn" href="index.html">2인용으로 돌아가기</a>
  <p class="msg" id="lobbyMsg"></p>
@@ -199,7 +201,7 @@ header nav button{background:none;border:0;text-decoration:underline;text-underl
 const N=15,DIRS=[[0,1],[1,0],[1,1],[1,-1]],LET=['A','B','C'],STAR=[[3,3],[3,11],[11,3],[11,11],[7,7]];
 const $=id=>document.getElementById(id),svg=$('board');
 const CN=['','흑','백','적'],SIDES=[1,2,3],WIN=4;
-let MY=0,host=false,peer=null,hconn=null,conns={},ST={},lastSay={},autoT=null,tid=null,lastSvg='',joined=false;
+let MODE='net',aiT=null,MY=0,host=false,peer=null,hconn=null,conns={},ST={},lastSay={},autoT=null,tid=null,lastSvg='',joined=false;
 let P={app:'pomok3',code:null,name:'',gen:0,h:{},say:null};
 const blank=()=>Array.from({length:N},()=>Array(N).fill(0));
 const fresh=()=>({b:blank(),round:1,phase:'lobby',bud:{1:10,2:10,3:10},sel:null,dir:0,tri:null,bets:[1,1,1],last:[],res:null,nb:null,over:false,myRv:null,t:30});
@@ -220,8 +222,9 @@ function lineVal(r,c,who){let s=0;for(const[dr,dc]of DIRS){let n=1,op=0;for(cons
 function bestTri(who){let best=null,bs=-1e9;const op=SIDES.filter(s=>s!==who);for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(let d=0;d<4;d++){const t=triple(r,c,d);if(!okTri(t))continue;
  let s=0;for(const[a,b]of t){s+=lineVal(a,b,who);for(const o of op)s-=.45*lineVal(a,b,o)}s+=Math.random()*25;if(s>bs){bs=s;best={r,c,d}}}return best}
 function five(who){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(S.b[r][c]!==who)continue;for(const[dr,dc]of DIRS){if(inB(r-dr,c-dc)&&S.b[r-dr][c-dc]===who)continue;let k=1;while(inB(r+dr*k,c+dc*k)&&S.b[r+dr*k][c+dc*k]===who)k++;if(k>=WIN)return true}}return false}
-const nameOf=s=>s===MY?(P.name||'나'):(ST[s]&&typeof ST[s].name==='string'&&ST[s].name.trim().slice(0,12))||CN[s];
-const present=s=>s===MY||!!(ST[s]&&(host?conns[s]&&conns[s].open:hconn&&hconn.open));
+const AIN=['','','수석 악마','차석 악마'];
+const nameOf=s=>MODE==='ai'&&s!==MY?AIN[s]:s===MY?(P.name||'나'):(ST[s]&&typeof ST[s].name==='string'&&ST[s].name.trim().slice(0,12))||CN[s];
+const present=s=>MODE==='ai'||s===MY||!!(ST[s]&&(host?conns[s]&&conns[s].open:hconn&&hconn.open));
 const tag=s=>nameOf(s)===CN[s]?CN[s]:`${nameOf(s)}(${CN[s]})`;
 const myName=()=>($('nick').value.trim()||'이름 없는 책략가').slice(0,12);
 
@@ -231,11 +234,13 @@ function startRound(){S.tri=null;S.sel=null;S.bets=[1,1,1];S.myRv=null;S.res=nul
  if(S.round>30||!hasMove())return finish(null);
  const sl=selector();
  if(sl===MY){S.phase='select';say('세 점을 고르십시오. 확정을 눌러야 정해집니다.');resetT()}
- else{S.phase='osel';stopT();say(`${tag(sl)} 님이 세 점을 고르고 있습니다.`)}
+ else{S.phase='osel';stopT();say(`${tag(sl)}${MODE==='ai'?'가':' 님이'} 세 점을 고르고 있습니다.`);
+  if(MODE==='ai'){const R0=S.round;aiT=setTimeout(()=>{if(S.phase!=='osel'||S.round!==R0)return;const q=aiPick(sl);S.sel=[q.r,q.c];S.dir=q.d;S.tri=triple(q.r,q.c,q.d);toBet()},1300)}}
  render();sync()}
 function chooseDone(){setH(S.round,{t:[S.sel[0],S.sel[1],S.dir]});toBet()}
 function toBet(){S.phase='bet';S.bets=[1,1,1];say('세 점에 포인트를 몰래 나눠 거십시오.');resetT();render();sync()}
 function submit(){if(S.phase!=='bet')return;stopT();
+ if(MODE==='ai'){const bc={[MY]:S.bets.slice()};for(const s of OTH())bc[s]=aiBids(s);return resolve(bc)}
  const s=Math.random().toString(36).slice(2)+Date.now().toString(36);S.myRv={b:S.bets.slice(),s};
  S.phase='sent';say('제출했습니다. 다른 두 사람을 기다립니다.');setH(S.round,{c:hash(JSON.stringify(S.myRv.b)+s)});render();sync()}
 function resolve(bc){const sl=selector(),res=[];
@@ -246,6 +251,7 @@ function resolve(bc){const sl=selector(),res=[];
  const li=document.createElement('li');li.textContent=`라운드 ${S.round} · 선택 ${CN[sl]} · `+res.map((x,i)=>`${LET[i]} 흑${x.b[1]} 백${x.b[2]} 적${x.b[3]}→${CN[x.w]}${x.tie?'(동점)':''}`).join(', ');$('log').prepend(li);
  const got=s=>res.filter(x=>x.w===s).length;
  say(`나 ${got(MY)}점 · `+OTH().map(s=>`${nameOf(s)} ${got(s)}점`).join(' · '));
+ if(MODE==='ai'&&Math.random()<.5){const s=OTH()[Math.floor(Math.random()*2)];bubble('bub'+s,pick(got(s)>=2?AIL.win:got(s)===0?AIL.lose:AIL.any))}
  render();
  const fv=SIDES.filter(five);
  if(fv.length){S.over=true;render();setTimeout(()=>finish({w:fv}),1200);return}
@@ -269,6 +275,35 @@ function say(t){$('dealer').textContent=t}
 function bubble(id,t){const e=$(id);if(!e)return;e.textContent=t;e.classList.remove('on');void e.offsetWidth;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),5000)}
 function hash(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(h2>>>0).toString(16)+(h1>>>0).toString(16)}
 
+/* ---- 혼자 연습: 악마 둘 ---- */
+const AIL={win:['예상대로입니다.','숫자는 거짓말을 하지 않습니다.','그 점은 제 것입니다.'],lose:['…흥미롭군요.','계산 밖의 수였습니다.','이번만 양보하지요.'],any:['다음 수를 읽고 있습니다.','셋이 두니 더 재미있군요.','당신의 포인트가 보입니다.']};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function comboWin(t,who){const keep=t.map(([r,c])=>S.b[r][c]);t.forEach(([r,c])=>S.b[r][c]=who);const w=five(who);t.forEach(([r,c],i)=>S.b[r][c]=keep[i]);return w}
+function aiPick(me){let best=null,bs=-1e9;const op=SIDES.filter(x=>x!==me);
+ for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(let d=0;d<4;d++){const t=triple(r,c,d);if(!okTri(t))continue;
+  let sc=0;for(const[a,b]of t){sc+=lineVal(a,b,me);for(const o of op)sc-=.6*lineVal(a,b,o)}
+  for(const o of op)if(comboWin(t,o))sc-=60000;
+  sc+=Math.random()*25;if(sc>bs){bs=sc;best={r,c,d}}}
+ return best}
+function aiBids(me){const t=S.tri,B=S.bud[me],op=SIDES.filter(x=>x!==me),sl=selector();
+ const mine=t.map(([r,c])=>lineVal(r,c,me)),th=t.map(([r,c])=>Math.max(...op.map(o=>lineVal(r,c,o))));
+ const opMax=Math.max(...op.map(o=>S.bud[o])),first=i=>prio(sl,i)[0]===me;
+ const bids=[1,1,1];let rem=B-3;const give=(i,amt)=>{const a=Math.max(0,Math.min(amt,rem));bids[i]+=a;rem-=a};
+ const myCombo=comboWin(t,me),opCombo=op.some(o=>comboWin(t,o));
+ // 1) 한 점만 가져가도 내가 이기는 곳
+ const winC=[0,1,2].filter(i=>mine[i]>=1e5);
+ for(const i of winC)give(i,Math.ceil(opMax*.8)-bids[i]);
+ // 2) 남이 한 점으로 이기는 곳 막기 (다른 악마가 막아 줄 거라 믿기도 함)
+ const blockC=[0,1,2].filter(i=>!winC.includes(i)&&th[i]>=1e5);
+ for(const i of blockC)give(i,Math.ceil(opMax*(.55+Math.random()*.4))-bids[i]);
+ // 3) 누가 세 점을 다 가져가면 이기는 줄: 한 점은 꼭 막기
+ if(opCombo&&!blockC.length){const i=[0,1,2].sort((x,y)=>(first(y)-first(x))||(th[y]-th[x]))[0];give(i,Math.ceil(opMax*(.45+Math.random()*.3))-bids[i])}
+ // 4) 나머지는 점의 가치대로 나누기
+ const mx=Math.max(...mine,...th);const ratio=myCombo?.95:mx>=9000?.9:mx>=900?.75:mx>=120?.55:.3+Math.random()*.25;
+ const spend=Math.floor(rem*ratio);const w=[0,1,2].map(i=>Math.sqrt(Math.max(mine[i]*(myCombo?1.5:1),th[i]))+1+Math.random()*2+(first(i)?1:0)),ws=sum(w);
+ if(spend>0){let used=0;for(let i=0;i<3;i++){const g=Math.floor(spend*w[i]/ws);bids[i]+=g;used+=g}bids[w.indexOf(Math.max(...w))]+=spend-used}
+ return bids}
+
 /* ---- 온라인: 방장이 두 사람의 기록을 서로에게 전달 ---- */
 const PID=c=>'devilplan-pointomok3-'+c;
 const myMsg=()=>({app:'pomok3',code:P.code,name:P.name,gen:P.gen,h:P.h,say:P.say});
@@ -284,7 +319,7 @@ function hostAccept(c){c.on('open',()=>{const free=[2,3].find(s=>!(conns[s]&&con
   c.on('data',d=>{if(conns[free]!==c)return;try{const o=typeof d==='string'?JSON.parse(d):d;if(o&&o.app==='pomok3'&&o.code===P.code)ST[free]={...o,side:free}}catch(e){}push();sync()});
   c.on('close',()=>{if(conns[free]===c){delete conns[free];delete ST[free];push();sync()}});
   push();sync()})}
-function sync(){if(!MY)return;
+function sync(){if(!MY||MODE==='ai')return;
  for(const s of OTH()){const sy=ST[s]&&ST[s].say;if(sy&&typeof sy.t==='string'&&sy.at!==lastSay[s]){lastSay[s]=sy.at;bubble('bub'+s,sy.t.slice(0,60))}}
  const miss=OTH().filter(s=>!present(s));
  if(S.phase==='wait'){seats();if(!miss.length&&OTH().every(s=>ST[s].gen===P.gen))return newGame();render();return}
@@ -304,9 +339,9 @@ function seats(){$('seats').innerHTML=SIDES.map(s=>`<li><i class="st s${s}"></i>
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function endNote(){if(!MY)return;const want=OTH().filter(s=>ST[s]&&ST[s].gen>P.gen).map(nameOf);
  $('endR').textContent=want.length?`${want.join(', ')} 님이 재대결을 원합니다.`:S.phase==='wait'?'다른 사람의 수락을 기다리는 중…':''}
-function goNet(code,side){MY=side;P={app:'pomok3',code,name:myName(),gen:0,h:{},say:null};S=fresh();S.phase='wait';
+function goNet(code,side){MODE='net';MY=side;P={app:'pomok3',code,name:myName(),gen:0,h:{},say:null};S=fresh();S.phase='wait';
  $('waitCode').textContent=code;$('mLobby').classList.remove('on');$('mWait').classList.add('on');seats();render();push();setTimeout(sync,300)}
-function leave(){stopT();clearTimeout(autoT);killNet();MY=0;P.h={};S=fresh();$('log').innerHTML='';
+function leave(){stopT();clearTimeout(autoT);clearTimeout(aiT);killNet();MODE='net';MY=0;P.h={};S=fresh();$('log').innerHTML='';
  ['mWait','mEnd','mExit'].forEach(m=>$(m).classList.remove('on'));$('mLobby').classList.add('on');render()}
 
 /* ---- 접속 기록 ---- */
@@ -339,8 +374,9 @@ $('bJoin').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textCont
    const nst={};for(const s of SIDES)if(s!==MY&&o.st&&o.st[s]&&typeof o.st[s]==='object')nst[s]=o.st[s];ST=nst;sync()});
   c.on('close',()=>{if(hconn===c){hconn=null;ST={};if(MY)sync()}})});
  peer.on('error',e=>{$('lobbyMsg').textContent=e.type==='peer-unavailable'?'그 코드의 방이 없습니다. 코드를 다시 확인해 주세요.':'연결 오류: '+e.type;if(!MY)killNet()})};
+$('bSolo').onclick=()=>{if(!needName())return;saveName();logVisit('3인 혼자 연습',$('nick').value.trim());killNet();MODE='ai';MY=1;P={app:'pomok3',code:null,name:myName(),gen:0,h:{},say:null};$('lobbyMsg').textContent='';newGame()};
 $('bCancel').onclick=leave;$('bReset').onclick=leave;
-$('bAgain').onclick=()=>{$('mEnd').classList.remove('on');P.gen++;P.h={};S.phase='wait';push();say('재대결 신청을 보냈습니다. 다른 두 사람을 기다립니다.');render();sync()};
+$('bAgain').onclick=()=>{$('mEnd').classList.remove('on');if(MODE==='ai')return newGame();P.gen++;P.h={};S.phase='wait';push();say('재대결 신청을 보냈습니다. 다른 두 사람을 기다립니다.');render();sync()};
 
 /* ---- 조작 ---- */
 svg.addEventListener('click',e=>{if(S.phase!=='select')return;const b=svg.getBoundingClientRect(),c=Math.floor((e.clientX-b.left)/b.width*N),r=Math.floor((e.clientY-b.top)/b.height*N);if(!inB(r,c)||S.b[r][c])return;
@@ -351,7 +387,9 @@ $('bUndo').onclick=()=>{if(S.phase!=='select')return;S.sel=null;S.tri=null;rende
 $('bOk').onclick=()=>{if(S.phase==='select'&&S.tri)chooseDone()};
 $('bSubmit').onclick=()=>{if(S.phase==='bet')submit();else if(S.phase==='reveal')next()};
 $('cols').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b||S.phase!=='bet')return;const i=+b.dataset.i,v=+b.dataset.v,left=S.bud[MY]-sum(S.bets);if(v<0&&S.bets[i]<=1)return;if(v>0&&left<=0)return;S.bets[i]+=v;render()});
-$('chatF').addEventListener('submit',e=>{e.preventDefault();const t=$('chatIn').value.trim().slice(0,60);if(!t||!MY)return;$('chatIn').value='';bubble('bub'+MY,t);P.say={t,at:Date.now()};push()});
+$('chatF').addEventListener('submit',e=>{e.preventDefault();const t=$('chatIn').value.trim().slice(0,60);if(!t||!MY)return;$('chatIn').value='';bubble('bub'+MY,t);
+ if(MODE==='ai'){if(Math.random()<.7)setTimeout(()=>bubble('bub'+OTH()[Math.floor(Math.random()*2)],pick(AIL.any.concat(AIL.win))),1100);return}
+ P.say={t,at:Date.now()};push()});
 $('bRule').onclick=$('bRule2').onclick=()=>$('mRule').classList.add('on');
 $('bExit').onclick=()=>{if(S.phase==='lobby')return;$('mExit').classList.add('on')};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
@@ -361,9 +399,9 @@ function render(){const p=S.phase,sl=selector(),R=S.round;
  for(const s of SIDES){const me=s===MY,card=$('c'+s);
   card.style.order=MY?(s-MY+3)%3:s;card.classList.toggle('sel',sl===s&&!['lobby','wait'].includes(p));
   $('n'+s).textContent=MY?nameOf(s):CN[s];$('m'+s).classList.toggle('hide',!me);$('p'+s).textContent=S.bud[s];
-  $('u'+s).textContent=`${CN[s]}${me?'':MY&&!present(s)?' · 연결 끊김':''}`;
+  $('u'+s).textContent=`${CN[s]}${me?'':MODE==='ai'?' · 계산으로 둡니다':MY&&!present(s)?' · 연결 끊김':''}`;
   const o=!me&&ST[s]&&ST[s].h&&ST[s].h[R];
-  $('t'+s).textContent=me?'':p==='osel'&&sl===s?'고르는 중':(p==='bet'||p==='sent')?(o&&o.c?'제출 완료':'거는 중'):''}
+  $('t'+s).textContent=me?'':p==='osel'&&sl===s?'고르는 중':(p==='bet'||p==='sent')?(MODE==='ai'?'계산 중':o&&o.c?'제출 완료':'거는 중'):''}
  $('myStone').className='stone'+(MY===2?' w':MY===3?' r':'');$('myColor').textContent=CN[MY]||'–';
   $('banner').textContent=p==='select'?'세 점을 고르십시오':p==='osel'?`${MY?tag(sl):''}이 세 점을 고르는 중`:p==='bet'?'세 점에 포인트를 거십시오':p==='sent'?'다른 사람의 걸기를 기다리는 중':p==='reveal'?'결과가 공개되었습니다':p==='over'?'게임 종료':p==='wait'?'세 명을 기다리는 중':'포인트 오목 · 3인';
  $('info').textContent=`라운드 ${Math.min(R,30)}/30 · 선택 ${CN[sl]} · 쓸 수 있는 포인트 ${S.bud[MY]||10}`;
