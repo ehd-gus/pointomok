@@ -484,8 +484,7 @@ function grantBonus(n){if(['select','osel','bet'].includes(S.phase))addPts(n);el
 $('bAdmin').onclick=()=>{const v=$('adminIn').value.trim();
  if(hash(v)!==ADMIN_H){$('adminMsg').textContent='코드가 맞지 않습니다.';$('adminIn').value='';return}
  if(!INGAME.includes(S.phase)){$('adminMsg').textContent='게임 중에만 쓸 수 있습니다.';return}
- const later=!['select','osel','bet'].includes(S.phase);grantBonus(3);$('mAdmin').classList.remove('on');
- say(later?'관리자: 다음 라운드에 포인트 3이 추가됩니다.':'관리자: 포인트 3이 추가되었습니다.')};
+ grantBonus(3);$('mAdmin').classList.remove('on')};
 $('adminIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('bAdmin').onclick()});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 
