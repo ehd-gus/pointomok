@@ -274,6 +274,7 @@ html{background:#100b0c}
  <p class="msg" id="lobbyMsg"></p>
 </div></div>
 <div class="modal" id="mWait"><div class="mbox" style="text-align:center"><h2>친구 두 명을 기다리는 중</h2><div class="goalbox">이번 판은 4목 승리</div><div class="code" id="waitCode"></div><p style="color:var(--dim)">두 친구가 '방에 들어가기'에 이 코드를 넣으면 세 명이 모이는 대로 시작합니다.</p><ul class="seats" id="seats"></ul><button class="btn" id="bCancel">나가기</button></div></div>
+<div class="modal" id="mAdmin"><div class="mbox" style="text-align:center"><h2>관리자 코드</h2><input id="adminIn" type="password" inputmode="numeric" maxlength="12" autocomplete="off" aria-label="관리자 코드" style="width:100%;font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;padding:10px;min-height:52px;background:#140e0f;color:var(--ink);border:1px solid var(--line2);border-radius:8px"><p class="msg" id="adminMsg" style="min-height:1.6em"></p><div style="display:flex;gap:10px;justify-content:center"><button class="btn" data-close>닫기</button><button class="btn red" id="bAdmin">확인</button></div></div></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 {
@@ -309,7 +310,7 @@ const myName=()=>($('nick').value.trim()||'이름 없는 책략가').slice(0,12)
 
 /* ---- 진행 ---- */
 function newGame(){clearTimeout(autoT);S=fresh();$('log').innerHTML='';['mWait','mEnd','mLobby'].forEach(m=>$(m).classList.remove('on'));startRound()}
-function startRound(){S.tri=null;S.sel=null;S.bets=[1,1,1];S.myRv=null;S.res=null;
+function startRound(){S.tri=null;S.sel=null;S.bets=[1,1,1];S.myRv=null;S.res=null;if(S.pend&&S.round<=30){const n=S.pend;S.pend=0;addPts(n)}
  if(S.round>30||!hasMove())return finish(null);
  const sl=selector();
  if(sl===MY){S.phase='select';say(S.round===1?'3인 게임은 4목입니다. 세 점을 고르십시오.':'세 점을 고르십시오. 확정을 눌러야 정해집니다.');resetT()}
@@ -409,10 +410,10 @@ function sync(){if(!MY||MODE==='ai')return;
  if(S.phase==='sent'){
   if(OTH().every(s=>hh(s)&&hh(s).c)&&!(P.h[R]&&P.h[R].v))setH(R,{v:S.myRv});
   if(P.h[R]&&P.h[R].v&&OTH().every(s=>hh(s)&&hh(s).v)){const bc={[MY]:S.myRv.b};
-   for(const s of OTH()){const o=hh(s),ob=o.v&&o.v.b;
-    const ok=Array.isArray(ob)&&ob.length===3&&ob.every(x=>isInt(x,1,999))&&sum(ob)<=S.bud[s]&&typeof o.v.s==='string'&&hash(JSON.stringify(ob)+o.v.s)===o.c;
+   const xs={};for(const s of OTH()){const o=hh(s),ob=o.v&&o.v.b;xs[s]=isInt(o.x,0,999)?o.x:0;
+    const ok=Array.isArray(ob)&&ob.length===3&&ob.every(x=>isInt(x,1,999))&&sum(ob)<=S.bud[s]+xs[s]&&typeof o.v.s==='string'&&hash(JSON.stringify(ob)+o.v.s)===o.c;
     if(!ok)return finish({cheat:s});bc[s]=ob}
-   return resolve(bc)}}
+   for(const s in xs)S.bud[s]+=xs[s];return resolve(bc)}}
  render()}
 function seats(){$('seats').innerHTML=SIDES.map(s=>`<li><i class="st s${s}"></i> ${CN[s]} · ${present(s)?`<b>${esc(nameOf(s))}</b>${s===MY?' (나)':''}`:'<span style="color:var(--dim)">기다리는 중…</span>'}</li>`).join('')}
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -471,6 +472,21 @@ $('chatF').addEventListener('submit',e=>{e.preventDefault();const t=$('chatIn').
  P.say={t,at:Date.now()};push()});
 $('bRule').onclick=$('bRule2').onclick=()=>$('mRule').classList.add('on');
 $('bExit').onclick=()=>{if(S.phase==='lobby')return;$('mExit').classList.add('on')};
+/* ---- 관리자: 게임 중 상단 지시 띠를 꾹 누르면 코드 입력 ---- */
+const ADMIN_H='78fd30064e67a9d1',INGAME=['select','osel','bet','sent','reveal'];
+function addPts(n){const R=S.round;S.bud[MY]+=n;if(MODE!=='ai')setH(R,{x:((P.h[R]&&P.h[R].x)||0)+n});render()}
+function grantBonus(n){if(['select','osel','bet'].includes(S.phase))addPts(n);else S.pend=(S.pend||0)+n}
+{let lpT=null;const bn=document.querySelector('.banner');
+ const start=e=>{if(!INGAME.includes(S.phase))return;clearTimeout(lpT);lpT=setTimeout(()=>{$('adminIn').value='';$('adminMsg').textContent='';$('mAdmin').classList.add('on');setTimeout(()=>$('adminIn').focus(),50)},800)};
+ const stop=()=>clearTimeout(lpT);
+ bn.addEventListener('pointerdown',start);['pointerup','pointerleave','pointercancel'].forEach(t=>bn.addEventListener(t,stop));
+ bn.addEventListener('contextmenu',e=>e.preventDefault());bn.style.webkitUserSelect='none';bn.style.userSelect='none'}
+$('bAdmin').onclick=()=>{const v=$('adminIn').value.trim();
+ if(hash(v)!==ADMIN_H){$('adminMsg').textContent='코드가 맞지 않습니다.';$('adminIn').value='';return}
+ if(!INGAME.includes(S.phase)){$('adminMsg').textContent='게임 중에만 쓸 수 있습니다.';return}
+ const later=!['select','osel','bet'].includes(S.phase);grantBonus(3);$('mAdmin').classList.remove('on');
+ say(later?'관리자: 다음 라운드에 포인트 3이 추가됩니다.':'관리자: 포인트 3이 추가되었습니다.')};
+$('adminIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('bAdmin').onclick()});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 
 /* ---- 그리기 ---- */
