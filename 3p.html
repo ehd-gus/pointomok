@@ -201,6 +201,8 @@ header nav button:hover{color:var(--ink);background:rgba(255,255,255,.04)}
 @media(max-width:600px){header h1{font-size:19px}.btn{padding:0 14px}.timer{font-size:28px}.banner{padding:10px 2px}}
 html{background:#100b0c}
 @media(max-width:600px){.controls .dir{flex:1;width:auto}.controls .grow{flex-basis:100%;height:0}.controls #bUndo,.controls #bOk{flex:1}}
+.won-by{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--serif);font-weight:600;font-size:16px;line-height:1.3;text-align:center;color:var(--ink)}.col.win-me .won-by{color:var(--gold)}.won-by .st{width:16px;height:16px;flex:none;vertical-align:0}
+.pts b.hid,#pAi{font-size:13px;font-weight:600;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -247,6 +249,7 @@ html{background:#100b0c}
  <li>선택권은 <b>흑 → 백 → 적</b> 순서로 돌아갑니다. 선택자는 한 줄로 이어진 빈 점 세 개(A·B·C)를 고릅니다.</li>
  <li>세 사람 모두 세 점에 포인트를 몰래 나눠 겁니다. 점마다 최소 1포인트입니다.</li>
  <li>각 점은 가장 많이 건 사람의 돌이 놓입니다.</li>
+ <li>다른 사람이 가진 포인트와 건 포인트는 끝까지 공개되지 않습니다. 결과에는 누가 가져갔는지만 나옵니다.</li>
  <li><b>동점이면 선택자는 항상 집니다.</b> A·C 점은 선택자의 다음 사람이, B 점은 그다음 사람이 먼저 가져갑니다. (예: 흑이 선택자면 A·C는 백 → 적 → 흑, B는 적 → 백 → 흑) 그래서 셋 다 똑같이 걸어도 한 사람이 세 점을 다 가져가지는 않습니다.</li>
  <li>매 라운드 10포인트를 새로 받습니다. 쓰지 않고 남긴 포인트는 절반(내림)만 다음 라운드로 이월됩니다.</li>
  <li>각 단계는 30초입니다. 시간이 다 되면 선택은 자동으로, 걸기는 현재 값으로 제출됩니다.</li>
@@ -324,7 +327,7 @@ function resolve(bc){const sl=selector(),res=[];
  S.last=S.tri.map(x=>x.join());
  S.nb={};for(const s of SIDES)S.nb[s]=10+Math.floor((S.bud[s]-sum(bc[s]))/2);
  S.res=res;S.phase='reveal';
- const li=document.createElement('li');li.textContent=`라운드 ${S.round} · 선택 ${CN[sl]} · `+res.map((x,i)=>`${LET[i]} 흑${x.b[1]} 백${x.b[2]} 적${x.b[3]}→${CN[x.w]}${x.tie?'(동점)':''}`).join(', ');$('log').prepend(li);
+ const li=document.createElement('li');li.textContent=`라운드 ${S.round} · 선택 ${CN[sl]} · `+res.map((x,i)=>`${LET[i]} 나 ${x.b[MY]}→${CN[x.w]}`).join(', ');$('log').prepend(li);
  const got=s=>res.filter(x=>x.w===s).length;
  say(`나 ${got(MY)}점 · `+OTH().map(s=>`${nameOf(s)} ${got(s)}점`).join(' · '));
  if(MODE==='ai'&&Math.random()<.5){const s=OTH()[Math.floor(Math.random()*2)];bubble('bub'+s,pick(got(s)>=2?AIL.win:got(s)===0?AIL.lose:AIL.any))}
@@ -474,7 +477,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.m
 function render(){const p=S.phase,sl=selector(),R=S.round;
  for(const s of SIDES){const me=s===MY,card=$('c'+s);
   card.style.order=MY?(s-MY+3)%3:s;card.classList.toggle('sel',sl===s&&!['lobby','wait'].includes(p));
-  $('n'+s).textContent=MY?nameOf(s):CN[s];$('m'+s).classList.toggle('hide',!me);$('p'+s).textContent=S.bud[s];
+  $('n'+s).textContent=MY?nameOf(s):CN[s];$('m'+s).classList.toggle('hide',!me);$('p'+s).textContent=me?S.bud[s]:'비공개';$('p'+s).classList.toggle('hid',!me);
   $('u'+s).textContent=`${CN[s]}${me?'':MODE==='ai'?' · 계산으로 둡니다':MY&&!present(s)?' · 연결 끊김':''}`;
   const o=!me&&ST[s]&&ST[s].h&&ST[s].h[R];
   $('t'+s).textContent=me?'':p==='osel'&&sl===s?'고르는 중':(p==='bet'||p==='sent')?(MODE==='ai'?'계산 중':o&&o.c?'제출 완료':'거는 중'):''}
@@ -492,7 +495,7 @@ function render(){const p=S.phase,sl=selector(),R=S.round;
  $('carry').textContent=p==='reveal'?'잠시 후 다음 라운드로 넘어갑니다':`쓸 수 있음 ${bud} · 남기면 이월 +${Math.floor(left/2)}`;
  $('bSubmit').textContent=p==='reveal'?'바로 넘어가기':p==='sent'?'기다리는 중':'제출';$('bSubmit').disabled=p==='sent'||(p==='reveal'&&S.over);
  $('cols').innerHTML=[0,1,2].map(i=>{if(p==='reveal'&&S.res){const x=S.res[i];
-   return`<div class="col ${x.w===MY?'win-me':'win-ai'}"><span class="tok">${LET[i]}</span>${SIDES.map(s=>`<div class="rv3${s===x.w?' won':''}"><i class="st s${s}"></i>${CN[s]}${s===MY?'(나)':''} <span class="n">${x.b[s]}</span></div>`).join('')}<div class="rv">${CN[x.w]}${x.w===MY?'(나)':''} 획득${x.tie?' · 동점':''}</div></div>`}
+   return`<div class="col ${x.w===MY?'win-me':'win-ai'}"><span class="tok">${LET[i]}</span><div class="won-by"><i class="st s${x.w}"></i>${x.w===MY?'나':esc(nameOf(x.w))}</div><div class="rv">가져감 · 내 베팅 ${x.b[MY]}</div></div>`}
   return`<div class="col"><span class="tok">${LET[i]}</span><div class="step"><button data-i="${i}" data-v="-1" ${lock||S.bets[i]<=1?'disabled':''} aria-label="${LET[i]} 빼기">−</button><output>${S.bets[i]}</output><button data-i="${i}" data-v="1" ${lock||left<=0?'disabled':''} aria-label="${LET[i]} 더하기">+</button></div></div>`}).join('');
  draw()}
 const GR=['','gb','gw','gr'],ST_STROKE=['','#000','#9c9583','#4a0f13'],DOT=['','#e9c46a','#b3343a','#ece4dc'];

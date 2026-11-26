@@ -190,6 +190,9 @@ header nav button:hover{color:var(--ink);background:rgba(255,255,255,.04)}
 @media(max-width:600px){header h1{font-size:19px}.btn{padding:0 14px}.timer{font-size:28px}.banner{padding:10px 2px}}
 html{background:#100b0c}
 @media(max-width:600px){.controls .dir{flex:1;width:auto}.controls .grow{flex-basis:100%;height:0}.controls #bUndo,.controls #bOk{flex:1}}
+.st{display:inline-block;border-radius:50%;border:1px solid #9a8f8a}.st.s1{background:radial-gradient(circle at 35% 30%,#666,#050505 65%)}.st.s2{background:radial-gradient(circle at 35% 30%,#fff,#d8d2c4 70%)}
+.won-by{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--serif);font-weight:600;font-size:16px;line-height:1.3;text-align:center;color:var(--ink)}.col.win-me .won-by{color:var(--gold)}.won-by .st{width:16px;height:16px;flex:none;vertical-align:0}
+.pts b.hid,#pAi{font-size:13px;font-weight:600;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -206,7 +209,7 @@ html{background:#100b0c}
   <div class="card" id="cAi">
    <div class="who"><span class="badge">선택</span><span class="emb"><svg viewBox="0 0 24 24" fill="none" stroke="#141011" stroke-width="1.4"><path d="M12 1 19 10 12 23 5 10Z"/><path d="M5 10h14M12 1v22M8.5 5.5 12 10l3.5-4.5"/></svg></span><span class="name" id="oName">수석 악마</span></div>
    <div class="sub" id="oSub">계산으로 둡니다</div>
-   <div class="pts">보유 포인트 <b id="pAi">10</b></div>
+   <div class="pts">보유 포인트 <b id="pAi">비공개</b></div>
    <div class="status" id="sAi"></div>
    <div class="bubble" id="bubAi"></div>
   </div>
@@ -245,6 +248,7 @@ html{background:#100b0c}
  <li>라운드마다 선택권이 번갈아 넘어갑니다. 선택자는 한 줄로 이어진 빈 점 세 개(A·B·C)를 고릅니다.</li>
  <li>두 사람은 세 점에 포인트를 몰래 나눠 겁니다. 점마다 최소 1포인트입니다.</li>
  <li>각 점은 더 많이 건 쪽의 돌이 놓입니다. 같으면 선택자가 아닌 쪽이 가져갑니다.</li>
+ <li>상대가 가진 포인트와 건 포인트는 끝까지 공개되지 않습니다. 결과에는 누가 가져갔는지만 나옵니다.</li>
  <li>매 라운드 10포인트를 새로 받습니다. 쓰지 않고 남긴 포인트는 절반(내림)만 다음 라운드로 이월됩니다.</li>
  <li>각 단계는 30초입니다. 시간이 다 되면 선택은 자동으로, 걸기는 현재 값으로 제출됩니다.</li>
  <li>온라인 대전: 같은 주소로 들어와서 방을 만든 사람이 흑(첫 선택), 코드로 들어온 사람이 백입니다. 거는 포인트는 암호화된 값으로 먼저 보내고, 둘 다 제출한 뒤에 공개되어 서로 몰래 볼 수 없습니다.</li>
@@ -322,7 +326,7 @@ function resolve(bc){const sl=selector(),res=[];
  const sum=a=>a.reduce((x,y)=>x+y,0);S.nb={1:10+Math.floor((S.bud[1]-sum(bc[1]))/2),2:10+Math.floor((S.bud[2]-sum(bc[2]))/2)};
  S.res=res;S.phase='reveal';
  const mine=res.filter(x=>x.w===MY).length;
- const li=document.createElement('li');li.textContent=`라운드 ${S.round} · ${sl===MY?'내 선택':'상대 선택'} · `+res.map((x,i)=>`${LET[i]} ${x.my}:${x.op}→${CN(x.w)}`).join(', ');$('log').prepend(li);
+ const li=document.createElement('li');li.textContent=`라운드 ${S.round} · ${sl===MY?'내 선택':'상대 선택'} · `+res.map((x,i)=>`${LET[i]} 나 ${x.my}→${CN(x.w)}`).join(', ');$('log').prepend(li);
  say(`내가 ${mine}점, 상대가 ${3-mine}점을 가져갔습니다.`);
  if(MODE==='ai'&&Math.random()<.6)bubble('bubAi',pick(mine>=2?AILINES.lose:mine===0?AILINES.win:AILINES.any));
  render();
@@ -438,7 +442,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.m
 
 function render(){const p=S.phase,sl=selector(),ON=oppName();
  $('cMe').classList.toggle('sel',sl===MY&&p!=='lobby');$('cAi').classList.toggle('sel',sl===OPP()&&p!=='lobby');
- $('pMe').textContent=S.bud[MY];$('pAi').textContent=S.bud[OPP()];
+ $('pMe').textContent=S.bud[MY];$('pAi').textContent='비공개';
  $('myStone').classList.toggle('w',MY===2);$('myColor').textContent=CN(MY);
  const oc=MODE==='net'&&opp&&opp.presence.h&&opp.presence.h[S.round]&&opp.presence.h[S.round].c;
  $('sAi').textContent=p==='osel'?'고르는 중':(p==='bet'||p==='sent')?(oc?'제출 완료':'거는 중'):'';
@@ -454,7 +458,7 @@ function render(){const p=S.phase,sl=selector(),ON=oppName();
  $('tieRule').textContent=sl===MY?'= 같으면 상대가 가져갑니다':'= 같으면 내가 가져갑니다';
  $('carry').textContent=p==='reveal'?'잠시 후 다음 라운드로 넘어갑니다':`쓸 수 있음 ${S.bud[MY]} · 남기면 이월 +${Math.floor(left/2)}`;
  $('bSubmit').textContent=p==='reveal'?'바로 넘어가기':p==='sent'?'기다리는 중':'제출';$('bSubmit').disabled=p==='sent'||(p==='reveal'&&S.over);
- $('cols').innerHTML=[0,1,2].map(i=>{if(p==='reveal'&&S.res){const x=S.res[i];return`<div class="col ${x.w===MY?'win-me':'win-ai'}"><span class="tok">${LET[i]}</span><div class="rv">나 <span class="n">${x.my}</span> : <span class="n">${x.op}</span> 상대</div><div class="rv">${x.w===MY?'내가 획득':'상대가 획득'} · ${CN(x.w)}</div></div>`}
+ $('cols').innerHTML=[0,1,2].map(i=>{if(p==='reveal'&&S.res){const x=S.res[i];return`<div class="col ${x.w===MY?'win-me':'win-ai'}"><span class="tok">${LET[i]}</span><div class="won-by"><i class="st s${x.w}"></i>${x.w===MY?'나':'상대'}</div><div class="rv">가져감 · 내 베팅 ${x.my}</div></div>`}
   return`<div class="col"><span class="tok">${LET[i]}</span><div class="step"><button data-i="${i}" data-v="-1" ${lock||S.bets[i]<=1?'disabled':''} aria-label="${LET[i]} 빼기">−</button><output>${S.bets[i]}</output><button data-i="${i}" data-v="1" ${lock||left<=0?'disabled':''} aria-label="${LET[i]} 더하기">+</button></div></div>`}).join('');
  draw()}
 function draw(){let h='<defs><radialGradient id="gb" cx=".35" cy=".3"><stop offset="0" stop-color="#666"/><stop offset=".6" stop-color="#0a0a0a"/></radialGradient><radialGradient id="gw" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d8d2c4"/></radialGradient><radialGradient id="gg" cx=".4" cy=".35"><stop offset="0" stop-color="#f8e09a"/><stop offset="1" stop-color="#d4a033"/></radialGradient></defs>';
