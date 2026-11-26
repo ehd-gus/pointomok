@@ -3,6 +3,7 @@
   "short_name": "포인트 오목",
   "description": "세 점에 포인트를 몰래 걸어 돌을 차지하는 오목 게임",
   "lang": "ko",
+  "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -10,8 +11,8 @@
   "background_color": "#120d0e",
   "theme_color": "#120d0e",
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {"src": "icons/icon-192-v2.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }

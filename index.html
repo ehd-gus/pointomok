@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="포인트 오목">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-v2.png">
 <title>포인트 오목</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -367,7 +367,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 </div></div>
 <div class="modal" id="mVisit"><div class="mbox"><h2>접속 기록</h2><p style="color:var(--dim);font-size:14px;margin:0 0 8px">최근 접속이 위에 나옵니다. 기록 서버는 12시간이 지난 기록을 지우지만, 이 기기에서 한 번 연 기록은 계속 남아요.</p><div id="visitList" style="max-height:55vh;overflow:auto;font-size:15px;border-top:1px solid #4a3d3d"></div><div class="row" style="margin-top:12px"><button class="btn" id="bVisitRe">새로고침</button><button class="btn" id="bVisitX">닫기</button></div></div></div>
 <div class="modal" id="mAdmin"><div class="mbox" style="text-align:center"><h2>관리자 코드</h2><input id="adminIn" type="password" inputmode="numeric" maxlength="12" autocomplete="off" aria-label="관리자 코드" style="width:100%;font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;padding:10px;min-height:52px;background:#140e0f;color:var(--ink);border:1px solid var(--line2);border-radius:8px"><p class="msg" id="adminMsg" style="min-height:1.6em"></p><div style="display:flex;gap:10px;justify-content:center"><button class="btn" data-close>닫기</button><button class="btn red" id="bAdmin">확인</button></div></div></div>
-<div class="instbar hide" id="instBar" role="region" aria-label="앱 설치"><img src="icons/icon-192.png" alt="" width="40" height="40"><div class="ib-t"><b>포인트 오목 앱</b><span>홈 화면에 추가해 앱처럼 쓰기</span></div><button class="btn red" id="bInstall">설치</button><button class="ib-x" id="bInstX" aria-label="닫기">×</button></div>
+<div class="instbar hide" id="instBar" role="region" aria-label="앱 설치"><img src="icons/icon-192-v2.png" alt="" width="40" height="40"><div class="ib-t"><b>포인트 오목 앱</b><span>홈 화면에 추가해 앱처럼 쓰기</span></div><button class="btn red" id="bInstall">설치</button><button class="ib-x" id="bInstX" aria-label="닫기">×</button></div>
 <div class="modal" id="mInstall"><div class="mbox"><h2>홈 화면에 설치</h2>
  <div id="instIos" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>Safari 아래쪽의 <b>공유</b> 버튼(네모에 위쪽 화살표)을 누르세요.</li><li><b>홈 화면에 추가</b>를 누르세요.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝입니다.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">아이폰은 Safari에서만 설치할 수 있어요. 카카오톡이나 다른 앱 안에서 열었다면 Safari로 다시 열어 주세요.</p></div>
  <div id="instOther" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>브라우저 오른쪽 위 <b>⋮</b> 메뉴를 누르세요.</li><li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누르세요.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">카카오톡이나 인스타그램 안에서 열었다면 설치가 안 돼요. 크롬이나 삼성 인터넷으로 다시 열어 주세요.</p></div>
