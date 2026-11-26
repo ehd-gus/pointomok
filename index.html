@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>포인트 오목</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
 <style>
 /* VOICE: 촛불 아래 악마와 두는 은밀한 내기 — 낮고 엄숙하게
    IDEA: 낡은 나무 탁자 위 찢긴 양피지, 그 위에 놓인 남색 바둑판
@@ -117,6 +119,77 @@ header nav button{background:none;border:0;text-decoration:underline;text-underl
 @media(max-width:900px){.stage{grid-template-columns:minmax(0,1fr)}.deco{display:none}.side{flex-direction:row;flex-wrap:wrap}.side .card{flex:1 1 220px}.boardwrap{width:min(100%,600px)}}
 @media(max-width:600px){header h1{font-size:19px}.dir{width:48px;height:48px}.btn{padding:0 16px}.timer{font-size:28px;width:44px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+/* ---- 다듬기: 함렛(제목·대사) + 프리텐다드(조작·숫자), 금빛 테두리로 정리 ---- */
+:root{--bg:#120d0e;--wood:#1a1213;--paper:#211819;--line:#3a2b2c;--line2:#4d3a3b;--ink:#efe7de;--dim:#a2948c;--red:#a8323a;--red2:#6e1c22;--navy:#17245e;--gold:#d8b26a;--gold2:#8f6d2c;
+ --serif:"Hahmlet","Nanum Myeongjo",serif;--sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+body{font:15px/1.6 var(--sans);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;
+ background:radial-gradient(130% 70% at 50% 0%,#2b1b1d 0,#160f10 55%,#100b0c 100%) fixed;background-image:radial-gradient(130% 70% at 50% 0%,#2b1b1d 0,#160f10 55%,#100b0c 100%)}
+button,input{font-family:var(--sans)}
+header{background:rgba(14,9,10,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px max(4vw,16px)}
+header h1{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:-.02em}
+header h1 small{font-family:var(--sans);font-weight:600;font-size:13px!important;letter-spacing:0;border:1px solid var(--gold2);border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:3px}
+header nav{gap:6px}
+header nav button{font-size:15px;text-decoration:none;color:var(--dim);padding:8px 10px;border-radius:6px}
+header nav button:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+.paper{display:none}
+.stage{gap:24px;padding-top:26px}
+.card{background:linear-gradient(180deg,#1e1617,#181213);border:1px solid var(--line);border-radius:8px;padding:14px 16px 12px;transition:border-color .3s,box-shadow .3s}
+.card.sel{background:linear-gradient(180deg,#261a1b,#1b1314);border-color:var(--gold2);box-shadow:inset 3px 0 0 var(--gold)}
+.badge{background:var(--gold);color:#1d1407;font-size:12px;font-weight:700;border-radius:4px;padding:2px 7px}
+.emb{background:none;border:1px solid var(--line2);border-radius:50%}
+.emb svg path[fill="#141011"]{fill:#ece4dc}
+.name{font-family:var(--serif);font-weight:600;font-size:18px;letter-spacing:-.02em}
+.me-tag{border-color:var(--line2);color:var(--dim);border-radius:4px;font-size:12px;padding:0 6px}
+.sub{font-size:13px}
+.pts{font-size:13px}.pts b{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-left:2px}
+.status{font-size:13px;color:var(--gold)}
+.bubble{background:#efe7de;border-radius:8px;font-size:14px}
+.chat input{border-radius:6px;border-color:var(--line2);background:#140e0f}
+.topline{gap:16px}
+.banner{background:none;border-top:1px solid var(--gold2);border-bottom:1px solid var(--gold2);padding:12px 2px;font-family:var(--serif);font-weight:600;font-size:clamp(17px,2.3vw,21px);letter-spacing:-.02em}
+.banner .emb{display:none}
+.timer{font-weight:300;font-size:36px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.timer.low{color:#ff7a7f;font-weight:500}
+.info{font-size:14px}
+.info strong{font-family:var(--serif);font-weight:600;font-size:20px}
+.info .stone{width:22px;height:22px;border-width:1px}
+.boardwrap{border:1px solid rgba(216,178,106,.55);border-radius:3px;box-shadow:0 0 0 6px #140e0f,0 0 0 7px rgba(216,178,106,.22),0 28px 60px rgba(0,0,0,.55),inset 0 0 50px rgba(0,0,0,.35)}
+.hint{font-size:14px}
+.dir{border-radius:8px;border-color:var(--line2);background:#1a1314}
+.dir.on{border:1px solid var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.btn{min-height:52px;padding:0 22px;border-radius:8px;border:1px solid var(--line2);background:#1b1415;font-size:16px;font-weight:600;letter-spacing:-.01em;transition:border-color .2s,background .2s}
+.btn:hover:not(:disabled){border-color:var(--gold2);background:#221819}
+.btn.red{clip-path:none;background:linear-gradient(180deg,#b63841,#9a2c34);border-color:#c4505a;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 6px 18px rgba(120,20,30,.35)}
+.btn.red:hover:not(:disabled){background:linear-gradient(180deg,#c13f48,#a3323a);border-color:#d6626b}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.left{font-size:14px}.left b,.left span{font-weight:600;font-variant-numeric:tabular-nums}.left b{font-size:30px}
+.rule{font-size:13px;font-weight:600}
+.col{border:1px solid var(--line);border-radius:8px;background:#191213;padding:12px 6px}
+.col.win-me{border-color:var(--gold);background:rgba(216,178,106,.08)}
+.col.win-ai{border-color:var(--line2);background:#1d1516}
+.tok{font-family:var(--serif);font-weight:700;width:36px;height:36px;font-size:17px;border-width:1px}
+.step button{border-radius:6px;border-color:var(--line2);font-weight:400}
+.step output{font-weight:300;font-size:30px;font-variant-numeric:tabular-nums}
+.rv{font-size:13px}.rv .n{font-weight:600;font-variant-numeric:tabular-nums}
+.betfoot .note{font-size:13px}
+.dealer{padding-top:14px;border-top:1px solid var(--line)}
+.dealer svg{width:52px;height:52px;border-radius:50%;overflow:hidden}
+.dealer p{font-family:var(--serif);font-weight:500;font-size:clamp(16px,2.1vw,19px);letter-spacing:-.02em;color:#e9dfd2;line-height:1.5}
+.log{font-size:13px}
+.modal{background:rgba(8,5,6,.72);backdrop-filter:blur(3px)}
+.mbox{background:linear-gradient(180deg,#211718,#1a1314);border:1px solid var(--line2);border-radius:12px;padding:26px 24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.mbox h2{font-family:var(--serif);font-weight:600;font-size:25px;letter-spacing:-.03em;margin-bottom:12px}
+.mbox li{line-height:1.65}
+.mbox .big{font-family:var(--serif);font-weight:700;font-size:44px;letter-spacing:-.03em;color:var(--gold)}
+.field{font-size:14px;color:var(--dim)}
+.field input,.row input{border-radius:8px!important;border-color:var(--line2)!important;background:#140e0f!important;color:var(--ink)}
+.field input:focus,.row input:focus,.chat input:focus{outline:none;border-color:var(--gold)!important}
+.code{font-weight:300;letter-spacing:.28em;font-variant-numeric:tabular-nums}
+.or{font-size:13px}
+.msg{font-size:14px}
+@media(max-width:600px){header h1{font-size:19px}.btn{padding:0 14px}.timer{font-size:28px}.banner{padding:10px 2px}}
+html{background:#100b0c}
+@media(max-width:600px){.controls .dir{flex:1;width:auto}.controls .grow{flex-basis:100%;height:0}.controls #bUndo,.controls #bOk{flex:1}}
 </style>
 </head>
 <body>
@@ -389,7 +462,7 @@ function draw(){let h='<defs><radialGradient id="gb" cx=".35" cy=".3"><stop offs
  STAR.forEach(([r,c])=>h+=`<circle cx="${c+.5}" cy="${r+.5}" r=".09" fill="#dfe4ff"/>`);
  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=S.b[r][c];if(!v)continue;const nw=S.last.includes(r+','+c);
   h+=`<g class="${nw&&S.phase==='reveal'?'newst':''}"><circle cx="${c+.5}" cy="${r+.5}" r=".43" fill="url(#${v===1?'gb':'gw'})" stroke="${v===1?'#000':'#9c9583'}" stroke-width=".04"/>${v===2?`<circle cx="${c+.5}" cy="${r+.5}" r=".36" fill="none" stroke="#a49d8b" stroke-width=".025" stroke-dasharray=".05 .05"/>`:''}${nw?`<circle cx="${c+.5}" cy="${r+.5}" r=".1" fill="${v===1?'#e9c46a':'#b3343a'}"/>`:''}</g>`}
- if(S.tri&&['select','bet','sent'].includes(S.phase))S.tri.forEach(([r,c],i)=>h+=`<g><circle cx="${c+.5}" cy="${r+.5}" r=".42" fill="url(#gg)" stroke="#6b4f12" stroke-width=".06"/><text x="${c+.5}" y="${r+.68}" text-anchor="middle" font-size=".5" font-weight="800" fill="#2b1d05" font-family="Nanum Myeongjo,serif">${LET[i]}</text></g>`);
+ if(S.tri&&['select','bet','sent'].includes(S.phase))S.tri.forEach(([r,c],i)=>h+=`<g><circle cx="${c+.5}" cy="${r+.5}" r=".42" fill="url(#gg)" stroke="#6b4f12" stroke-width=".06"/><text x="${c+.5}" y="${r+.68}" text-anchor="middle" font-size=".5" font-weight="800" fill="#2b1d05" font-family="Hahmlet,serif">${LET[i]}</text></g>`);
  if(h!==lastSvg){lastSvg=h;svg.innerHTML=h}}
 render();
 $('lobbyMsg').textContent='';
