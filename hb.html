@@ -455,7 +455,7 @@ function resolve(bc){const fr=S.first,sc=3-fr,b1=bc[fr],b2=bc[sc];
  if(MODE==='ai'&&Math.random()<.45)bubble('bubOp',pick(w===OPP()?AIL.win:w===MY?AIL.lose:AIL.any));
  render();
  if(w&&S.score[w]>=WINS){S.over=true;setTimeout(()=>finish(),1200);return}
- autoT=setTimeout(next,3200)}
+ autoT=setTimeout(next,6500)}
 function next(){if(S.phase!=='reveal'||S.over)return;clearTimeout(autoT);S.round++;startRound()}
 function endOfRounds(){if(S.score[1]===S.score[2]&&!S.ot){S.ot=true;S.maxR=S.round+OT_ROUNDS-1;S.pts={1:OT_PTS,2:OT_PTS};
   const li=document.createElement('li');li.className='ot';li.textContent=`승점 ${S.score[1]} : ${S.score[2]} 동점 → 33포인트로 3라운드 연장`;$('log').prepend(li);
