@@ -283,6 +283,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .center>.info>.stone{width:16px;height:16px}.center>.info>strong{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink)}.center>.info>.melabel{color:var(--dim)}
 .center>.info>strong::after{content:"·";margin-left:8px;color:var(--dim);font-weight:400}
 .room .rk.ghb{background:#f2ede4;color:#141011}
+.room .rk.gyut{background:#3f7fd8;color:#fff}
 /* ---- 마법 윷놀이 ---- */
 .yt{max-width:620px;margin:0 auto;padding:14px max(4vw,12px) 130px;display:flex;flex-direction:column;gap:12px}
 .ypl{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
@@ -328,23 +329,48 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .whost{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px}.wguest{text-align:center;color:var(--dim);margin:0}
 .room .rk.gyut{background:#3f7fd8;color:#fff}
 .row.solo{display:grid;grid-template-columns:repeat(3,1fr)}
-@media(max-width:480px){.pcards{grid-template-columns:1fr}.pcard{display:grid;grid-template-columns:44px 1fr;column-gap:10px;row-gap:2px;text-align:left;align-items:start;padding:12px}.pcard .pc-i{grid-row:1/4;font-size:30px;align-self:center;text-align:center}.pcard b{font-size:16px}.ypl{grid-template-columns:1fr 1fr}.whost{grid-template-columns:1fr 1fr}.whost #bStart{grid-column:1/3}}
+@media(max-width:480px){.pcards{grid-template-columns:1fr}.pcard{flex-direction:row;text-align:left;align-items:center}.pcard .pc-i{font-size:28px}.pcard>b,.pcard>span,.pcard>em{display:block}.ypl{grid-template-columns:1fr 1fr}.whost{grid-template-columns:1fr 1fr}.whost #bStart{grid-column:1/3}}
+/* v2 */
+.ymid{display:flex;flex-direction:column;gap:10px;min-width:0}.yside{display:flex;flex-direction:column;gap:10px;min-width:0}
+.yc-top .yc-fin{margin-left:auto;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.yc-pcs i{display:grid;place-items:center;font-size:7px;width:12px;height:12px}
+.yc-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:44px;padding:3px 2px;border:1px solid var(--line2);border-radius:6px;background:#140e0f;text-align:center;min-width:0}
+.slot i{font-style:normal;font-size:15px;line-height:1}.slot b{font-size:10px;font-weight:600;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slot small{font-size:9px;color:var(--gold)}
+.slot.empty{color:#4d3a3b;border-style:dashed}.slot.off{opacity:.55}.slot.used{opacity:.45}
+.ycard.out{opacity:.45;filter:grayscale(.7)}
+.ycard.mine{border-color:var(--gold2)}
+.yaug small{color:var(--gold);font-weight:500;margin-left:2px}
+.pcard.special{border-color:var(--gold2);background:linear-gradient(180deg,#2a1e15,#1b1415)}.pcard:disabled{opacity:.35;cursor:not-allowed}
+.augall h4{margin:14px 0 4px;font-size:13px;color:var(--gold)}.aug-row small{font-size:11px;color:var(--gold);font-weight:500}
+#board.pick-node .ynode{cursor:crosshair;stroke:#ff8a8f;stroke-opacity:1}
+.ybtns{grid-template-columns:repeat(2,1fr)}
+@media(min-width:1000px){.yt{max-width:1240px;display:grid;grid-template-columns:260px minmax(0,1fr) 300px;align-items:start;gap:18px}
+ .yplO{grid-template-columns:1fr;order:0}.ymid{order:1}.yside{order:2}.yplMe{grid-template-columns:1fr}
+ .yt>.chat,.yt>.log{grid-column:1/-1}.yside .chat,.yside .log{grid-column:auto}}
+@media(max-width:999px){.yt{display:flex}.yside{order:2}.ymid{order:1}.yplO{order:0}}
 </style>
 </head>
 <body>
 <header><h1>마법 윷놀이</h1><nav><button id="bRule">규칙</button><button id="bExit">나가기</button></nav></header>
 <main class="yt">
- <section class="ypl" id="ypl"></section>
+ <section class="ypl yplO" id="yplO"></section>
+ <section class="ymid">
  <div class="ybar"><div class="ybar-l"><span class="ymeta" id="ymeta"></span><span id="banner">마법 윷놀이</span></div><span class="timer idle" id="timer">30</span></div>
  <div class="yboard"><svg id="board" viewBox="-8 -8 116 116" aria-label="윷판"></svg><div class="ythrow" id="ythrow"></div></div>
+ </section>
+ <section class="yside">
+ <section class="ypl yplMe" id="yplMe"></section>
  <section class="yact" id="yact">
   <div class="yres" id="yres"></div>
-  <div class="ybtns"><button class="btn red" id="bThrow">윷 던지기</button><button class="btn" id="bNew">새 말 내기</button></div>
+  <div class="ybtns"><button class="btn red" id="bThrow">윷 던지기</button><button class="btn red hide" id="bDo">도 내기</button><button class="btn red hide" id="bGae">개 내기</button><button class="btn" id="bNew">새 말 내기</button><button class="btn hide" id="bCancelT">선택 취소</button></div>
   <div class="yaug" id="yaug"></div>
   <p class="yhint" id="yhint"></p>
  </section>
+ </section>
  <form class="chat" id="chatF"><input id="chatIn" maxlength="60" placeholder="모두에게 한마디" autocomplete="off" aria-label="채팅"><button class="btn red">보내기</button></form>
  <details class="log" open><summary>진행 기록</summary><ol id="log"></ol></details>
+ </section>
 </main>
 <div class="modal" id="mPick"><div class="mbox ypick"><h2 id="pickT">증강을 고르세요</h2><p class="ypick-s" id="pickS"></p><div class="pcards" id="pcards"></div><div class="pmine" id="pmine"></div></div></div>
 <div class="modal" id="mTarget"><div class="mbox"><h2 id="tgT">대상을 고르세요</h2><div class="tglist" id="tgList"></div><button class="btn wide" data-close>취소</button></div></div>
@@ -355,9 +381,10 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <li>꼭짓점(모·뒷모)이나 방(가운데)에 <b>멈추면</b> 다음에 지름길로 갑니다.</li>
  <li>내 말끼리 같은 칸에 서면 <b>업혀서</b> 함께 움직입니다. 상대 말이 있는 칸에 멈추면 <b>잡아서</b> 집으로 보내고 한 번 더 던집니다.</li>
  <li>참먹이(출발점)에 도착하거나 지나가면 골인입니다.</li>
- <li><b>증강</b>: 시작할 때 3개 중 1개를 고르고, 모두가 <b>3턴</b>을 돌 때마다 3개 중 1개를 더 고릅니다. 한 사람당 <b>최대 3개</b>입니다.</li>
- <li>🌀🔀🧊🔒 표시 증강은 내 턴에 버튼을 눌러 <b>한 번만</b> 쓸 수 있습니다. 나머지는 자동으로 적용됩니다.</li>
- <li>내 턴은 30초, 증강 고르기는 20초입니다. 시간이 지나면 자동으로 진행됩니다.</li>
+ <li><b>증강</b>은 한 판에 <b>3개</b>까지 얻습니다. <b>1라운드·6라운드·12라운드</b>가 시작될 때 3개 중 1개를 고릅니다. (라운드 = 모두가 한 번씩 턴을 도는 것)</li>
+ <li><b>범용</b> 증강은 언제든 나올 수 있고, <b>시작 전용</b>은 1라운드, <b>중간 전용</b>은 6라운드, <b>마무리 전용</b>은 12라운드에만 나옵니다.</li>
+ <li>'사용' 표시가 있는 증강은 내 턴에 버튼을 눌러 씁니다. 나머지는 자동으로 적용됩니다. 특별한 승리 조건이나 탈락이 있는 증강도 있습니다.</li>
+ <li>내 턴은 40초, 증강 고르기는 25초입니다. 시간이 지나면 자동으로 진행됩니다.</li>
 </ul><div class="augall" id="augAll"></div><button class="btn red" data-close>닫기</button></div></div>
 <div class="modal" id="mEnd"><div class="mbox" style="text-align:center"><h2 id="endT">게임 종료</h2><div class="big" id="endBig"></div><p id="endP" style="color:var(--dim)"></p><div style="display:flex;gap:10px;justify-content:center"><button class="btn" data-close>판 보기</button><button class="btn red" id="bAgain">다시 하기</button></div></div></div>
 <div class="modal" id="mExit"><div class="mbox"><h2>나가시겠습니까?</h2><p style="color:var(--dim)">진행 중인 판에서 빠지고 첫 화면으로 돌아갑니다.</p><div style="display:flex;gap:10px"><button class="btn" data-close>계속하기</button><button class="btn red" id="bReset">나가기</button></div></div></div>
@@ -398,7 +425,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 const $=id=>document.getElementById(id),Y=window.YUT;
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
-const TURN_MS=30000,PICK_MS=20000;
+const TURN_MS=40000,PICK_MS=25000;
 let MODE='net',MY=-1,host=false,peer=null,hconn=null,conns={},G=null,L=null,P={code:null,name:''},tickT=null,deadline=0,tlLocal=0,lastEv=-1,sel=0,target=null,reported=false,lastSayAt={},timerI=null,lastThrowId=null;
 try{$('nick').value=localStorage.getItem('pomok-name')||''}catch(e){}
 const myName=()=>($('nick').value.trim()||'이름 없는 책략가').slice(0,12);
@@ -485,107 +512,123 @@ $('bAgain').onclick=()=>{$('mEnd').classList.remove('on');if(!host){$('yhint').t
 /* ---- 조작 ---- */
 const myTurn=()=>G&&MY>=0&&G.turn===MY&&(G.phase==='throw'||G.phase==='move');
 $('bThrow').onclick=()=>{if(myTurn()&&G.phase==='throw')act({t:'throw'})};
-$('bNew').onclick=()=>{if(!myTurn()||G.phase!=='move')return;const pi=G.seats[MY].pieces.findIndex(p=>p.n==='H');if(pi>=0)tryMove(pi)};
+$('bDo').onclick=()=>{if(myTurn()&&G.phase==='throw')act({t:'throw',k:'도'})};
+$('bGae').onclick=()=>{if(myTurn()&&G.phase==='throw')act({t:'throw',k:'개'})};
+$('bNew').onclick=()=>{if(!myTurn()||G.phase!=='move')return;const st=G.seats[MY];const pi=st.pieces.findIndex(p=>p.n==='H'&&p.t!=='pawn'&&!p.t)>=0?st.pieces.findIndex(p=>p.n==='H'&&!p.t):st.pieces.findIndex(p=>p.n==='H'&&p.t!=='pawn');if(pi>=0)tryMove(pi)};
+$('bCancelT').onclick=()=>{target=null;render()};
 function tryMove(pi){if(!myTurn()||G.phase!=='move')return;if(!G.results[sel])sel=0;
- if(!Y.preview(G,MY,sel,pi)){const alt=G.results.findIndex((r,ri)=>Y.preview(G,MY,ri,pi));if(alt<0){flash('그 말은 이 결과로 움직일 수 없습니다.');return}sel=alt}
+ if(!Y.preview(G,MY,sel,pi)){const alt=G.results.findIndex((r,ri)=>Y.preview(G,MY,ri,pi));if(alt<0){flash('그 말은 지금 움직일 수 없습니다.');return}sel=alt}
  act({t:'move',ri:sel,pi});sel=0}
 $('yres').addEventListener('click',e=>{const b=e.target.closest('[data-ri]');if(!b)return;sel=+b.dataset.ri;render()});
-function flash(t){$('yhint').textContent=t;clearTimeout(flash.t);flash.t=setTimeout(()=>render(),1800)}
-$('board').addEventListener('click',e=>{const t=e.target.closest('[data-s]');if(!t||!G)return;const s=+t.dataset.s,pi=+t.dataset.p;
+function flash(t){$('yhint').textContent=t;clearTimeout(flash.t);flash.t=setTimeout(()=>render(),2200)}
+$('board').addEventListener('click',e=>{if(!G)return;const nd=e.target.closest('[data-node]');const t=e.target.closest('[data-s]');
+ if(target&&target.tg==='node'){const n=t?G.seats[+t.dataset.s].pieces[+t.dataset.p].n:nd&&nd.dataset.node;if(n){act({t:'use',id:target.id,x:{n}});target=null;render()}return}
+ if(!t)return;const s=+t.dataset.s,pi=+t.dataset.p;
  if(target){targetClick(s,pi);return}
  if(s===MY)tryMove(pi)});
-$('ypl').addEventListener('click',e=>{const h=e.target.closest('[data-home]');if(!h||!G)return;if(+h.dataset.home===MY)$('bNew').onclick()});
-// 한 번만 쓰는 증강
-$('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if(!b||!myTurn())return;const id=b.dataset.use,others=G.seats.map((s,i)=>i).filter(i=>i!==MY);
- if(id==='tele'){target={id,step:'mine'};flash('방으로 옮길 내 말을 판에서 누르세요.');render()}
- else if(id==='swap'){target={id,step:'mine'};flash('바꿀 내 말을 판에서 누르세요.');render()}
- else if(id==='freeze'){openList('누구를 얼릴까요?',others.map(o=>({l:G.seats[o].name,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o}})})))}
- else if(id==='seal'){const items=[];others.forEach(o=>G.seats[o].aug.forEach(a=>{if(!a.off)items.push({l:`${G.seats[o].name} · ${Y.AUG[a.id].icon} ${Y.AUG[a.id].name}`,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o,aug:a.id}})})}));
-  if(!items.length){flash('봉인할 상대 증강이 없습니다.');return}openList('무엇을 봉인할까요?',items)}});
+$('yplMe').addEventListener('click',e=>{const h=e.target.closest('[data-home]');if(!h||!G)return;$('bNew').onclick()});
+// 직접 쓰는 증강
+$('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if(!b||!myTurn())return;const id=b.dataset.use,A=Y.AUG[id],others=G.seats.map((s,i)=>i).filter(i=>i!==MY&&!G.seats[i].out);
+ switch(A.tg){
+  case'own':target={id,tg:'own'};flash(`${A.name}: 판 위의 내 말을 누르세요.`);render();break;
+  case'two':target={id,tg:'two',a:null};flash('바둑: 같은 줄에 있는 내 말 두 개를 차례로 누르세요.');render();break;
+  case'node':target={id,tg:'node'};flash('명사수: 조준할 칸(또는 말)을 누르세요.');render();break;
+  case'opp':openList(`${A.name}: 상대를 고르세요`,others.map(o=>({l:G.seats[o].name,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o}})})));break;
+  case'oppAug':{const items=[];others.forEach(o=>G.seats[o].aug.forEach(a=>{const B=Y.AUG[a.id];if(a.off||a.id==='cat'||(B.use&&(G.seats[o].used[a.id]||0)>=B.use))return;items.push({l:`${G.seats[o].name} · ${B.icon} ${B.name}`,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o,aug:a.id}})})}));
+   if(!items.length){flash('바꿀 수 있는 상대 증강이 없습니다.');return}openList('착각: 고양이로 바꿀 증강을 고르세요',items);break}
+  case'kind':openList('조작된 윷: 다음 결과를 고르세요',Y.KINDS.map(k=>({l:k,c:'#d8b26a',f:()=>act({t:'use',id,x:{k}})})));break;
+  case'flip':{const items=[];G.results.forEach((r,ri)=>{const f=Y.FLATS[r.k];[[-1,'아래로'],[1,'위로']].forEach(([d,w])=>{const nf=f+d;if(nf<0||nf>4)return;items.push({l:`${r.k} → ${Y.BYFLATS[nf]}`,c:'#d8b26a',f:()=>act({t:'use',id,x:{ri,d}})})})});
+   if(!items.length){flash('뒤집을 결과가 없습니다. 먼저 던지세요.');return}openList('슬쩍: 뒤집을 결과를 고르세요',items);break}
+  default:act({t:'use',id})}});
 function targetClick(s,pi){const p=G.seats[s].pieces[pi];
- if(target.step==='mine'){if(s!==MY||['H','F'].includes(p.n)){flash('판 위에 있는 내 말을 누르세요.');return}
-  if(target.id==='tele'){act({t:'use',id:'tele',x:{pi}});target=null;return}
-  target={id:'swap',step:'theirs',pi};flash('자리를 바꿀 상대 말을 누르세요.');return}
- if(target.step==='theirs'){if(s===MY||['H','F'].includes(p.n)){flash('판 위에 있는 상대 말을 누르세요.');return}act({t:'use',id:'swap',x:{pi:target.pi,o:s,qi:pi}});target=null}}
+ if(target.tg==='own'){if(s!==MY||!Y.onBoard(p)){flash('판 위에 있는 내 말을 누르세요.');return}act({t:'use',id:target.id,x:{pi}});target=null;render();return}
+ if(target.tg==='two'){if(s!==MY||!Y.onBoard(p)){flash('판 위에 있는 내 말을 누르세요.');return}
+  if(target.a==null){target.a=pi;flash('두 번째 내 말을 누르세요.');return}act({t:'use',id:'baduk',x:{a:target.a,b:pi}});target=null;render()}}
 function openList(title,items){$('tgT').textContent=title;$('tgList').innerHTML='';items.forEach(it=>{const b=document.createElement('button');b.className='btn wide';b.innerHTML=`<i class="ydot" style="background:${it.c}"></i>${esc(it.l)}`;b.onclick=()=>{$('mTarget').classList.remove('on');it.f()};$('tgList').appendChild(b)});$('mTarget').classList.add('on')}
-$('pcards').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b)return;act({t:'pick',id:b.dataset.pick})});
+$('pcards').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||b.disabled)return;act({t:'pick',id:b.dataset.pick})});
 // 채팅
 function showSay(s,m){const e=document.querySelector(`.ycard[data-seat="${s}"] .bubble`);if(!e)return;e.textContent=m;e.classList.remove('on');void e.offsetWidth;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),5000)}
 $('chatF').addEventListener('submit',e=>{e.preventDefault();const m=$('chatIn').value.trim().slice(0,60);if(!m||MY<0)return;$('chatIn').value='';showSay(MY,m);
  if(MODE!=='net')return;if(host){for(const k in conns)if(conns[k].open)try{conns[k].send(JSON.stringify({app:'yut',code:P.code,t:'say',s:MY,m}))}catch(e){}}else if(hconn&&hconn.open)try{hconn.send(JSON.stringify({app:'yut',code:P.code,t:'say',m}))}catch(e){}});
 $('bRule').onclick=$('bRule2').onclick=$('bRuleW').onclick=()=>$('mRule').classList.add('on');
 $('bExit').onclick=()=>{if(!G&&!L)return;$('mExit').classList.add('on')};
-$('augAll').innerHTML='<h3>증강 목록</h3>'+Y.AUGS.map(a=>`<div class="aug-row"><span class="ai">${a.icon}</span><div><b>${esc(a.name)}</b><span>${esc(a.d)}</span></div></div>`).join('');
+const TAGN={g:'범용',start:'시작 전용 · 1라운드',mid:'중간 전용 · 6라운드',end:'마무리 전용 · 12라운드'};
+$('augAll').innerHTML='<h3>증강 목록</h3>'+['g','start','mid','end'].map(tg=>`<h4>${TAGN[tg]}</h4>`+Y.AUGS.filter(a=>a.tag===tg).map(a=>`<div class="aug-row"><span class="ai">${a.icon}</span><div><b>${esc(a.name)}${a.use?` <small>사용 ${a.use}회</small>`:a.perTurn?' <small>턴마다 사용</small>':''}</b><span>${esc(a.d)}</span></div></div>`).join('')).join('');
 
 /* ---- 그리기 ---- */
 const SV='http://www.w3.org/2000/svg';
 function boardBase(){const P=Y.POS;let h='<defs><radialGradient id="ybg" cx=".5" cy=".5" r=".75"><stop offset="0" stop-color="#2a1d1e"/><stop offset="1" stop-color="#171011"/></radialGradient></defs>';
  h+='<rect x="-8" y="-8" width="116" height="116" rx="6" fill="url(#ybg)" stroke="#8f6d2c" stroke-width=".6"/>';
  h+='<g stroke="#d8b26a" stroke-opacity=".35" stroke-width=".7" fill="none"><rect x="0" y="0" width="100" height="100"/><path d="M100 0L0 100M0 0L100 100"/></g>';
- h+='<g id="ytraps"></g><g id="ydest"></g>';
  for(const k of Y.NODES){const[x,y]=P[k],big=['o0','o5','o10','o15','C'].includes(k);
-  h+=`<circle cx="${x}" cy="${y}" r="${big?5.2:3.4}" fill="${big?'#3a2a1c':'#241a1b'}" stroke="#d8b26a" stroke-opacity="${big?.9:.55}" stroke-width="${big?.8:.5}"/>`}
+  h+=`<circle data-node="${k}" class="ynode" cx="${x}" cy="${y}" r="${big?5.2:3.4}" fill="${big?'#3a2a1c':'#241a1b'}" stroke="#d8b26a" stroke-opacity="${big?.9:.55}" stroke-width="${big?.8:.5}"/>`}
  h+=`<text x="100" y="107.2" text-anchor="end" font-size="3.4" fill="#d8b26a" font-family="Pretendard,sans-serif">출발·골인</text>`;
- h+='<g id="ypieces"></g>';return h}
+ h+='<g id="yfx"></g><g id="ydest"></g><g id="ypieces"></g>';return h}
 $('board').innerHTML=boardBase();
 const pieceEls={};
-function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('ytraps').innerHTML='';$('ydest').innerHTML='';return}
- // 덫
- $('ytraps').innerHTML=Object.entries(G.traps).map(([k,s])=>{const[x,y]=P[k];return`<g transform="translate(${x} ${y})"><circle r="2.6" fill="none" stroke="${G.seats[s].color}" stroke-width=".7" stroke-dasharray="1 .8"/><text y="1.3" text-anchor="middle" font-size="3.4">🪤</text></g>`}).join('');
- // 같은 칸의 말 묶기
- const at={};G.seats.forEach((st,s)=>st.pieces.forEach((p,pi)=>{if(p.n==='H'||p.n==='F')return;(at[p.n]=at[p.n]||[]).push([s,pi])}));
+const ic=(n,emo,extra)=>{const[x,y]=Y.POS[n];return`<g transform="translate(${x} ${y})" pointer-events="none">${extra||''}<text y="1.6" text-anchor="middle" font-size="4.4">${emo}</text></g>`};
+function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx').innerHTML='';$('ydest').innerHTML='';for(const k in pieceEls)delete pieceEls[k];return}
+ let fx='';
+ for(const k in G.traps)fx+=ic(k,'🪤');for(const k in G.rewards)fx+=ic(k,'🎁');for(const k in G.poop)fx+=ic(k,'💩');
+ if(G.garlic)G.garlic.nodes.forEach(k=>{if(!G.garlic.got.includes(k))fx+=ic(k,'🧄')});
+ for(const s in G.fires)fx+=ic(G.fires[s],'🔥',`<circle r="4.6" fill="none" stroke="${G.seats[s].color}" stroke-width=".6"/>`);
+ G.marks.forEach(m=>{if(m.s===MY)fx+=ic(m.n,'🎯')});
+ if(G.reaper)fx+=ic(G.reaper.n,'💀',`<circle r="5" fill="rgba(0,0,0,.55)" stroke="#bbb" stroke-width=".4"/>`);
+ $('yfx').innerHTML=fx;
+ const at={};G.seats.forEach((st,s)=>{if(st.out)return;st.pieces.forEach((p,pi)=>{if(!Y.onBoard(p))return;(at[p.n]=at[p.n]||[]).push([s,pi])})});
  const want=new Set();
  for(const k in at){const list=at[k],bySeat={};list.forEach(([s,pi])=>(bySeat[s]=bySeat[s]||[]).push(pi));const seats=Object.keys(bySeat);
-  seats.forEach((s,si)=>{const pis=bySeat[s],[x,y]=P[k],off=seats.length>1?(si-(seats.length-1)/2)*4.2:0;
-   pis.forEach((pi,j)=>{const id=s+'-'+pi;want.add(id);let el=pieceEls[id];
-    if(!el){el=document.createElementNS(SV,'g');el.setAttribute('class','ypc');el.dataset.s=s;el.dataset.p=pi;el.innerHTML=`<circle r="3.4" fill="${G.seats[s].color}" stroke="#fff" stroke-width=".55"/><text y="1.3" text-anchor="middle" font-size="3.6" font-weight="800" fill="#fff"></text>`;g.appendChild(el);pieceEls[id]=el}
-    el.style.transform=`translate(${x+off}px,${y-j*1.1}px)`;el.querySelector('text').textContent=j===pis.length-1&&pis.length>1?pis.length:'';
-    el.classList.toggle('mine',+s===MY);el.style.opacity=j===pis.length-1?1:.0})})}
+  seats.forEach((s,si)=>{const pis=bySeat[s],[x,y]=P[k],off=seats.length>1?(si-(seats.length-1)/2)*4.4:0;
+   pis.forEach((pi,j)=>{const id=s+'-'+pi;want.add(id);let el=pieceEls[id];const p=G.seats[s].pieces[pi];
+    if(!el){el=document.createElementNS(SV,'g');el.setAttribute('class','ypc');el.dataset.s=s;el.dataset.p=pi;g.appendChild(el);pieceEls[id]=el}
+    const top=j===pis.length-1,badge=pis.map(q=>G.seats[s].pieces[q]);const tIcon=badge.map(q=>Y.TYPEICON[q.t]).find(Boolean)||'';
+    const sh=badge.some(q=>q.sh),lock=badge.some(q=>q.lock>=G.round),dom=badge.some(q=>q.dom>0),asn=+s===MY&&badge.some(q=>q.asn);
+    el.innerHTML=`${sh?'<circle r="4.6" fill="none" stroke="#9fd8ff" stroke-width=".8"/>':''}${dom?'<circle r="5" fill="none" stroke="#b28cff" stroke-width=".9" stroke-dasharray="1.2 .8"/>':''}<circle r="3.4" fill="${G.seats[s].color}" stroke="${+s===MY?'#ffe7a0':'#fff'}" stroke-width=".6"/>`+
+     (tIcon?`<text y="1.3" text-anchor="middle" font-size="3.4">${tIcon}</text>`:`<text y="1.3" text-anchor="middle" font-size="3.6" font-weight="800" fill="#fff">${pis.length>1?pis.length:''}</text>`)+
+     (tIcon&&pis.length>1?`<text x="3.6" y="-2.4" font-size="2.8" font-weight="800" fill="#fff">${pis.length}</text>`:'')+(lock?'<text x="-4.8" y="-2.2" font-size="3">⛔</text>':'')+(asn?'<text x="2.4" y="4.6" font-size="2.8">🗡️</text>':'');
+    el.style.transform=`translate(${x+off}px,${y-j*1.1}px)`;el.style.opacity=top?1:0;el.style.pointerEvents=top?'':'none'})})}
  for(const id in pieceEls)if(!want.has(id)){pieceEls[id].remove();delete pieceEls[id]}
- // 고른 결과로 갈 곳 미리 보기
  let dh='';if(myTurn()&&G.phase==='move'&&!target){const seen=new Set();G.seats[MY].pieces.forEach((p,pi)=>{const pv=Y.preview(G,MY,sel,pi);if(!pv)return;const key=p.n+'>'+pv.dest;if(seen.has(key))return;seen.add(key);
-  if(pv.dest==='FIN'){dh+=`<text x="100" y="94" text-anchor="middle" font-size="4" fill="#ffd77a">골인 가능</text>`;return}const[x,y]=P[pv.dest];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.4" fill="none" stroke="#ffd77a" stroke-width=".9" stroke-dasharray="1.6 1.2"/>`})}
- $('ydest').innerHTML=dh}
+  if(pv.dest==='FIN'){dh+=`<text x="100" y="94" text-anchor="end" font-size="4" fill="#ffd77a">골인 가능</text>`;return}const[x,y]=P[pv.dest];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.6" fill="none" stroke="#ffd77a" stroke-width=".9" stroke-dasharray="1.6 1.2" pointer-events="none"/>`})}
+ $('ydest').innerHTML=dh;$('board').classList.toggle('pick-node',!!(target&&target.tg==='node'))}
+function card(st,s){const home=st.pieces.filter(p=>p.n==='H').length,fin=st.pieces.filter(p=>p.n==='F').length;
+ const slots=st.aug.map(a=>{const A=Y.AUG[a.id],left=A.use?A.use-(st.used[a.id]||0):null;return`<span class="slot${a.off?' off':''}${A.use&&left<=0?' used':''}" title="${esc(A.name+': '+A.d)}"><i>${a.off?'🐈':A.icon}</i><b>${esc(a.off?'고양이(착각)':A.name)}</b>${A.use?`<small>${Math.max(0,left)}/${A.use}</small>`:''}</span>`});
+ while(slots.length<3)slots.push('<span class="slot empty">—</span>');
+ const extra=[];if(st.skip)extra.push(`⏸️×${st.skip}`);if(G.garlic&&G.garlic.s===s)extra.push(`🧄 ${G.garlic.got.length}/4`);if(st.pieces.some(p=>p.t==='kim'&&p.n!=='F'))extra.push(`🛺 ${st.st.kimTurns}/6턴`);
+ G.duels.forEach(d=>{if(!d.done&&d.o===s)extra.push(`🤺 ${d.left}턴 남음`)});
+ return`<div class="ycard${s===G.turn&&['throw','move'].includes(G.phase)?' turn':''}${s===MY?' mine':''}${st.out?' out':''}" data-seat="${s}" style="--pc:${st.color}"><div class="yc-top"><i class="ydot" style="background:${st.color}"></i><b>${esc(st.name)}</b>${s===MY?'<small>나</small>':st.ai?'<small>악마</small>':''}${st.out?'<small>탈락</small>':''}<span class="yc-fin">${fin}/${st.pieces.length}</span></div>
+  <div class="yc-pcs" data-home="${s}">${st.pieces.map(p=>`<i class="${p.n==='H'?'h':p.n==='F'?'f':'b'}">${p.t?Y.TYPEICON[p.t]:''}</i>`).join('')}<span>집 ${home}${extra.length?' · '+extra.join(' · '):''}</span></div>
+  <div class="yc-slots">${slots.join('')}</div><div class="bubble"></div></div>`}
 function render(){
- // 대기실
  if(L&&!L.started){$('vs').innerHTML=[0,1,2,3].map(i=>{const s=L.seats[i];return s?`<div class="seat${i===MY?' me':''}"><i class="ydot big" style="background:${Y.COLORS[i]}"></i><b>${esc(s.name)}</b><small>${Y.CNAMES[i]}${s.ai?' · 악마':i===MY?' · 나':''}${i===0?' · 방장':''}</small></div>`:`<div class="seat empty"><div class="ring"></div><b>빈자리</b><small>${Y.CNAMES[i]}</small></div>`}).join('');
   $('wHost').classList.toggle('hide',!host);$('wGuest').classList.toggle('hide',host);$('bStart').disabled=L.seats.length<2;$('bAddAi').disabled=L.seats.length>=4;$('bDelAi').disabled=!L.seats.some((s,i)=>i>0&&s.ai)}
- if(!G){$('ypl').innerHTML='';$('yres').innerHTML='';$('yaug').innerHTML='';$('banner').textContent='마법 윷놀이';$('ymeta').textContent='';drawBoard();return}
- const me=G.seats[MY],cur=G.seats[G.turn];
- // 플레이어 카드
- $('ypl').innerHTML=G.seats.map((st,s)=>{const home=st.pieces.filter(p=>p.n==='H').length,fin=st.pieces.filter(p=>p.n==='F').length;
-  return`<div class="ycard${s===G.turn&&G.phase!=='pick'&&G.phase!=='over'?' turn':''}${s===MY?' mine':''}" data-seat="${s}" style="--pc:${st.color}"><div class="yc-top"><i class="ydot" style="background:${st.color}"></i><b>${esc(st.name)}</b>${s===MY?'<small>나</small>':st.ai?'<small>악마</small>':''}${st.frozen?'<small>🧊</small>':''}</div>
-  <div class="yc-pcs" data-home="${s}">${st.pieces.map(p=>`<i class="${p.n==='H'?'h':p.n==='F'?'f':'b'}"></i>`).join('')}<span>집 ${home} · 골인 ${fin}</span></div>
-  <div class="yc-aug">${st.aug.map(a=>`<span class="${a.off?'off':''}${Y.AUG[a.id].a&&st.used[a.id]?' used':''}" title="${esc(Y.AUG[a.id].name+': '+Y.AUG[a.id].d)}">${Y.AUG[a.id].icon}</span>`).join('')||'<em>증강 없음</em>'}</div><div class="bubble"></div></div>`}).join('');
- // 위쪽 안내
- const p=G.phase,mine=myTurn();
- $('ymeta').innerHTML=`<i class="ydot" style="background:${me?me.color:'#888'}"></i>나는 ${me?me.cname:'관전'} · 증강 ${G.pickNo}번째 고르기 ${G.seats.every(s=>s.aug.length>=3)?'끝':`· 다음은 ${G.nextPickAt}턴 뒤`}`;
- $('banner').textContent=p==='pick'?'증강을 고르세요':p==='over'?`${G.seats[G.winner].name} 승리!`:mine?(p==='throw'?'윷을 던지세요':'움직일 말을 고르세요'):`${cur.name}의 차례`;
- // 결과 칩
+ if(!G){$('yplO').innerHTML='';$('yplMe').innerHTML='';$('yres').innerHTML='';$('yaug').innerHTML='';$('banner').textContent='마법 윷놀이';$('ymeta').textContent='';drawBoard();return}
+ const me=G.seats[MY],cur=G.seats[G.turn],p=G.phase,mine=myTurn();
+ $('yplMe').innerHTML=me?card(me,MY):'';$('yplO').innerHTML=G.seats.map((st,s)=>s===MY?'':card(st,s)).join('');
+ const nextPick=Y.PICK_ROUNDS.find(r=>r>G.round);
+ $('ymeta').innerHTML=`<i class="ydot" style="background:${me?me.color:'#888'}"></i>나는 ${me?me.cname:'관전'} · ${G.round}라운드${nextPick?` · 다음 증강 ${nextPick}라운드`:' · 증강 끝'}${G.echo?' · 🔁 메아리':''}`;
+ $('banner').textContent=p==='pick'?`${G.pickRound}라운드 증강 고르기`:p==='over'?`${G.seats[G.winner].name} 승리!`:mine?(p==='throw'?'윷을 던지세요':'움직일 말을 고르세요'):`${cur.name}의 차례`;
  if(G.results[sel]==null)sel=0;
  $('yres').innerHTML=G.results.length?G.results.map((r,ri)=>`<button class="rchip${ri===sel&&mine&&p==='move'?' on':''}${r.v<0?' back':''}" data-ri="${ri}">${r.k}${r.tag?`<small>${esc(r.tag)}</small>`:''}<em>${r.v<0?'뒤로 1':r.v+'칸'}</em></button>`).join(''):'<span class="rnone">아직 던진 결과가 없습니다</span>';
- const canThrow=mine&&p==='throw';$('bThrow').disabled=!canThrow;$('bThrow').textContent=canThrow&&G.throws>1?`윷 던지기 (${G.throws}번)`:'윷 던지기';
- const homeLeft=me?me.pieces.filter(x=>x.n==='H').length:0;$('bNew').disabled=!(mine&&p==='move'&&homeLeft&&G.results.some(r=>r.v>0));$('bNew').textContent=`새 말 내기${homeLeft?` (${homeLeft})`:''}`;
- // 내 증강 버튼
- $('yaug').innerHTML=me?me.aug.map(a=>{const A=Y.AUG[a.id];if(!A.a)return`<span class="ya pas${a.off?' off':''}" title="${esc(A.d)}">${A.icon} ${esc(A.name)}</span>`;
-  const ok=mine&&!a.off&&!me.used[a.id];return`<button class="ya act" data-use="${a.id}" ${ok?'':'disabled'} title="${esc(A.d)}">${A.icon} ${esc(A.name)}${me.used[a.id]?' (사용함)':''}</button>`}).join(''):'';
- if(!target)$('yhint').textContent=p==='pick'?'':mine?(p==='throw'?(G.results.length?'한 번 더 던질 수 있어요!':'윷 던지기를 누르세요.'):'결과를 고르고 움직일 말(판 위 말이나 새 말 내기)을 누르세요. 점선 원이 도착할 곳이에요.'):p==='over'?'':`${cur.name}의 차례를 기다리는 중…`;
- // 기록
+ const canThrow=mine&&p==='throw',dg=me&&Y.has(G,MY,'dogae')&&!(G.force&&G.force[MY]);
+ $('bThrow').classList.toggle('hide',!!dg);$('bDo').classList.toggle('hide',!dg);$('bGae').classList.toggle('hide',!dg);
+ $('bThrow').disabled=$('bDo').disabled=$('bGae').disabled=!canThrow;$('bThrow').textContent=canThrow&&G.throws>1?`윷 던지기 (${G.throws}번)`:'윷 던지기';
+ const homeLeft=me?me.pieces.filter(x=>x.n==='H'&&x.t!=='pawn').length:0;$('bNew').disabled=!(mine&&p==='move'&&homeLeft&&G.results.some(r=>r.v>0));$('bNew').textContent=`새 말 내기${homeLeft?` (${homeLeft})`:''}`;
+ $('bNew').classList.toggle('hide',!!target);$('bCancelT').classList.toggle('hide',!target);
+ $('yaug').innerHTML=me?me.aug.map(a=>{const A=Y.AUG[a.id];if(!A.use&&!A.perTurn)return'';const left=Y.usesLeft(G,MY,a.id);const ok=mine&&!a.off&&left>0&&!target&&(a.id!=='sniper'||(p==='throw'&&G.throws>0));
+  return`<button class="ya act" data-use="${a.id}" ${ok?'':'disabled'} title="${esc(A.d)}">${A.icon} ${esc(A.name)} <small>${A.perTurn?(left?'이번 턴 가능':'이번 턴 씀'):`${left}/${A.use}`}</small></button>`}).join(''):'';
+ if(!target)$('yhint').textContent=p==='pick'?'':mine?(p==='throw'?(G.results.length?'한 번 더 던질 수 있어요!':'윷 던지기를 누르세요.'):'결과를 고르고 움직일 말(판 위 말이나 새 말 내기)을 누르세요. 점선 원이 도착할 곳이에요.'):p==='over'?(G.winWhy||''):`${cur.name}의 차례를 기다리는 중…`;
  $('log').innerHTML=G.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join('');
- // 던지기 연출
- if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
- // 증강 고르기 창
- const st=me;if(p==='pick'&&st&&st.offers){$('pickT').textContent=G.pickNo===1?'시작 증강을 고르세요':`${G.pickNo}번째 증강을 고르세요`;$('pickS').textContent=`3개 중 1개 · 최대 ${Y.MAX_AUG}개까지`;
-  $('pcards').innerHTML=st.offers.map(id=>{const A=Y.AUG[id];return`<button class="pcard" data-pick="${id}"><span class="pc-i">${A.icon}</span><b>${esc(A.name)}</b><span>${esc(A.d)}</span>${A.a?'<em>직접 사용 · 1회</em>':'<em>자동 적용</em>'}</button>`}).join('');
+ if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k,t.sticks||4)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
+ const st=me;if(p==='pick'&&st&&st.offers){const forced=Y.catForced(G,MY);$('pickT').textContent=`${G.pickRound}라운드 증강을 고르세요`;$('pickS').textContent=`3개 중 1개 · ${G.pickRound===1?'시작':G.pickRound===6?'중간':'마무리'} 전용 증강도 나옵니다${forced?' · 🐈 고양이를 꼭 골라야 합니다!':''}`;
+  $('pcards').innerHTML=st.offers.map(id=>{const A=Y.AUG[id];return`<button class="pcard${A.tag!=='g'?' special':''}" data-pick="${id}" ${forced&&id!=='cat'?'disabled':''}><span class="pc-i">${A.icon}</span><b>${esc(A.name)}</b><span>${esc(A.d)}</span><em>${TAGN[A.tag]}${A.use?` · 사용 ${A.use}회`:A.perTurn?' · 턴마다 사용':''}</em></button>`}).join('');
   $('pmine').innerHTML=st.aug.length?'내 증강: '+st.aug.map(a=>Y.AUG[a.id].icon+' '+esc(Y.AUG[a.id].name)).join(', '):'';$('mPick').classList.add('on')}
- else{if(p==='pick'&&st){$('mPick').classList.remove('on');$('yhint').textContent='다른 사람이 증강을 고르는 중…'}else $('mPick').classList.remove('on')}
- // 끝
- if(p==='over'&&!$('mEnd').dataset.shown){$('mEnd').dataset.shown='1';const w=G.winner;$('endBig').textContent=w===MY?'승리':'패배';$('endT').textContent=`${G.seats[w].name} 승리`;$('endP').textContent='말 4개를 모두 골인시켰습니다.';
-  $('bAgain').textContent=host?'다시 하기':'확인';setTimeout(()=>$('mEnd').classList.add('on'),700);
-  if(w===MY&&MODE==='net'&&!G.seats[MY].ai)reportWin()}
+ else{$('mPick').classList.remove('on');if(p==='pick')$('yhint').textContent='다른 사람이 증강을 고르는 중…'}
+ if(p==='over'&&!$('mEnd').dataset.shown){$('mEnd').dataset.shown='1';const w=G.winner;$('endBig').textContent=w===MY?'승리':'패배';$('endT').textContent=`${G.seats[w].name} 승리`;$('endP').textContent=G.winWhy||'';
+  $('bAgain').textContent=host?'다시 하기':'확인';setTimeout(()=>$('mEnd').classList.add('on'),700);if(w===MY&&MODE==='net'&&!G.seats[MY].ai)reportWin()}
  if(p!=='over')delete $('mEnd').dataset.shown;
  drawBoard()}
-function sticks(k){const n={'빽도':1,'도':1,'개':2,'걸':3,'윷':4,'모':0}[k],arr=[0,1,2,3].map(i=>i<n);return arr.map((f,i)=>`<i class="${f?'flat':'round'}${k==='빽도'&&i===0?' mark':''}"></i>`).join('')}
+function sticks(k,n){const flats={'빽도':1,'도':1,'개':2,'걸':3,'윷':4,'모':0}[k];return Array.from({length:n},(_,i)=>`<i class="${i<flats?'flat':'round'}${k==='빽도'&&i===0?' mark':''}"></i>`).join('')}
 setInterval(()=>{const end=host?deadline:tlLocal;const e=$('timer');if(!G||!end||G.phase==='over'){e.classList.add('idle');return}
  const left=Math.max(0,Math.ceil((end-Date.now())/1000));const relevant=G.phase==='pick'?!!(G.seats[MY]&&G.seats[MY].offers):myTurn();e.classList.toggle('idle',!relevant);e.textContent=left;e.classList.toggle('low',left<=5)},250);
 render();
@@ -622,7 +665,7 @@ async function loadRooms(){if(!$('mLobby').classList.contains('on'))return;const
  box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':m.g==='yut'?' gyut':''}">${LABEL[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,4)?m.p:1}/${MAXP[m.g]}명</span><button class="btn red" data-g="${m.g}" data-c="${m.c}">들어가기</button></div>`).join('')}
 $('roomList').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b)return;if(b.dataset.g!=='yut'){location.href=PAGE[b.dataset.g]+'#join='+b.dataset.c;return}$('codeIn').value=b.dataset.c;WANTPUB=false;$('mWait').classList.add('pub');$('bJoin').onclick()});
 setInterval(loadRooms,6000);loadRooms();
-const TIPS=["윷·모가 나오거나 상대 말을 잡으면 한 번 더 던져요.", "모 자리나 뒷모 자리에 멈추면 다음 턴에 대각선 지름길로 가요.", "방(가운데)에 멈추면 출발점까지 가장 빠른 길로 가요.", "내 말끼리 같은 칸에 서면 업혀서 함께 움직여요. 잡히면 같이 잡혀요.", "증강은 처음 1개, 모두 3턴을 돌 때마다 1개씩, 최대 3개까지예요.", "🌀🔀🧊🔒 증강은 내 턴에 버튼을 눌러 한 번만 쓸 수 있어요.", "빽도는 뒤로 1칸이에요. 판 위에 말이 없으면 버려져요."];let tipI=Math.floor(Math.random()*TIPS.length);
+const TIPS=["윷·모가 나오거나 상대 말을 잡으면 한 번 더 던져요.", "모 자리나 뒷모 자리에 멈추면 다음 턴에 대각선 지름길로 가요.", "증강은 1·6·12라운드에 하나씩, 한 판에 3개까지예요.", "1라운드엔 시작 전용, 6라운드엔 중간 전용, 12라운드엔 마무리 전용 증강이 섞여 나와요.", "'사목', '악보', '777'처럼 특별한 방법으로 이기는 증강도 있어요.", "'라스트 댄스'나 '독이 든 성배'는 강하지만 잘못하면 탈락해요.", "고양이는 아무 능력이 없어요. 그런데 고양이를 노리는 증강도 있어요."];let tipI=Math.floor(Math.random()*TIPS.length);
 function showTip(){$('tipT').textContent=TIPS[tipI];$('tipN').textContent=(tipI+1)+'/'+TIPS.length}
 $('tipBox').onclick=()=>{tipI=(tipI+1)%TIPS.length;showTip()};showTip();
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
