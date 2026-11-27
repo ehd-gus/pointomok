@@ -431,6 +431,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 <script src="config.js"></script>
 <script src="yut-engine.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="net.js"></script>
 <script>
 {
 const $=id=>document.getElementById(id),Y=window.YUT;
@@ -516,12 +517,24 @@ $('bCreate').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textCo
  peer.on('error',e=>{if(e.type==='unavailable-id'){killNet();$('bCreate').onclick()}else $('lobbyMsg').textContent='연결 오류: '+e.type})};
 $('bJoin').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent=NONET;return}
  const code=$('codeIn').value.trim();if(!/^\d{4}$/.test(code)){$('lobbyMsg').textContent='방 코드 4자리를 넣어 주세요.';return}
- saveName();logVisit('윷놀이 방 참가',$('nick').value.trim());killNet();MODE='net';host=false;P={code,name:myName()};G=null;L=null;MY=-1;$('lobbyMsg').textContent='방에 연결하는 중…';
- peer=new Peer();peer.on('open',()=>{const c=peer.connect(PID(code),{reliable:true});hconn=c;
-  c.on('open',()=>{$('lobbyMsg').textContent='';goWait(code);try{c.send(JSON.stringify({app:'yut',code,t:'hi',name:P.name,tok:MYTOK}))}catch(e){}try{localStorage.setItem('yut-last',JSON.stringify({code,at:Date.now()}))}catch(e){}});
+ saveName();logVisit('윷놀이 방 참가',$('nick').value.trim());joinRoom(code,false)};
+let joinT=null,rejoinT=null;
+function joinRoom(code,quiet){clearTimeout(joinT);killNet();MODE='net';host=false;P={code,name:myName()};if(!quiet){G=null;L=null;MY=-1}
+ const say=t=>{if(quiet)$('yhint').textContent=t;else $('lobbyMsg').textContent=t};say(quiet?'방장에게 다시 연결하는 중…':'방에 연결하는 중…');
+ let attempt=0,opened=false;peer=new Peer();
+ const tryConnect=()=>{attempt++;if(attempt>1)say(`연결이 늦어 다시 시도합니다 (${attempt}/4)…`);
+  const c=peer.connect(PID(code),{reliable:true});hconn=c;
+  c.on('open',()=>{if(hconn!==c)return;opened=true;clearTimeout(joinT);if(!quiet)$('lobbyMsg').textContent='';if(!G)goWait(code);else $('yhint').textContent='다시 연결되었습니다.';
+   try{c.send(JSON.stringify({app:'yut',code,t:'hi',name:P.name,tok:MYTOK}))}catch(e){}try{localStorage.setItem('yut-last',JSON.stringify({code,at:Date.now()}))}catch(e){}});
   c.on('data',d=>{if(hconn!==c)return;let o;try{o=typeof d==='string'?JSON.parse(d):d}catch(e){return}guestData(o)});
-  c.on('close',()=>{if(hconn!==c)return;hconn=null;if(G&&G.phase!=='over'){$('yhint').textContent='방장과 연결이 끊겼습니다. 판이 끝났습니다.'}})});
- peer.on('error',e=>{$('lobbyMsg').textContent=e.type==='peer-unavailable'?'그 코드의 방이 없습니다. 코드를 다시 확인해 주세요.':'연결 오류: '+e.type;if(MY<0)killNet()})};
+  c.on('close',()=>{if(hconn!==c)return;hconn=null;if(G&&G.phase!=='over')scheduleRejoin()});
+  clearTimeout(joinT);joinT=setTimeout(()=>{if(opened||hconn!==c)return;try{c.close()}catch(e){}if(attempt<4)tryConnect();else{say('연결이 안 됩니다. 방장 화면이 켜져 있는지, 인터넷(와이파이/데이터)을 확인하고 다시 참가를 눌러 주세요.');if(!quiet&&MY<0)killNet();else scheduleRejoin()}},7000)};
+ peer.on('open',tryConnect);
+ peer.on('error',e=>{if(e.type==='peer-unavailable'){if(quiet){scheduleRejoin();return}say('그 코드의 방이 없습니다. 코드를 다시 확인해 주세요.');clearTimeout(joinT);if(MY<0)killNet();return}
+  if(['network','server-error','socket-error','socket-closed'].includes(e.type)){say('인터넷 연결이 불안정합니다. 다시 시도합니다…');if(G)scheduleRejoin();return}
+  say('연결 오류: '+e.type)})}
+function scheduleRejoin(){clearTimeout(rejoinT);if(MODE!=='net'||host||!P.code)return;$('yhint').textContent='방장과 연결이 끊겼습니다. 다시 연결을 시도합니다…';rejoinT=setTimeout(()=>{if(hconn&&hconn.open)return;joinRoom(P.code,true)},2000)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&MODE==='net'&&!host&&P.code&&G&&G.phase!=='over'&&!(hconn&&hconn.open))joinRoom(P.code,true)});
 document.querySelectorAll('.solo [data-ai]').forEach(b=>b.onclick=()=>{if(!needName())return;saveName();logVisit('윷놀이 혼자 연습',$('nick').value.trim());killNet();
  MODE='ai';host=true;MY=0;P={code:null,name:myName()};const n=+b.dataset.ai;L={started:false,seats:[{name:P.name,ai:false,id:'host'}].concat(AIN.slice(0,n).map(a=>({name:a,ai:true})))};startGame()});
 $('bAddAi').onclick=()=>{if(!host||L.started||L.seats.length>=4)return;const used=new Set(L.seats.map(s=>s.name));L.seats.push({name:AIN.find(a=>!used.has(a))||'악마',ai:true});hostChange()};
