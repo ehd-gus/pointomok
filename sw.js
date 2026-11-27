@@ -1,5 +1,5 @@
 // 포인트 오목 앱: 화면 파일은 항상 새 버전을 먼저 받고, 인터넷이 끊겼을 때만 저장본을 씁니다.
-const CACHE='pomok-v11';
+const CACHE='pomok-v12';
 const SHELL=['./','./index.html','./omok.html','./3p.html','./hb.html','./yut.html','./yut-engine.js','./config.js','./manifest.webmanifest','./icons/icon-192-v2.png','./icons/icon-512-v2.png','./icons/apple-touch-icon-v2.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
