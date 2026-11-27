@@ -17,15 +17,36 @@ const LINES=[['o0','o1','o2','o3','o4','o5'],['o5','o6','o7','o8','o9','o10'],['
  ['o5','a1','a2','C','a3','a4','o15'],['o10','b1','b2','C','b3','b4','o0']];
 const DIAG=['a1','a2','C','a3','a4','b1','b2','b3','b4'];
 const ADJ={};NODES.forEach(n=>ADJ[n]=new Set());LINES.forEach(l=>{for(let i=1;i<l.length;i++){ADJ[l[i]].add(l[i-1]);ADJ[l[i-1]].add(l[i])}});
-function step(cur,prev,start){
+// 판을 반으로 접으면 칸이 절반만 남고 한 바퀴가 짧아집니다. (FG: 지금 계산 중인 게임)
+let FG=null;
+const HALF={
+ up:{start:'o0',seq:['o1','o2','C','o13','o14','o15','o16','o17','o18','o19'],exit:['b3','b4']},
+ down:{start:'o5',seq:['o4','o3','C','o12','o11','o10','o9','o8','o7','o6'],exit:['a2','a1']},
+ left:{start:'o0',seq:['o1','o2','o3','o4','o5','o6','o7','C','o18','o19'],exit:['b3','b4'],corner:'o5',cut:['a1','a2']},
+ right:{start:'o15',seq:['o14','o13','o12','o11','o10','o9','o8','C','o17','o16'],exit:['a3','a4'],corner:'o10',cut:['b1','b2']}};
+Object.values(HALF).forEach(h=>{h.keep=new Set([h.start,...h.seq,...h.exit,...(h.cut||[])])});
+const half=()=>FG&&FG.half?HALF[FG.half]:null;
+function stepHalf(h,cur,prev,start){
+ if(cur==='H')return h.seq[0];if(cur===h.start)return'FIN';
+ if(h.corner&&cur===h.corner&&cur===start)return h.cut[0];
+ let i=(h.cut||[]).indexOf(cur);if(i>=0)return i+1<h.cut.length?h.cut[i+1]:'C';
+ i=h.exit.indexOf(cur);if(i>=0)return i+1<h.exit.length?h.exit[i+1]:'FIN';
+ if(cur==='C'&&(cur===start||(h.cut&&prev===h.cut[h.cut.length-1])))return h.exit[0];
+ i=h.seq.indexOf(cur);if(i>=0)return i+1<h.seq.length?h.seq[i+1]:'FIN';
+ return'FIN'}
+function backHalf(h,n){if(n===h.start)return h.seq[h.seq.length-1];let i=h.seq.indexOf(n);if(i>=0)return i?h.seq[i-1]:h.start;
+ i=h.exit.indexOf(n);if(i>=0)return i?h.exit[i-1]:'C';i=(h.cut||[]).indexOf(n);if(i>=0)return i?h.cut[i-1]:h.corner;return n}
+function nearKeep(h,n){if(h.keep.has(n))return n;const[x,y]=POS[n];let b=null,bd=1e9;h.keep.forEach(k=>{const[a,c]=POS[k],d=(a-x)**2+(c-y)**2;if(d<bd){bd=d;b=k}});return b}
+function step(cur,prev,start){const h=half();if(h)return stepHalf(h,cur,prev,start);
  if(cur==='H')return'o1';
  if(cur[0]==='o'){const k=+cur.slice(1);if(k===5&&cur===start)return'a1';if(k===10&&cur===start)return'b1';if(k===19||k===0)return'FIN';return'o'+(k+1)}
  switch(cur){case'a1':return'a2';case'a2':return'C';case'a3':return'a4';case'a4':return'o15';case'b1':return'b2';case'b2':return'C';case'b3':return'b4';case'b4':return'FIN';
   case'C':return cur===start?'b3':prev==='a2'?'a3':'b3'}
  return'FIN'}
 function walk(from,v){const path=[];let cur=from,prev=null;for(let i=0;i<v;i++){const n=step(cur,prev,from);path.push(n);if(n==='FIN')return path;prev=cur;cur=n}return path}
-function backOf(p){if(p.prev&&p.prev!=='H')return p.prev;const n=p.n;if(n[0]==='o'){const k=+n.slice(1);return'o'+((k+19)%20)}
+function backOf(p){if(p.prev&&p.prev!=='H')return p.prev;const n=p.n;const h=half();if(h)return backHalf(h,n);if(n[0]==='o'){const k=+n.slice(1);return'o'+((k+19)%20)}
  return{a1:'o5',a2:'a1',C:'a2',a3:'C',a4:'a3',b1:'o10',b2:'b1',b3:'C',b4:'b3'}[n]||n}
+function nbr(x){const h=half();if(!h)return[...ADJ[x]];const out=new Set();try{const a=stepHalf(h,x,null,null);if(a!=='FIN')out.add(a);const b=backHalf(h,x);if(b!==x)out.add(b)}catch(e){}if(x==='C'||x===h.corner){const c=stepHalf(h,x,null,x);if(c!=='FIN')out.add(c)}return[...out]}
 function distFin(n){if(n==='F')return 0;let cur=n,prev=null,d=0;while(d<40){const x=step(cur,prev,n);d++;if(x==='FIN')return d;prev=cur;cur=x}return d}
 
 /* ---- 윷 ---- */
@@ -61,7 +82,7 @@ const AUGS=[
  {id:'notme',tag:'g',icon:'🙈',name:'나만 아니면 돼',d:'얻는 즉시 무작위 상대 한 명의 판 위 말이 모두 잡힙니다.'},
  {id:'illusion',tag:'g',icon:'🐱',name:'착각',d:'상대 증강 하나를 3라운드 동안 고양이로 바꿉니다. (다 쓴 증강은 못 바꿈)',use:1,tg:'oppAug'},
  {id:'hit',tag:'g',icon:'🥏',name:'윷 맞히기',d:'상대 한 명에게 윷을 맞혀서, 그 사람의 턴 2번을 건너뛰게 합니다.',use:1,tg:'opp'},
- {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 반으로 접습니다. 접는 방향을 고르면 그쪽 절반의 말과 물건이 반대편 같은 자리로 넘어가고, 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다.',use:1,tg:'fold'},
+ {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
  {id:'vanguard',tag:'g',icon:'🚩',name:'선봉장',d:'내 말 하나가 선봉장이 됩니다. 선봉장이 판 위에 있는 동안 내 모든 이동이 1칸 늘어납니다.'},
@@ -223,7 +244,7 @@ function endRound(G){
  G.seats.forEach(st=>st.aug.forEach(a=>{if(a.off&&a.until&&G.round>=a.until){a.off=false;delete a.until;addLog(G,`🐱 ${st.name}의 ${AUG[a.id].name}이(가) 돌아왔습니다.`)}}));
  if(G.reaper){const R=G.reaper;// 가장 가까운 상대 말 쪽으로 한 칸
   const targets=new Set();G.seats.forEach((st,o)=>{if(o===R.s||st.out)return;st.pieces.forEach(p=>{if(onBoard(p))targets.add(p.n)})});
-  if(targets.size){const prev={},q=[R.n];prev[R.n]=null;let hit=null;while(q.length){const x=q.shift();if(targets.has(x)&&x!==R.n){hit=x;break}if(targets.has(x)&&x===R.n){hit=x;break}ADJ[x].forEach(y=>{if(!(y in prev)){prev[y]=x;q.push(y)}})}
+  if(targets.size){const prev={},q=[R.n];prev[R.n]=null;let hit=null;while(q.length){const x=q.shift();if(targets.has(x)&&x!==R.n){hit=x;break}if(targets.has(x)&&x===R.n){hit=x;break}nbr(x).forEach(y=>{if(!(y in prev)){prev[y]=x;q.push(y)}})}
    if(hit&&hit!==R.n){let c=hit;while(prev[c]!==R.n)c=prev[c];R.n=c}
    killAt(G,R.n,R.s,{exceptSeat:R.s,cause:'💀 사신'})}}}
 function tickDuel(G,s){G.duels.forEach(d=>{if(d.done||d.o!==s)return;d.left--;if(d.left<=0){d.done=true;eliminate(G,s,'🤺 승부에서 졌습니다 (3턴 안에 골인 실패).')}})}
@@ -309,17 +330,22 @@ function foldNode(n,dir){if(!POS[n])return n;const[x,y]=POS[n];let nx=x,ny=y;
  if(dir==='up'&&y<49)ny=100-y;else if(dir==='down'&&y>51)ny=100-y;else if(dir==='left'&&x<49)nx=100-x;else if(dir==='right'&&x>51)nx=100-x;else return n;
  return AT[[nx,ny].map(v=>Math.round(v)).join(',')]||n}
 function foldBoard(G,s,dir){const moved=[];// 접히는 쪽 말 옮기기
- G.seats.forEach((st,o)=>{if(st.out)return;st.pieces.forEach((p,k)=>{if(!onBoard(p))return;const m=foldNode(p.n,dir);if(m!==p.n){moved.push({o,k,to:m});}})});
+ const h=HALF[dir],fn=n=>nearKeep(h,foldNode(n,dir));
+ G.seats.forEach((st,o)=>{if(st.out)return;st.pieces.forEach((p,k)=>{if(!onBoard(p))return;const m=fn(p.n);if(m!==p.n){moved.push({o,k,to:m});}})});
  const dests=new Set(moved.map(m=>m.to));
  // 받는 쪽에 원래 있던 상대 말은 깔림
  dests.forEach(n=>{G.seats.forEach((st,o)=>{if(o===s)return;const idx=st.pieces.map((p,k)=>p.n===n&&!moved.some(m=>m.o===o&&m.k===k)?k:-1).filter(k=>k>=0);if(idx.length)killStack(G,o,idx,s,'📄 판 접기')})});
  moved.forEach(m=>{const p=G.seats[m.o].pieces[m.k];if(p.n==='H'||p.n==='F')return;p.n=m.to;p.prev=null});
- const mv=obj=>{const out={};for(const k in obj)out[foldNode(k,dir)]=obj[k];return out};
+ moved.forEach(m=>{const p=G.seats[m.o].pieces[m.k];if(p.n===h.start){p.n='F'}});
+ const mv=obj=>{const out={};for(const k in obj){const t=fn(k);if(t!==h.start)out[t]=obj[k]}return out};
  G.traps=mv(G.traps);G.rewards=mv(G.rewards);G.poop=mv(G.poop);
- for(const k in G.fires)G.fires[k]=foldNode(G.fires[k],dir);G.marks.forEach(m=>m.n=foldNode(m.n,dir));
- if(G.garlic){G.garlic.nodes=G.garlic.nodes.map(n=>foldNode(n,dir));G.garlic.got=G.garlic.got.map(n=>foldNode(n,dir))}
- if(G.reaper)G.reaper.n=foldNode(G.reaper.n,dir);
- G.fold={dir,id:Math.random()};addLog(G,`📄 ${G.seats[s].name}이(가) 판을 접었습니다: ${FOLDS[dir]}. 말 ${moved.length}개가 넘어갔습니다.`);boardWins(G)}
+ for(const k in G.fires)G.fires[k]=fn(G.fires[k]);G.marks.forEach(m=>m.n=fn(m.n));
+ if(G.garlic){G.garlic.nodes=G.garlic.nodes.map(fn);G.garlic.got=G.garlic.got.map(fn)}
+ if(G.reaper)G.reaper.n=fn(G.reaper.n);
+ G.half=dir;G.fold={dir,id:Math.random()};
+ G.seats.forEach(st=>st.pieces.forEach(p=>{if(onBoard(p))p.prev=null}));
+ addLog(G,`📄 ${G.seats[s].name}이(가) 판을 반으로 접었습니다 (${FOLDS[dir]}). 이제 한 바퀴가 절반으로 짧아집니다! 말 ${moved.length}개가 넘어갔습니다.`);
+ G.seats.forEach((st,o)=>{if(!st.out&&!st.done&&st.pieces.every(p=>p.n==='F'))win(G,o,'📄 판이 접히면서 모두 골인!')});boardWins(G)}
 
 /* ---- 직접 쓰는 증강 ---- */
 function usesLeft(G,s,id){const A=AUG[id];if(A.perTurn)return G.snTurn[s]===G.turnNo?0:1;return(A.use||0)-(G.seats[s].used[id]||0)}
@@ -348,7 +374,7 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'marathon':{const k=st.pieces.findIndex(p=>p.n==='H'&&!p.t);if(k<0)return false;st.pieces[k].t='mara';break}
   case'duel':{const o=G.seats[t.o];if(!o||t.o===s||o.out)return false;G.duels.push({by:s,o:t.o,left:3,done:false});break}
   case'domain':if(!ownOn(t.pi))return false;st.pieces[t.pi].dom=2;break;
-  case'fold':if(!FOLDS[t.dir])return false;foldBoard(G,s,t.dir);break;
+  case'fold':if(!FOLDS[t.dir]||G.half)return false;foldBoard(G,s,t.dir);break;
   case'prophet':{if(!G.seats[t.o]||G.seats[t.o].out||G.seats[t.o].done||!KINDS.includes(t.k))return false;if(t.o===s&&G.turnRes.length>0)return false;G.props.push({by:s,o:t.o,k:t.k});break}
   case'gambler':{if(!G.seats[t.o]||G.seats[t.o].out||G.seats[t.o].done)return false;G.bets.push({by:s,who:t.o});break}
   case'plan':{const n=G.seats.length;if(!Array.isArray(t.order)||t.order.length!==n||new Set(t.order).size!==n||t.order.some(x=>!Number.isInteger(x)||x<0||x>=n))return false;
@@ -407,6 +433,8 @@ function apply(G,s,a){if(!a||G.phase==='over')return false;
  if(a.t==='move')return movePiece(G,s,a.ri,a.pi);
  if(a.t==='use')return useAug(G,s,a.id,a.x);
  return false}
-const API={FOLDS,foldNode,CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
+const API0={HALF,FOLDS,foldNode,CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
+const API={};for(const k in API0){const f=API0[k];API[k]=typeof f==='function'?function(G){if(G&&G.seats)FG=G;return f.apply(null,arguments)}:f}
+API.setGame=G=>{FG=G};
 if(typeof module!=='undefined')module.exports=API;else root.YUT=API;
 })(this);
