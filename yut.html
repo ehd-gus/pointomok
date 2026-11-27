@@ -565,7 +565,7 @@ $('board').addEventListener('click',e=>{if(!G)return;const nd=e.target.closest('
  if(target&&target.tg==='node'){const n=t?G.seats[+t.dataset.s].pieces[+t.dataset.p].n:nd&&nd.dataset.node;if(n){act({t:'use',id:target.id,x:{n}});target=null;render()}return}
  if(!t)return;const s=+t.dataset.s,pi=+t.dataset.p;
  if(target){targetClick(s,pi);return}
- if(s===MY)tryMove(pi);else if(G.chaos===MY&&myTurn())tryMove(pi,s)});
+ if(s===MY)tryMove(pi);else if(myTurn()&&G.seats[MY].aug.some(a=>a.id==='chaos'&&!a.off))tryMove(pi,s)});
 $('yplMe').addEventListener('click',e=>{const h=e.target.closest('[data-home]');if(!h||!G)return;$('bNew').onclick()});
 document.addEventListener('click',e=>{const sl=e.target.closest('.slot[data-aug]');if(!sl||!G)return;const st=G.seats[+sl.dataset.seat],a=st&&st.aug[+sl.dataset.k];if(!a)return;const A=Y.AUG[a.id];
  $('tgT').textContent=`${a.off?'🐈':A.icon} ${A.name}`;$('tgList').innerHTML=`<p class="aug-pop">${esc(A.d)}</p><p class="aug-pop s">${esc(st.name)} · ${({g:'범용',start:'시작 전용',mid:'중간 전용',end:'마무리 전용'})[A.tag]}${A.use?` · 남은 횟수 ${Math.max(0,A.use-(st.used[a.id]||0))}/${A.use}`:''}${a.off?' · 지금은 착각으로 고양이':''}</p>`;$('mTarget').classList.add('on')});
