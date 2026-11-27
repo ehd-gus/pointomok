@@ -287,6 +287,11 @@ html{background:#100b0c}
 .instbar .btn{min-height:40px;padding:0 16px;font-size:15px;flex:none}.ib-x{flex:none;width:36px;height:36px;border:0;background:none;color:var(--dim);font-size:22px;cursor:pointer;border-radius:6px}.ib-x:hover{color:var(--ink);background:rgba(255,255,255,.05)}
 #mInstall{z-index:31}
 body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has(#instBar:not(.hide)) .stage{padding-bottom:110px}
+.colchip{flex:none;display:inline-flex;align-items:center;font-size:12px;font-weight:700;line-height:1;padding:4px 8px;border-radius:999px;letter-spacing:0}
+.colchip.c1{background:#0b0b0b;color:#f2ede4;border:1px solid #6b6464}.colchip.c2{background:#f2ede4;color:#141011;border:1px solid #f2ede4}.colchip.c3{background:#b3343a;color:#fff;border:1px solid #d9666c}
+.center>.info>.stone:not(#z),.center>.info>strong:not(#z),.center>.info>.melabel:not(#z){display:inline-flex!important;align-items:center}
+.center>.info>.stone{width:16px;height:16px}.center>.info>strong{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink)}.center>.info>.melabel{color:var(--dim)}
+.center>.info>strong::after{content:"·";margin-left:8px;color:var(--dim);font-weight:400}
 </style>
 </head>
 <body>
@@ -294,14 +299,14 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 <main class="stage">
  <div class="paper"></div>
  <aside class="side" id="side">
-  <div class="card" id="c1"><div class="who"><span class="badge">선택</span><span class="emb"><i class="st s1"></i></span><span class="name" id="n1">흑</span><span class="me-tag hide" id="m1">나</span></div><div class="sub" id="u1"></div><div class="pts">포인트 <b id="p1">10</b></div><div class="status" id="t1"></div><div class="bubble" id="bub1"></div></div>
-  <div class="card" id="c2"><div class="who"><span class="badge">선택</span><span class="emb"><i class="st s2"></i></span><span class="name" id="n2">백</span><span class="me-tag hide" id="m2">나</span></div><div class="sub" id="u2"></div><div class="pts">포인트 <b id="p2">10</b></div><div class="status" id="t2"></div><div class="bubble" id="bub2"></div></div>
-  <div class="card" id="c3"><div class="who"><span class="badge">선택</span><span class="emb"><i class="st s3"></i></span><span class="name" id="n3">적</span><span class="me-tag hide" id="m3">나</span></div><div class="sub" id="u3"></div><div class="pts">포인트 <b id="p3">10</b></div><div class="status" id="t3"></div><div class="bubble" id="bub3"></div></div>
+  <div class="card" id="c1"><div class="who"><span class="badge">선택</span><span class="emb"><i class="st s1"></i></span><span class="name" id="n1">흑</span><span class="colchip c1">흑돌</span><span class="me-tag hide" id="m1">나</span></div><div class="sub" id="u1"></div><div class="pts">포인트 <b id="p1">10</b></div><div class="status" id="t1"></div><div class="bubble" id="bub1"></div></div>
+  <div class="card" id="c2"><div class="who"><span class="badge">선택</span><span class="emb"><i class="st s2"></i></span><span class="name" id="n2">백</span><span class="colchip c2">백돌</span><span class="me-tag hide" id="m2">나</span></div><div class="sub" id="u2"></div><div class="pts">포인트 <b id="p2">10</b></div><div class="status" id="t2"></div><div class="bubble" id="bub2"></div></div>
+  <div class="card" id="c3"><div class="who"><span class="badge">선택</span><span class="emb"><i class="st s3"></i></span><span class="name" id="n3">적</span><span class="colchip c3">적돌</span><span class="me-tag hide" id="m3">나</span></div><div class="sub" id="u3"></div><div class="pts">포인트 <b id="p3">10</b></div><div class="status" id="t3"></div><div class="bubble" id="bub3"></div></div>
   <form class="chat" id="chatF" style="order:9;width:100%"><input id="chatIn" maxlength="60" placeholder="두 사람에게 한마디" autocomplete="off" aria-label="채팅"><button class="btn red" aria-label="보내기">보내기</button></form>
  </aside>
  <section class="center">
   <div class="topline"><div class="banner"><span id="banner">세 점을 고르십시오</span></div><div class="timer" id="timer">30</div></div>
-  <div class="info"><span class="goal">4목 승리</span><span>나</span><span class="stone" id="myStone"></span><strong id="myColor">흑</strong><span id="info">라운드 1/30</span></div>
+  <div class="info"><span class="goal">4목 승리</span><span class="melabel">나는</span><span class="stone" id="myStone"></span><strong id="myColor">흑</strong><span id="info">라운드 1/30</span></div>
   <div class="boardwrap"><svg id="board" viewBox="0 0 15 15" aria-label="오목판"></svg></div>
   <div id="selUI" style="width:100%;max-width:640px">
    <p class="hint">점을 누르면 세 점이 놓입니다. 다시 누르면 방향이 바뀝니다.</p>
@@ -648,7 +653,7 @@ function render(){const p=S.phase,sl=selector(),R=S.round;
   $('u'+s).textContent=`${CN[s]}${me?'':MODE==='ai'?' · 계산으로 둡니다':MY&&!present(s)?' · 연결 끊김':''}`;
   const o=!me&&ST[s]&&ST[s].h&&ST[s].h[R];
   $('t'+s).textContent=me?'':p==='osel'&&sl===s?'고르는 중':(p==='bet'||p==='sent')?(MODE==='ai'?'계산 중':o&&o.c?'제출 완료':'거는 중'):''}
- $('myStone').className='stone'+(MY===2?' w':MY===3?' r':'');$('myColor').textContent=CN[MY]||'–';
+ $('myStone').className='stone'+(MY===2?' w':MY===3?' r':'');$('myColor').textContent=MY?CN[MY]+'돌':'–';
   $('banner').textContent=p==='select'?'세 점을 고르십시오':p==='osel'?`${MY?tag(sl):''}이 세 점을 고르는 중`:p==='bet'?'세 점에 포인트를 거십시오':p==='sent'?'다른 사람의 걸기를 기다리는 중':p==='reveal'?'결과가 공개되었습니다':p==='over'?'게임 종료':p==='wait'?'세 명을 기다리는 중':'포인트 오목 · 3인';
  $('info').textContent=`라운드 ${Math.min(R,30)}/30 · ${CN[sl]} 선택`;
  if(p!=='select'&&p!=='bet')$('timer').textContent='–';
