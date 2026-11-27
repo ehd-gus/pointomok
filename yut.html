@@ -429,6 +429,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <div id="instOther" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>브라우저 오른쪽 위 <b>⋮</b> 메뉴를 누르세요.</li><li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누르세요.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">카카오톡이나 인스타그램 안에서 열었다면 설치가 안 돼요. 크롬이나 삼성 인터넷으로 다시 열어 주세요.</p></div>
  <button class="btn red wide" data-close>확인</button><button class="btn wide" id="bInstDone" style="margin-top:8px">이미 설치했어요</button></div></div>
 <script src="config.js"></script>
+<script src="rooms.js"></script>
 <script src="yut-engine.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="net.js"></script>
@@ -468,7 +469,7 @@ setInterval(()=>{if(host&&MODE==='net')broadcast()},4000);
 const seen={};
 function dropSeat(id){const c=conns[id];delete conns[id];delete seen[id];try{c&&c.close()}catch(e){}if(!L)return;const s=L.seats.findIndex(x=>x.id===id);if(s<0)return;L.seats[s].id=null;
  if(!L.started)L.seats.splice(s,1);else if(G&&G.seats[s]&&!L.seats[s].dc){L.seats[s].ai=true;L.seats[s].dc=true;G.seats[s].ai=true;G.log.push(`${G.seats[s].name}의 연결이 끊겨 악마가 대신 둡니다.`)}hostChange()}
-setInterval(()=>{if(!host||MODE!=='net'||!L)return;const now=Date.now();for(const id in conns){if(!seen[id])seen[id]=now;if(now-seen[id]>9000||!conns[id].open)dropSeat(id)}},2000);
+setInterval(()=>{if(!host||MODE!=='net'||!L)return;const now=Date.now();for(const id in conns){if(!seen[id])seen[id]=now;if(now-seen[id]>(L.started?20000:30000)||!conns[id].open)dropSeat(id)}},2000);
 setInterval(()=>{if(!host&&hconn&&hconn.open)try{hconn.send(JSON.stringify({app:'yut',code:P.code,t:'ping'}))}catch(e){}},2500);
 function killNet(){try{hconn&&hconn.close()}catch(e){}for(const k in conns)try{conns[k].close()}catch(e){}try{peer&&peer.destroy()}catch(e){}hconn=null;conns={};peer=null;host=false}
 function hostConn(c){c.on('open',()=>{const id=c.peer+':'+Math.random().toString(36).slice(2,7);seen[id]=Date.now();conns[id]=c;
@@ -527,14 +528,14 @@ function joinRoom(code,quiet){clearTimeout(joinT);killNet();MODE='net';host=fals
   c.on('open',()=>{if(hconn!==c)return;opened=true;clearTimeout(joinT);if(!quiet)$('lobbyMsg').textContent='';if(!G)goWait(code);else $('yhint').textContent='다시 연결되었습니다.';
    try{c.send(JSON.stringify({app:'yut',code,t:'hi',name:P.name,tok:MYTOK}))}catch(e){}try{localStorage.setItem('yut-last',JSON.stringify({code,at:Date.now()}))}catch(e){}});
   c.on('data',d=>{if(hconn!==c)return;let o;try{o=typeof d==='string'?JSON.parse(d):d}catch(e){return}guestData(o)});
-  c.on('close',()=>{if(hconn!==c)return;hconn=null;if(G&&G.phase!=='over')scheduleRejoin()});
+  c.on('close',()=>{if(hconn!==c)return;hconn=null;if(!G||G.phase!=='over')scheduleRejoin()});
   clearTimeout(joinT);joinT=setTimeout(()=>{if(opened||hconn!==c)return;try{c.close()}catch(e){}if(attempt<4)tryConnect();else{say('연결이 안 됩니다. 방장 화면이 켜져 있는지, 인터넷(와이파이/데이터)을 확인하고 다시 참가를 눌러 주세요.');if(!quiet&&MY<0)killNet();else scheduleRejoin()}},7000)};
  peer.on('open',tryConnect);
  peer.on('error',e=>{if(e.type==='peer-unavailable'){if(quiet){scheduleRejoin();return}say('그 코드의 방이 없습니다. 코드를 다시 확인해 주세요.');clearTimeout(joinT);if(MY<0)killNet();return}
   if(['network','server-error','socket-error','socket-closed'].includes(e.type)){say('인터넷 연결이 불안정합니다. 다시 시도합니다…');if(G)scheduleRejoin();return}
   say('연결 오류: '+e.type)})}
-function scheduleRejoin(){clearTimeout(rejoinT);if(MODE!=='net'||host||!P.code)return;$('yhint').textContent='방장과 연결이 끊겼습니다. 다시 연결을 시도합니다…';rejoinT=setTimeout(()=>{if(hconn&&hconn.open)return;joinRoom(P.code,true)},2000)}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&MODE==='net'&&!host&&P.code&&G&&G.phase!=='over'&&!(hconn&&hconn.open))joinRoom(P.code,true)});
+function scheduleRejoin(){clearTimeout(rejoinT);if(MODE!=='net'||host||!P.code)return;$('yhint').textContent='방장과 연결이 끊겼습니다. 다시 연결을 시도합니다…';if(!G)$('wGuest').textContent='연결이 끊겨 다시 연결하는 중…';rejoinT=setTimeout(()=>{if(hconn&&hconn.open)return;joinRoom(P.code,true)},2000)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(!host&&hconn&&hconn.open)try{hconn.send(JSON.stringify({app:'yut',code:P.code,t:'ping'}))}catch(e){}if(MODE==='net'&&!host&&P.code&&MY>=0&&(!G||G.phase!=='over')&&!(hconn&&hconn.open))joinRoom(P.code,true)});
 document.querySelectorAll('.solo [data-ai]').forEach(b=>b.onclick=()=>{if(!needName())return;saveName();logVisit('윷놀이 혼자 연습',$('nick').value.trim());killNet();
  MODE='ai';host=true;MY=0;P={code:null,name:myName()};const n=+b.dataset.ai;L={started:false,seats:[{name:P.name,ai:false,id:'host'}].concat(AIN.slice(0,n).map(a=>({name:a,ai:true})))};startGame()});
 $('bAddAi').onclick=()=>{if(!host||L.started||L.seats.length>=4)return;const used=new Set(L.seats.map(s=>s.name));L.seats.push({name:AIN.find(a=>!used.has(a))||'악마',ai:true});hostChange()};
