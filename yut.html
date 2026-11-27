@@ -349,6 +349,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  .yplO{grid-template-columns:1fr;order:0}.ymid{order:1}.yside{order:2}.yplMe{grid-template-columns:1fr}
  .yt>.chat,.yt>.log{grid-column:1/-1}.yside .chat,.yside .log{grid-column:auto}}
 @media(max-width:999px){.yt{display:flex}.yside{order:2}.ymid{order:1}.yplO{order:0}}
+.slot.catf{border-color:#f0a8c0;background:linear-gradient(180deg,#2a1820,#170f12)}
 </style>
 </head>
 <body>
@@ -383,6 +384,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <li>참먹이(출발점)에 도착하거나 지나가면 골인입니다.</li>
  <li><b>증강</b>은 한 판에 <b>3개</b>까지 얻습니다. <b>1라운드·6라운드·12라운드</b>가 시작될 때 3개 중 1개를 고릅니다. (라운드 = 모두가 한 번씩 턴을 도는 것)</li>
  <li><b>범용</b> 증강은 언제든 나올 수 있고, <b>시작 전용</b>은 1라운드, <b>중간 전용</b>은 6라운드, <b>마무리 전용</b>은 12라운드에만 나옵니다.</li>
+ <li>🐾 <b>고양이 시너지</b>: 고양이 계열 증강(고양이·집사 모집·고양이 홀릭·애묘인) <b>3개</b>를 모으면 바로 승리합니다. 착각으로 고양이가 된 증강도 한 마리로 칩니다.</li>
  <li>'사용' 표시가 있는 증강은 내 턴에 버튼을 눌러 씁니다. 나머지는 자동으로 적용됩니다. 특별한 승리 조건이나 탈락이 있는 증강도 있습니다.</li>
  <li>내 턴은 40초, 증강 고르기는 25초입니다. 시간이 지나면 자동으로 진행됩니다.</li>
 </ul><div class="augall" id="augAll"></div><button class="btn red" data-close>닫기</button></div></div>
@@ -592,9 +594,10 @@ function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx')
   if(pv.dest==='FIN'){dh+=`<text x="100" y="94" text-anchor="end" font-size="4" fill="#ffd77a">골인 가능</text>`;return}const[x,y]=P[pv.dest];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.6" fill="none" stroke="#ffd77a" stroke-width=".9" stroke-dasharray="1.6 1.2" pointer-events="none"/>`})}
  $('ydest').innerHTML=dh;$('board').classList.toggle('pick-node',!!(target&&target.tg==='node'))}
 function card(st,s){const home=st.pieces.filter(p=>p.n==='H').length,fin=st.pieces.filter(p=>p.n==='F').length;
- const slots=st.aug.map(a=>{const A=Y.AUG[a.id],left=A.use?A.use-(st.used[a.id]||0):null;return`<span class="slot${a.off?' off':''}${A.use&&left<=0?' used':''}" title="${esc(A.name+': '+A.d)}"><i>${a.off?'🐈':A.icon}</i><b>${esc(a.off?'고양이(착각)':A.name)}</b>${A.use?`<small>${Math.max(0,left)}/${A.use}</small>`:''}</span>`});
+ const slots=st.aug.map(a=>{const A=Y.AUG[a.id],left=A.use?A.use-(st.used[a.id]||0):null;return`<span class="slot${a.off?' off':''}${A.use&&left<=0?' used':''}${Y.isCat(a)?' catf':''}" title="${esc(A.name+': '+A.d)}"><i>${a.off?'🐈':A.icon}</i><b>${esc(a.off?'고양이(착각)':A.name)}</b>${A.use?`<small>${Math.max(0,left)}/${A.use}</small>`:''}</span>`});
  while(slots.length<3)slots.push('<span class="slot empty">—</span>');
- const extra=[];if(st.skip)extra.push(`⏸️×${st.skip}`);if(G.garlic&&G.garlic.s===s)extra.push(`🧄 ${G.garlic.got.length}/4`);if(st.pieces.some(p=>p.t==='kim'&&p.n!=='F'))extra.push(`🛺 ${st.st.kimTurns}/6턴`);
+ const nc=st.aug.filter(Y.isCat).length;
+ const extra=[];if(st.skip)extra.push(`⏸️×${st.skip}`);if(nc)extra.push(`🐾 ${nc}/3`);if(G.garlic&&G.garlic.s===s)extra.push(`🧄 ${G.garlic.got.length}/4`);if(st.pieces.some(p=>p.t==='kim'&&p.n!=='F'))extra.push(`🛺 ${st.st.kimTurns}/6턴`);
  G.duels.forEach(d=>{if(!d.done&&d.o===s)extra.push(`🤺 ${d.left}턴 남음`)});
  return`<div class="ycard${s===G.turn&&['throw','move'].includes(G.phase)?' turn':''}${s===MY?' mine':''}${st.out?' out':''}" data-seat="${s}" style="--pc:${st.color}"><div class="yc-top"><i class="ydot" style="background:${st.color}"></i><b>${esc(st.name)}</b>${s===MY?'<small>나</small>':st.ai?'<small>악마</small>':''}${st.out?'<small>탈락</small>':''}<span class="yc-fin">${fin}/${st.pieces.length}</span></div>
   <div class="yc-pcs" data-home="${s}">${st.pieces.map(p=>`<i class="${p.n==='H'?'h':p.n==='F'?'f':'b'}">${p.t?Y.TYPEICON[p.t]:''}</i>`).join('')}<span>집 ${home}${extra.length?' · '+extra.join(' · '):''}</span></div>
