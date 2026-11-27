@@ -366,7 +366,7 @@ async function loadRank(){const FB=(window.POMOK_FB||'').replace(/\/+$/,''),box=
  try{const r=await fetch(FB+'/ranking.json');if(!r.ok)throw 0;RK=await r.json()||{}}catch(e){box.innerHTML='<li class="rnote">랭킹을 불러오지 못했습니다. 잠시 후 다시 시도합니다.</li>';return}
  drawRank()}
 function drawRank(){const box=$('rlist');if(!RK)return;const tot={};
- for(const g of['2p','3p','hb']){if(RG!=='all'&&RG!==g)continue;const t=RK[g]||{};for(const k in t){const v=t[k];if(!v||typeof v.n!=='string'||!isInt(v.w,1,1e6))continue;const n=v.n.slice(0,12);tot[n]=(tot[n]||0)+v.w}}
+ for(const g of['2p','3p','hb']){if(RG!=='all'&&RG!==g)continue;const t=RK[g]||{};for(const k in t){const v=t[k];if(!v||typeof v.n!=='string'||v.n.startsWith('__')||!isInt(v.w,1,1e6))continue;const n=v.n.slice(0,12);tot[n]=(tot[n]||0)+v.w}}
  const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).slice(0,30);
  if(!list.length){box.innerHTML='<li class="rnote">아직 기록이 없습니다. 온라인 대전에서 이기면 이름이 올라가요.</li>';return}
  let rank=0,prev=null;box.innerHTML=list.map(([n,w],i)=>{if(w!==prev){rank=i+1;prev=w}return`<li><span class="rno">${rank}</span><span class="rname">${esc(n)}</span><span class="rw">${w}<small>승</small></span></li>`}).join('')}
