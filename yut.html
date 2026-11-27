@@ -361,6 +361,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .yopp{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#161011}.yopp summary{cursor:pointer;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;padding:4px 2px}.yopp summary small{color:var(--dim);font-weight:500}.yopp[open] summary{margin-bottom:6px}.yab.sm{padding:7px 8px;margin-top:5px}.yab.sm .yab-i{font-size:20px;width:26px}
 .yc-top small.rk{border-color:var(--gold);color:var(--gold);font-weight:700}.ycard.done{border-color:var(--gold2);opacity:.85}
 .frank{display:flex;align-items:baseline;gap:10px;padding:8px 4px;border-bottom:1px solid #2a2021;text-align:left}.frank b{width:70px;flex:none}.frank span{font-weight:600;color:var(--ink)}.frank small{margin-left:auto;font-size:12px;color:var(--dim)}.frank.me span{color:var(--gold)}
+#board.folding{animation:yfold .9s ease}#board.folding[data-dir=up],#board.folding[data-dir=down]{animation-name:yfoldY}@keyframes yfold{0%{transform:scaleX(1)}45%{transform:scaleX(.55) skewY(4deg)}100%{transform:none}}@keyframes yfoldY{0%{transform:scaleY(1)}45%{transform:scaleY(.55) skewX(4deg)}100%{transform:none}}
 </style>
 </head>
 <body>
@@ -603,18 +604,32 @@ $('augAll').innerHTML='<h3>증강 목록</h3>'+['g','start','mid','end'].map(tg=
 
 /* ---- 그리기 ---- */
 const SV='http://www.w3.org/2000/svg';
-function boardBase(){const P=Y.POS;let h='<defs><radialGradient id="ybg" cx=".5" cy=".5" r=".75"><stop offset="0" stop-color="#2a1d1e"/><stop offset="1" stop-color="#171011"/></radialGradient></defs>';
+function boardBase(half){const P=Y.POS;let h='<defs><radialGradient id="ybg" cx=".5" cy=".5" r=".75"><stop offset="0" stop-color="#2a1d1e"/><stop offset="1" stop-color="#171011"/></radialGradient><pattern id="yhatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#120c0d"/><path d="M0 0V4" stroke="#3a2a2b" stroke-width="1.4"/></pattern></defs>';
  h+='<rect x="-8" y="-8" width="116" height="116" rx="6" fill="url(#ybg)" stroke="#8f6d2c" stroke-width=".6"/>';
- h+='<g stroke="#d8b26a" stroke-opacity=".35" stroke-width=".7" fill="none"><rect x="0" y="0" width="100" height="100"/><path d="M100 0L0 100M0 0L100 100"/></g>';
- for(const k of Y.NODES){const[x,y]=P[k],big=['o0','o5','o10','o15','C'].includes(k);
-  h+=`<circle data-node="${k}" class="ynode" cx="${x}" cy="${y}" r="${big?5.2:3.4}" fill="${big?'#3a2a1c':'#241a1b'}" stroke="#d8b26a" stroke-opacity="${big?.9:.55}" stroke-width="${big?.8:.5}"/>`}
- h+=`<text x="100" y="107.2" text-anchor="end" font-size="3.4" fill="#d8b26a" font-family="Pretendard,sans-serif">출발·골인</text>`;
+ const H=half?Y.HALF[half]:null;
+ if(!H){h+='<g stroke="#d8b26a" stroke-opacity=".35" stroke-width=".7" fill="none"><rect x="0" y="0" width="100" height="100"/><path d="M100 0L0 100M0 0L100 100"/></g>';
+  for(const k of Y.NODES){const[x,y]=P[k],big=['o0','o5','o10','o15','C'].includes(k);
+   h+=`<circle data-node="${k}" class="ynode" cx="${x}" cy="${y}" r="${big?5.2:3.4}" fill="${big?'#3a2a1c':'#241a1b'}" stroke="#d8b26a" stroke-opacity="${big?.9:.55}" stroke-width="${big?.8:.5}"/>`}
+  h+=`<text x="100" y="107.2" text-anchor="end" font-size="3.4" fill="#d8b26a" font-family="Pretendard,sans-serif">출발·골인</text>`}
+ else{// 반으로 접힌 판: 접힌 쪽은 빗금, 남은 칸과 새 길만 그림
+  const flap={up:[-4,-4,108,52],down:[-4,52,108,52],left:[-4,-4,52,108],right:[52,-4,52,108]}[half];
+  h+=`<rect x="${flap[0]}" y="${flap[1]}" width="${flap[2]}" height="${flap[3]}" rx="3" fill="url(#yhatch)" opacity=".9"/>`;
+  const lab={up:[50,24],down:[50,78],left:[24,50],right:[76,50]}[half];h+=`<text x="${lab[0]}" y="${lab[1]}" text-anchor="middle" font-size="5" fill="#6b5556" font-family="Pretendard,sans-serif">접힌 부분</text>`;
+  const pt=k=>P[k].join(' ');const loop=[H.start,...H.seq,H.start];
+  h+=`<g stroke="#d8b26a" stroke-opacity=".45" stroke-width=".8" fill="none"><path d="M${loop.map(pt).join('L')}"/><path d="M${['C',...H.exit,H.start].map(pt).join('L')}"/>${H.cut?`<path d="M${[H.corner,...H.cut,'C'].map(pt).join('L')}"/>`:''}</g>`;
+  H.keep.forEach(k=>{const[x,y]=P[k],big=k===H.start||k==='C'||k===H.corner;
+   h+=`<circle data-node="${k}" class="ynode" cx="${x}" cy="${y}" r="${big?5.2:3.4}" fill="${big?'#3a2a1c':'#241a1b'}" stroke="#d8b26a" stroke-opacity="${big?.9:.55}" stroke-width="${big?.8:.5}"/>`});
+  const[sx,sy]=P[H.start];h+=`<text x="${sx>50?sx-6:sx+6}" y="${sy>50?sy+7.2:sy+1.2}" text-anchor="${sx>50?'end':'start'}" font-size="3.4" fill="#d8b26a" font-family="Pretendard,sans-serif">출발·골인</text>`}
  h+='<g id="yfx"></g><g id="ydest"></g><g id="ypieces"></g>';return h}
 $('board').innerHTML=boardBase();
 const MED=['🥇','🥈','🥉','4️⃣'];const pieceEls={};let lastFx=0;
 const closedOpp={};document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('yopp'))closedOpp[d.dataset.o]=!d.open},true);
 const ic=(n,emo,extra)=>{const[x,y]=Y.POS[n];return`<g transform="translate(${x} ${y})" pointer-events="none">${extra||''}<text y="1.6" text-anchor="middle" font-size="4.4">${emo}</text></g>`};
-function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx').innerHTML='';$('ydest').innerHTML='';for(const k in pieceEls)delete pieceEls[k];return}
+let drawnHalf=null,foldSeen=null;
+function drawBoard(){const hf=G&&G.half||null;if(hf!==drawnHalf){drawnHalf=hf;$('board').innerHTML=boardBase(hf);for(const k in pieceEls)delete pieceEls[k];
+  if(hf&&G.fold&&G.fold.id!==foldSeen){foldSeen=G.fold.id;const b=$('board');b.classList.remove('folding');void b.getBoundingClientRect();b.classList.add('folding');b.dataset.dir=hf;setTimeout(()=>b.classList.remove('folding'),900)}}
+ if(G&&G.fold)foldSeen=G.fold.id;
+ const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx').innerHTML='';$('ydest').innerHTML='';for(const k in pieceEls)delete pieceEls[k];return}
  let fx='';
  for(const k in G.traps)fx+=ic(k,'🪤');for(const k in G.rewards)fx+=ic(k,'🎁');for(const k in G.poop)fx+=ic(k,'💩');
  if(G.garlic)G.garlic.nodes.forEach(k=>{if(!G.garlic.got.includes(k))fx+=ic(k,'🧄')});
