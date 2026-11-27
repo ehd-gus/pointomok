@@ -357,6 +357,8 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .ya-use{flex:none;min-height:38px!important;padding:0 14px!important;font-size:14px!important}.yab-none{margin:0;font-size:13px;color:var(--dim)}
 .slot[data-aug]{cursor:pointer}.slot[data-aug]:hover{border-color:var(--gold2)}
 .aug-pop{margin:0 0 8px;font-size:15px;line-height:1.6}.aug-pop.s{font-size:13px;color:var(--gold)}
+.yburst{pointer-events:none;animation:yburst 1.3s ease-out forwards}@keyframes yburst{0%{opacity:0}15%{opacity:1}70%{opacity:1}100%{opacity:0}}
+.yopp{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#161011}.yopp summary{cursor:pointer;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;padding:4px 2px}.yopp summary small{color:var(--dim);font-weight:500}.yopp[open] summary{margin-bottom:6px}.yab.sm{padding:7px 8px;margin-top:5px}.yab.sm .yab-i{font-size:20px;width:26px}
 </style>
 </head>
 <body>
@@ -577,7 +579,8 @@ function boardBase(){const P=Y.POS;let h='<defs><radialGradient id="ybg" cx=".5"
  h+=`<text x="100" y="107.2" text-anchor="end" font-size="3.4" fill="#d8b26a" font-family="Pretendard,sans-serif">출발·골인</text>`;
  h+='<g id="yfx"></g><g id="ydest"></g><g id="ypieces"></g>';return h}
 $('board').innerHTML=boardBase();
-const pieceEls={};
+const pieceEls={};let lastFx=0;
+const closedOpp={};document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('yopp'))closedOpp[d.dataset.o]=!d.open},true);
 const ic=(n,emo,extra)=>{const[x,y]=Y.POS[n];return`<g transform="translate(${x} ${y})" pointer-events="none">${extra||''}<text y="1.6" text-anchor="middle" font-size="4.4">${emo}</text></g>`};
 function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx').innerHTML='';$('ydest').innerHTML='';for(const k in pieceEls)delete pieceEls[k];return}
  let fx='';
@@ -587,19 +590,24 @@ function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx')
  G.marks.forEach(m=>{if(m.s===MY)fx+=ic(m.n,'🎯')});
  if(G.reaper)fx+=ic(G.reaper.n,'💀',`<circle r="5" fill="rgba(0,0,0,.55)" stroke="#bbb" stroke-width=".4"/>`);
  $('yfx').innerHTML=fx;
- const at={};G.seats.forEach((st,s)=>{if(st.out)return;st.pieces.forEach((p,pi)=>{if(!Y.onBoard(p))return;(at[p.n]=at[p.n]||[]).push([s,pi])})});
+ const at={};G.seats.forEach((st,s)=>{if(st.out)return;st.pieces.forEach((p,pi)=>{if(!Y.onBoard(p))return;(at[p.n]=at[p.n]||[]).push([p.t==='pawn'?s+'p':s,pi])})});
  const want=new Set();
  for(const k in at){const list=at[k],bySeat={};list.forEach(([s,pi])=>(bySeat[s]=bySeat[s]||[]).push(pi));const seats=Object.keys(bySeat);
   seats.forEach((s,si)=>{const pis=bySeat[s],[x,y]=P[k],off=seats.length>1?(si-(seats.length-1)/2)*4.4:0;
-   pis.forEach((pi,j)=>{const id=s+'-'+pi;want.add(id);let el=pieceEls[id];const p=G.seats[s].pieces[pi];
-    if(!el){el=document.createElementNS(SV,'g');el.setAttribute('class','ypc');el.dataset.s=s;el.dataset.p=pi;g.appendChild(el);pieceEls[id]=el}
-    const top=j===pis.length-1,badge=pis.map(q=>G.seats[s].pieces[q]);const tIcon=badge.map(q=>Y.TYPEICON[q.t]).find(Boolean)||'';
-    const sh=badge.some(q=>q.sh),lock=badge.some(q=>q.lock>=G.round),dom=badge.some(q=>q.dom>0),asn=+s===MY&&badge.some(q=>q.asn);
-    el.innerHTML=`${sh?'<circle r="4.6" fill="none" stroke="#9fd8ff" stroke-width=".8"/>':''}${dom?'<circle r="5" fill="none" stroke="#b28cff" stroke-width=".9" stroke-dasharray="1.2 .8"/>':''}<circle r="3.4" fill="${G.seats[s].color}" stroke="${+s===MY?'#ffe7a0':'#fff'}" stroke-width=".6"/>`+
+   const sn=parseInt(s);pis.forEach((pi,j)=>{const id=sn+'-'+pi;want.add(id);let el=pieceEls[id];const p=G.seats[sn].pieces[pi];
+    if(!el){el=document.createElementNS(SV,'g');el.setAttribute('class','ypc');el.dataset.s=sn;el.dataset.p=pi;el.style.transform=`translate(${x+off}px,${y}px) scale(.2)`;g.appendChild(el);pieceEls[id]=el;void el.getBoundingClientRect()}
+    const top=j===pis.length-1,badge=pis.map(q=>G.seats[sn].pieces[q]);const tIcon=badge.map(q=>Y.TYPEICON[q.t]).find(Boolean)||'';
+    const sh=badge.some(q=>q.sh),lock=badge.some(q=>q.lock>=G.round),dom=badge.some(q=>q.dom>0),asn=sn===MY&&badge.some(q=>q.asn);
+    el.innerHTML=`${sh?'<circle r="4.6" fill="none" stroke="#9fd8ff" stroke-width=".8"/>':''}${dom?'<circle r="5" fill="none" stroke="#b28cff" stroke-width=".9" stroke-dasharray="1.2 .8"/>':''}<circle r="3.4" fill="${G.seats[sn].color}" stroke="${sn===MY?'#ffe7a0':'#fff'}" stroke-width=".6"/>`+
      (tIcon?`<text y="1.3" text-anchor="middle" font-size="3.4">${tIcon}</text>`:`<text y="1.3" text-anchor="middle" font-size="3.6" font-weight="800" fill="#fff">${pis.length>1?pis.length:''}</text>`)+
      (tIcon&&pis.length>1?`<text x="3.6" y="-2.4" font-size="2.8" font-weight="800" fill="#fff">${pis.length}</text>`:'')+(lock?'<text x="-4.8" y="-2.2" font-size="3">⛔</text>':'')+(asn?'<text x="2.4" y="4.6" font-size="2.8">🗡️</text>':'');
     el.style.transform=`translate(${x+off}px,${y-j*1.1}px)`;el.style.opacity=top?1:0;el.style.pointerEvents=top?'':'none'})})}
- for(const id in pieceEls)if(!want.has(id)){pieceEls[id].remove();delete pieceEls[id]}
+ for(const id in pieceEls)if(!want.has(id)){const el=pieceEls[id];delete pieceEls[id];const[sx,px]=id.split('-').map(Number),pc=G.seats[sx]&&G.seats[sx].pieces[px];
+  if(pc&&pc.n==='F'){const[x,y]=P.o0;el.style.transform=`translate(${x}px,${y}px) scale(.4)`}else el.style.transform=(el.style.transform||'')+' scale(.2)';
+  el.style.opacity=0;el.style.pointerEvents='none';setTimeout(()=>el.remove(),600)}
+ // 잡힘·골인 효과
+ (G.fx||[]).forEach(f=>{if(f.id<=lastFx)return;lastFx=f.id;const[x,y]=P[f.n]||P.o0;const b=document.createElementNS(SV,'g');b.setAttribute('class','yburst');b.setAttribute('transform',`translate(${x} ${y})`);
+  b.innerHTML=f.t==='fin'?`<text y="-6" text-anchor="middle" font-size="4.2" fill="#ffd77a" font-weight="800">골인 +${f.c}</text>`:`<text y="2" text-anchor="middle" font-size="7">💥</text>`;$('yfx').after(b);setTimeout(()=>b.remove(),1300)});
  let dh='';if(myTurn()&&G.phase==='move'&&!target){const seen=new Set();G.seats[MY].pieces.forEach((p,pi)=>{const pv=Y.preview(G,MY,sel,pi);if(!pv)return;const key=p.n+'>'+pv.dest;if(seen.has(key))return;seen.add(key);
   if(pv.dest==='FIN'){dh+=`<text x="100" y="94" text-anchor="end" font-size="4" fill="#ffd77a">골인 가능</text>`;return}const[x,y]=P[pv.dest];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.6" fill="none" stroke="#ffd77a" stroke-width=".9" stroke-dasharray="1.6 1.2" pointer-events="none"/>`})}
  $('ydest').innerHTML=dh;$('board').classList.toggle('pick-node',!!(target&&target.tg==='node'))}
@@ -632,6 +640,10 @@ function render(){
   const ok=act&&mine&&!a.off&&left>0&&!target&&(a.id!=='sniper'||(p==='throw'&&G.throws>0));
   const state=a.off?`🐈 착각으로 고양이가 됨 (${a.until}라운드에 돌아옴)`:A.perTurn?(left?'이번 턴에 쓸 수 있음':'이번 턴에 씀'):A.use?`남은 횟수 ${Math.max(0,left)}/${A.use}`:'자동 적용';
   return`<div class="yab${a.off?' off':''}${Y.isCat(a)?' catf':''}"><span class="yab-i">${a.off?'🐈':A.icon}</span><div class="yab-b"><b>${esc(A.name)}</b><p>${esc(A.d)}</p><small>${state}</small></div>${act?`<button class="btn red ya-use" data-use="${a.id}" ${ok?'':'disabled'}>사용</button>`:''}</div>`}).join(''):(me?'<p class="yab-none">아직 능력이 없습니다. 1·6·12라운드에 고를 수 있어요.</p>':'');
+ {const opp=G.seats.map((x,i)=>i).filter(i=>i!==MY);if(opp.length)$('yaug').insertAdjacentHTML('beforeend','<h3 class="yab-t">상대 능력</h3>'+opp.map(o=>{const ot=G.seats[o];
+  return`<details class="yopp" data-o="${o}" ${ot.aug.length&&!closedOpp[o]?'open':''}><summary><i class="ydot" style="background:${ot.color}"></i>${esc(ot.name)}${ot.out?' · 탈락':''} <small>${ot.aug.length}개</small></summary>${ot.aug.length?ot.aug.map(a=>{const A=Y.AUG[a.id],left=A.use?Math.max(0,A.use-(ot.used[a.id]||0)):null;
+   const state=a.off?`🐈 착각으로 고양이 (${a.until}라운드에 돌아옴)`:A.perTurn?'턴마다 사용':A.use?`남은 횟수 ${left}/${A.use}`:'자동 적용';
+   return`<div class="yab sm${a.off?' off':''}${Y.isCat(a)?' catf':''}"><span class="yab-i">${a.off?'🐈':A.icon}</span><div class="yab-b"><b>${esc(A.name)}</b><p>${esc(A.d)}</p><small>${state}</small></div></div>`}).join(''):'<p class="yab-none">아직 능력이 없습니다.</p>'}</details>`}).join(''))}
  if(!target)$('yhint').textContent=p==='pick'?'':mine?(p==='throw'?(G.results.length?'한 번 더 던질 수 있어요!':'윷 던지기를 누르세요.'):'결과를 고르고 움직일 말(판 위 말이나 새 말 내기)을 누르세요. 점선 원이 도착할 곳이에요.'):p==='over'?(G.winWhy||''):`${cur.name}의 차례를 기다리는 중…`;
  $('log').innerHTML=G.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join('');
  if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k,t.sticks||4)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}

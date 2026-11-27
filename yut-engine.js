@@ -102,6 +102,7 @@ const TYPEICON={van:'🚩',pawn:'♟️',kim:'🛺',mara:'🏃'};
 /* ---- 기본 ---- */
 function rnd(G){G.seed=(Math.imul(G.seed^(G.seed>>>15),2246822519)+0x9e3779b9)>>>0;G.seed=(G.seed^(G.seed>>>13))>>>0;return G.seed/4294967296}
 const pickR=(G,a)=>a[Math.floor(rnd(G)*a.length)];
+function fx(G,t,n,c){G.fxN=(G.fxN||0)+1;G.fx=(G.fx||[]).concat([{t,n,c:c||1,id:G.fxN}]).slice(-8)}
 function addLog(G,t){G.log.push(t);if(G.log.length>80)G.log.shift()}
 function has(G,s,id){return G.seats[s].aug.some(a=>a.id===id&&!a.off)}
 const alive=G=>G.seats.map((x,i)=>i).filter(i=>!G.seats[i].out);
@@ -175,7 +176,7 @@ function killStack(G,o,idx,by,cause){// o의 말 idx를 잡음. 반환: 잡힌 �
  if(has(G,o,'peace')||(by!=null&&by!==o&&has(G,by,'peace'))){if(has(G,o,'peace'))addLog(G,`🕊️ ${ot.name}은(는) 평화 협정으로 잡히지 않습니다.`);return 0}
  const sh=idx.filter(k=>ot.pieces[k].sh>0);if(sh.length){idx.forEach(k=>ot.pieces[k].sh=0);addLog(G,`🫧 ${ot.name}의 보호막이 막았습니다.`);return 0}
  if(has(G,o,'friend')&&idx.length>1){idx=[idx[0]];addLog(G,`🤝 동료 방패: ${ot.name}의 말 1개만 잡힙니다.`)}
- idx.forEach(k=>sendHome(G,o,k));
+ fx(G,'kill',ot.pieces[idx[0]].n,idx.length);idx.forEach(k=>sendHome(G,o,k));
  addLog(G,`${cause?cause+': ':''}${by!=null&&by!==o?G.seats[by].name+'이(가) ':''}${ot.name}의 말 ${idx.length}개를 잡았습니다.`);
  if(by!=null&&by!==o){const bs=G.seats[by].st;bs.kills+=idx.length;
   if(ot.st.nfOn&&!ot.st.killedBy.includes(by)){ot.st.killedBy.push(by);if(alive(G).filter(x=>x!==o).every(x=>ot.st.killedBy.includes(x)))win(G,o,'🥲 나만 친구 없어: 모두에게 잡혔습니다!')}
@@ -258,14 +259,14 @@ function doMove(G,s,g,path,back){// 경로를 따라 이동하며 똥·자객 �
  if(dest==='FIN'){g.forEach(k=>{st.pieces[k].n='F';st.pieces[k].prev=null;st.pieces[k].asn=0});finished(G,s,g);return 0}
  g.forEach(k=>{st.pieces[k].n=dest;st.pieces[k].prev=back?null:prevNode});
  return land(G,s,g,dest,back)}
-function finished(G,s,g){const st=G.seats[s];addLog(G,`🏠 ${st.name}의 말 ${g.length}개 골인!`);
+function finished(G,s,g){const st=G.seats[s];fx(G,'fin','o0',g.length);addLog(G,`🏠 ${st.name}의 말 ${g.length}개 골인!`);
  G.duels.forEach(d=>{if(!d.done&&d.o===s){d.done=true;eliminate(G,d.by,`🤺 ${st.name}이(가) 골인해서 승부에서 졌습니다.`)}});
  if(g.some(k=>st.pieces[k].t==='mara'))return win(G,s,'🏃 마라토너 골인!');
  if(g.some(k=>st.pieces[k].t==='kim')&&st.st.kimTurns<=6)return win(G,s,`🛺 김첨지가 ${st.st.kimTurns}턴 만에 골인!`);
  if(st.pieces.every(p=>p.n==='F'))win(G,s,'말을 모두 골인시켰습니다.')}
 function land(G,s,g,dest,back){const st=G.seats[s];let caught=0;
  if(G.reaper&&G.reaper.n===dest&&G.reaper.s!==s){killStack(G,s,g.slice(),G.reaper.s,'💀 사신');return 0}
- if(G.traps[dest]!=null&&G.traps[dest]!==s){delete G.traps[dest];g.forEach(k=>sendHome(G,s,k));addLog(G,`🪤 ${st.name}의 말이 함정에 빠져 집으로!`);return 0}
+ if(G.traps[dest]!=null&&G.traps[dest]!==s){delete G.traps[dest];fx(G,'kill',dest,g.length);g.forEach(k=>sendHome(G,s,k));addLog(G,`🪤 ${st.name}의 말이 함정에 빠져 집으로!`);return 0}
  if(G.rewards[dest]){delete G.rewards[dest];addLog(G,`🎁 보상! ${st.name}의 말이 3칸 더 갑니다.`);return doMove(G,s,g,walk(dest,3),false)}
  if(G.garlic&&G.garlic.s===s&&G.garlic.nodes.includes(dest)&&!G.garlic.got.includes(dest)){G.garlic.got.push(dest);addLog(G,`🧄 ${st.name}: 마늘 ${G.garlic.got.length}/4`);if(G.garlic.got.length>=4){win(G,s,'🧄 웅녀: 마늘 4개를 모았습니다!');return 0}}
  G.seats.forEach((ot,o)=>{if(o===s||G.phase==='over')return;const vs=ot.pieces.map((q,k)=>q.n===dest?k:-1).filter(k=>k>=0);if(!vs.length)return;
