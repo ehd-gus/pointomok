@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="포인트 오목">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-v2.png">
-<title>포인트 오목</title>
+<title>게임 고르기 · 포인트 오목 · 흑과 백</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -282,319 +282,57 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .center>.info>.stone:not(#z),.center>.info>strong:not(#z),.center>.info>.melabel:not(#z){display:inline-flex!important;align-items:center}
 .center>.info>.stone{width:16px;height:16px}.center>.info>strong{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink)}.center>.info>.melabel{color:var(--dim)}
 .center>.info>strong::after{content:"·";margin-left:8px;color:var(--dim);font-weight:400}
+.room .rk.ghb{background:#f2ede4;color:#141011}
+
+.hub{max-width:640px;margin:0 auto;padding:22px max(4vw,16px) 130px;display:flex;flex-direction:column;gap:14px}
+.hub h2{margin:8px 0 0;font-family:var(--serif);font-weight:600;font-size:18px;letter-spacing:-.02em}
+.gcard{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line2);border-radius:14px;background:linear-gradient(180deg,#201718,#181213);color:var(--ink);text-decoration:none;transition:border-color .2s,background .2s}
+.gcard:hover{border-color:var(--gold2);background:linear-gradient(180deg,#261b1c,#1b1314)}
+.gcard:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.gart{flex:none;width:92px;height:92px;border-radius:12px;overflow:hidden}
+.gtxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.gtxt b{font-family:var(--serif);font-weight:700;font-size:23px;letter-spacing:-.03em}
+.gtxt span{font-size:14px;color:var(--dim);line-height:1.45}
+.gtags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}.gtags i{font-style:normal;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--ink)}
+.go{flex:none;font-size:22px;color:var(--gold)}
 </style>
 </head>
 <body>
-<header><h1>포인트 오목</h1><nav><button id="bRule">규칙</button><button id="bExit">나가기</button></nav></header>
-<main class="stage">
- <div class="paper"></div>
- <aside class="side">
-  <div class="card" id="cMe">
-   <div class="who"><span class="badge">선택</span><span class="emb"><i class="st s1" id="stMe"></i></span><span class="name" id="myName">날렵한책략가1152</span><span class="colchip c1" id="ccMe">흑돌</span><span class="me-tag">나</span></div>
-   <div class="pts">포인트 <b id="pMe">10</b></div>
-   <form class="chat" id="chatF"><input id="chatIn" maxlength="60" placeholder="상대에게 한마디" autocomplete="off" aria-label="채팅"><button class="btn red" aria-label="보내기">보내기</button></form>
-   <div class="bubble" id="bubMe"></div>
-  </div>
-  <div class="card" id="cAi">
-   <div class="who"><span class="badge">선택</span><span class="emb"><i class="st s2" id="stAi"></i></span><span class="name" id="oName">수석 악마</span><span class="colchip c2" id="ccAi">백돌</span></div>
-   <div class="sub" id="oSub">계산으로 둡니다</div>
-   <div class="pts">포인트 <b id="pAi">비공개</b></div>
-   <div class="status" id="sAi"></div>
-   <div class="bubble" id="bubAi"></div>
-  </div>
- </aside>
- <section class="center">
-  <div class="topline"><div class="banner"><span class="emb"><svg viewBox="0 0 24 24"><path d="M12 1 19 12 12 23 5 12Z" fill="#141011"/><path d="M12 6 15.5 12 12 18 8.5 12Z" fill="#ece4dc"/></svg></span><span id="banner">세 점을 고르십시오</span></div><div class="timer" id="timer">30</div></div>
-  <div class="info"><span class="melabel">나는</span><span class="stone" id="myStone"></span><strong id="myColor">흑</strong><span id="info">라운드 1/30 · 쓸 수 있는 포인트 10</span></div>
-  <div class="boardwrap"><svg id="board" viewBox="0 0 15 15" aria-label="오목판"></svg></div>
-  <div id="selUI" class="controls-wrap" style="width:100%;max-width:640px">
-   <p class="hint">점을 누르면 세 점이 놓입니다. 다시 누르면 방향이 바뀝니다.</p>
-   <div class="controls">
-    <button class="dir" data-d="0" aria-label="가로"><svg viewBox="0 0 30 30"><path d="M4 15h22"/></svg></button>
-    <button class="dir" data-d="1" aria-label="세로"><svg viewBox="0 0 30 30"><path d="M15 4v22"/></svg></button>
-    <button class="dir" data-d="2" aria-label="대각선 아래로"><svg viewBox="0 0 30 30"><path d="M5 5l20 20"/></svg></button>
-    <button class="dir" data-d="3" aria-label="대각선 위로"><svg viewBox="0 0 30 30"><path d="M25 5 5 25"/></svg></button>
-    <span class="grow"></span>
-    <button class="btn" id="bUndo">되돌리기</button>
-    <button class="btn red" id="bOk">확정</button>
-   </div>
-  </div>
-  <div id="betUI" class="bet hide">
-   <div class="betrow"><div class="left">남은 포인트<b id="left">7</b><span> / <span id="tot">10</span></span></div><div class="rule" id="tieRule"></div></div>
-   <div class="cols" id="cols"></div>
-   <div class="betfoot"><span class="note" id="carry"></span><button class="btn red" id="bSubmit">제출</button></div>
-  </div>
-  <div class="dealer"><svg viewBox="0 0 60 60"><rect x="2" y="2" width="56" height="56" fill="#c9a46a" stroke="#5a3d16" stroke-width="2"/><rect x="6" y="6" width="48" height="48" fill="#e7cf9c"/><path d="M14 30c0-12 7-19 16-19s16 7 16 19c0 9-7 17-16 17s-16-8-16-17Z" fill="#f1dcc0" stroke="#3a2612" stroke-width="1.5"/><path d="M13 27c2-14 10-18 17-18s16 4 17 18c-4-6-9-9-17-9s-13 3-17 9Z" fill="#3a2612"/><path d="M15 16 11 6l9 7M45 16l4-10-9 7" fill="#7a1f25" stroke="#3a2612"/><circle cx="24" cy="31" r="2" fill="#3a2612"/><circle cx="36" cy="31" r="2" fill="#3a2612"/><path d="M25 39c3 2 7 2 10 0" stroke="#3a2612" fill="none" stroke-width="1.5"/><path d="M22 50h16l-8 6Z" fill="#7a1f25"/></svg><p id="dealer">세 점을 고르십시오. 확정을 눌러야 정해집니다.</p></div>
-  <details class="log"><summary>지난 라운드 기록</summary><ol id="log"></ol></details>
- </section>
- <div class="deco" aria-hidden="true">
-  <svg viewBox="0 0 110 260"><ellipse cx="55" cy="250" rx="50" ry="8" fill="#0c0909"/><path d="M14 232h82l-6 16H20Z" fill="#2a2122"/><ellipse cx="55" cy="232" rx="41" ry="7" fill="#3a2e2f"/><rect x="38" y="110" width="34" height="122" rx="4" fill="#d9cdb8"/><path d="M38 118c6 4 6 30 2 40M72 116c-5 6-3 20-1 26" stroke="#b8aa92" stroke-width="5" fill="none"/><rect x="38" y="110" width="34" height="122" rx="4" fill="url(#cg)"/><path d="M55 110v-8" stroke="#222" stroke-width="2"/><g class="flame"><path d="M55 104c-9-12-4-28 0-44 4 16 9 32 0 44Z" fill="#f2b04a"/><path d="M55 100c-4-7-2-17 0-26 2 9 4 19 0 26Z" fill="#fff3c4"/></g><defs><linearGradient id="cg" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset=".5" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient></defs></svg>
-  <svg viewBox="0 0 110 240"><path d="M100 8C60 30 30 90 24 168l8 2C44 100 70 50 100 8Z" fill="#4a4142"/><path d="M100 8C80 40 52 100 34 168" stroke="#7d7273" stroke-width="1.4" fill="none"/><path d="M28 168l-4 30" stroke="#8a7f80" stroke-width="2"/><path d="M8 200h44l6 30H2Z" fill="#231c1d"/><ellipse cx="30" cy="200" rx="22" ry="5" fill="#0c0909"/></svg>
- </div>
+<header><h1 id="hubT">게임 고르기</h1></header>
+<main class="hub">
+ <a class="gcard" href="omok.html">
+  <svg class="gart" viewBox="0 0 92 92" aria-hidden="true"><rect width="92" height="92" fill="#18265f"/><g stroke="#c8d0f0" stroke-opacity=".45" stroke-width="1.2"><path d="M0 23H92M0 46H92M0 69H92M23 0V92M46 0V92M69 0V92"/></g><g font-family="Hahmlet,serif" font-weight="700" font-size="13" text-anchor="middle" fill="#2b1d05"><circle cx="23" cy="69" r="10" fill="#e0b34e" stroke="#6b4f12"/><text x="23" y="73.5">A</text><circle cx="46" cy="46" r="10" fill="#e0b34e" stroke="#6b4f12"/><text x="46" y="50.5">B</text><circle cx="69" cy="23" r="10" fill="#e0b34e" stroke="#6b4f12"/><text x="69" y="27.5">C</text></g><circle cx="69" cy="69" r="9" fill="#111" stroke="#555"/><circle cx="23" cy="23" r="9" fill="#efe9dd"/></svg>
+  <div class="gtxt"><b>포인트 오목</b><span>세 점에 포인트를 몰래 걸어 돌을 차지하고 오목을 완성하세요.</span><div class="gtags"><i>2인 · 5목</i><i>3인 · 4목</i><i>혼자 연습</i></div></div><span class="go" aria-hidden="true">›</span>
+ </a>
+ <a class="gcard" href="hb.html">
+  <svg class="gart" viewBox="0 0 92 92" aria-hidden="true"><rect width="92" height="92" fill="#1a1213"/><rect x="10" y="22" width="34" height="48" rx="6" fill="#0b0b0b" stroke="#6b6464"/><rect x="48" y="22" width="34" height="48" rx="6" fill="#f2ede4"/><g fill="#e9b949"><circle cx="18" cy="80" r="3.2"/><circle cx="28" cy="80" r="3.2"/><circle cx="38" cy="80" r="3.2"/><circle cx="48" cy="80" r="3.2" fill="#3d3132"/><circle cx="58" cy="80" r="3.2" fill="#3d3132"/></g><text x="27" y="51" text-anchor="middle" font-family="Hahmlet,serif" font-weight="700" font-size="15" fill="#f2ede4">흑</text><text x="65" y="51" text-anchor="middle" font-family="Hahmlet,serif" font-weight="700" font-size="15" fill="#141011">백</text></svg>
+  <div class="gtxt"><b>흑과 백</b><span>99포인트로 9라운드. 숫자는 숨기고 흑·백만 보고 승부하세요.</span><div class="gtags"><i>2인</i><i>5승 먼저</i><i>혼자 연습</i></div></div><span class="go" aria-hidden="true">›</span>
+ </a>
+ <h2>열려 있는 공개 방</h2>
+ <div class="rooms" id="roomList" style="max-height:none"><p class="empty">공개 방을 찾는 중…</p></div>
 </main>
-<div class="modal" id="mRule"><div class="mbox"><h2>규칙</h2><ul>
- <li>15×15 판에서 흑(나)과 백(수석 악마)이 겨룹니다. 가로·세로·대각선으로 정확히 다섯 개를 먼저 잇는 쪽이 이깁니다. 여섯 개 이상(장목)은 인정되지 않습니다.</li>
- <li>라운드마다 선택권이 번갈아 넘어갑니다. 선택자는 한 줄로 이어진 빈 점 세 개(A·B·C)를 고릅니다.</li>
- <li>두 사람은 세 점에 포인트를 몰래 나눠 겁니다. 점마다 최소 1포인트입니다.</li>
- <li>각 점은 더 많이 건 쪽의 돌이 놓입니다. 같으면 선택자가 아닌 쪽이 가져갑니다.</li>
- <li>상대가 가진 포인트와 건 포인트는 끝까지 공개되지 않습니다. 결과에는 누가 가져갔는지만 나옵니다.</li>
- <li>매 라운드 10포인트를 새로 받습니다. 쓰지 않고 남긴 포인트는 절반(내림)만 다음 라운드로 이월됩니다.</li>
- <li>각 단계는 30초입니다. 시간이 다 되면 선택은 자동으로, 걸기는 현재 값으로 제출됩니다.</li>
- <li>온라인 대전: 같은 주소로 들어와서 방을 만든 사람이 흑(첫 선택), 코드로 들어온 사람이 백입니다. 거는 포인트는 암호화된 값으로 먼저 보내고, 둘 다 제출한 뒤에 공개되어 서로 몰래 볼 수 없습니다.</li>
- <li>30라운드 안에 오목이 없으면 판 위 돌이 많은 쪽이 이깁니다. 같은 라운드에 둘 다 오목이면 무승부입니다.</li>
-</ul><button class="btn red" data-close>닫기</button></div></div>
-<div class="modal" id="mEnd"><div class="mbox"><h2 id="endT">게임 종료</h2><div class="big" id="endBig"></div><p id="endP" style="text-align:center;color:var(--dim)"></p><p id="endR" style="text-align:center;color:var(--gold)"></p><div style="display:flex;gap:10px;justify-content:center"><button class="btn" data-close>판 보기</button><button class="btn red" id="bAgain">다시 하기</button></div></div></div>
-<div class="modal" id="mExit"><div class="mbox"><h2>나가시겠습니까?</h2><p style="color:var(--dim)">진행 중인 판은 사라지고 첫 화면으로 돌아갑니다.</p><div style="display:flex;gap:10px"><button class="btn" data-close>계속하기</button><button class="btn red" id="bReset">나가기</button></div></div></div>
-<div class="modal on" id="mLobby"><div class="mbox"><h2>포인트 오목</h2>
- <label class="field">이름<input id="nick" maxlength="12" placeholder="이름을 정하세요" autocomplete="off"></label>
- <button class="btn red wide" id="bPub">공개 방 만들기 · 아무나 참가</button>
- <div class="or">열려 있는 공개 방</div>
- <div class="rooms" id="roomList"><p class="empty">공개 방을 찾는 중…</p></div>
- <button class="btn wide" id="bCreate">코드 방 만들기 · 친구만 초대</button>
- <div class="or">친구가 만든 방에 들어가기</div>
- <div class="row"><input id="codeIn" inputmode="numeric" maxlength="4" placeholder="방 코드 4자리" class="field" style="margin:0;font:inherit;font-size:18px;padding:10px 12px;min-height:48px;background:#120e0f;color:var(--ink);border:1px solid #4a3d3d"><button class="btn" id="bJoin">참가</button></div>
- <button class="btn wide" id="bSolo">혼자 연습</button>
- <a class="btn wide" href="3p.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink)">3인 대전 (온라인) <b style="color:var(--gold);margin-left:6px">4목</b></a>
- <p class="msg" id="lobbyMsg">온라인 연결을 확인하는 중…</p>
-</div></div>
-<div class="modal" id="mSoloPick"><div class="mbox" style="text-align:center"><h2>혼자 연습</h2><p style="color:var(--dim);margin:0 0 14px">몇 명이서 두시겠습니까?</p>
- <button class="btn red wide" id="bSolo2">2인 · 수석 악마와 1:1</button>
- <button class="btn wide" id="bSolo3">3인 · 악마 둘과 대결 <b style="color:var(--gold)">(4목)</b></button>
- <button class="btn wide" data-close>취소</button></div></div>
-<div class="modal" id="mWait"><div class="wroom">
- <div class="wtop"><h2>대기실</h2><button class="btn" id="bRuleW">규칙 보기</button></div>
- <button class="tip" id="tipBox" type="button" aria-label="다음 팁 보기"><span class="tipk">팁</span><span class="tipt" id="tipT"></span><span class="tipn" id="tipN"></span></button>
- 
- <div class="vs" id="vs"></div>
- <p id="pubNote">공개 방으로 열렸습니다. 첫 화면 목록에서 누구나 들어올 수 있어요.</p>
- <div class="codeArea">친구에게 알려 줄 방 코드<div class="code" id="waitCode"></div>친구가 이 코드로 들어오면 바로 시작합니다.</div>
- <div class="wfoot"><button class="btn" id="bCancel">나가기</button></div>
-</div></div>
-<div class="modal" id="mVisit"><div class="mbox"><h2>접속 기록</h2><p style="color:var(--dim);font-size:14px;margin:0 0 8px">최근 접속이 위에 나옵니다. 기록 서버는 12시간이 지난 기록을 지우지만, 이 기기에서 한 번 연 기록은 계속 남아요.</p><div id="visitList" style="max-height:55vh;overflow:auto;font-size:15px;border-top:1px solid #4a3d3d"></div><div class="row" style="margin-top:12px"><button class="btn" id="bVisitRe">새로고침</button><button class="btn" id="bVisitX">닫기</button></div></div></div>
-<div class="modal" id="mAdmin"><div class="mbox" style="text-align:center"><h2>관리자 코드</h2><input id="adminIn" type="password" inputmode="numeric" maxlength="12" autocomplete="off" aria-label="관리자 코드" style="width:100%;font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;padding:10px;min-height:52px;background:#140e0f;color:var(--ink);border:1px solid var(--line2);border-radius:8px"><p class="msg" id="adminMsg" style="min-height:1.6em"></p><div style="display:flex;gap:10px;justify-content:center"><button class="btn" data-close>닫기</button><button class="btn red" id="bAdmin">확인</button></div></div></div>
 <div class="instbar hide" id="instBar" role="region" aria-label="앱 설치"><img src="icons/icon-192-v2.png" alt="" width="40" height="40"><div class="ib-t"><b>포인트 오목 앱</b><span>홈 화면에 추가해 앱처럼 쓰기</span></div><button class="btn red" id="bInstall">설치</button><button class="ib-x" id="bInstX" aria-label="닫기">×</button></div>
 <div class="modal" id="mInstall"><div class="mbox"><h2>홈 화면에 설치</h2>
  <div id="instIos" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>Safari 아래쪽의 <b>공유</b> 버튼(네모에 위쪽 화살표)을 누르세요.</li><li><b>홈 화면에 추가</b>를 누르세요.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝입니다.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">아이폰은 Safari에서만 설치할 수 있어요. 카카오톡이나 다른 앱 안에서 열었다면 Safari로 다시 열어 주세요.</p></div>
  <div id="instOther" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>브라우저 오른쪽 위 <b>⋮</b> 메뉴를 누르세요.</li><li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누르세요.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">카카오톡이나 인스타그램 안에서 열었다면 설치가 안 돼요. 크롬이나 삼성 인터넷으로 다시 열어 주세요.</p></div>
  <button class="btn red wide" data-close>확인</button><button class="btn wide" id="bInstDone" style="margin-top:8px">이미 설치했어요</button></div></div>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 {
-const N=15,DIRS=[[0,1],[1,0],[1,1],[1,-1]],LET=['A','B','C'],STAR=[[3,3],[3,11],[11,3],[11,11],[7,7]];
-const $=id=>document.getElementById(id),svg=$('board');
-const AILINES={win:['예상대로입니다.','숫자는 거짓말을 하지 않습니다.','그 점은 제 것입니다.'],lose:['…흥미롭군요.','계산 밖의 수였습니다.','이번만 양보하지요.'],any:['다음 수를 읽고 있습니다.','당신의 포인트가 보입니다.']};
-let MODE='ai',MY=1,room=null,peer=null,conn=null,oppState=null,opp=null,lastSay=0,autoT=null,aiT=null,tid=null,lastSvg='';
-const OPP=()=>3-MY,CN=c=>c===1?'흑':'백';
-let P={app:'pomok',code:null,side:0,name:'',gen:0,h:{},say:null};
-const blank=()=>Array.from({length:N},()=>Array(N).fill(0));
-let S={b:blank(),round:1,phase:'lobby',bud:{1:10,2:10},sel:null,dir:0,tri:null,bets:[1,1,1],last:[],res:null,nb:null,over:false,myRv:null};
-try{$('nick').value=localStorage.getItem('pomok-name')||''}catch(e){}
-
-function newGame(){clearTimeout(autoT);clearTimeout(aiT);
- S={b:blank(),round:1,phase:'',bud:{1:10,2:10},sel:null,dir:0,tri:null,bets:[1,1,1],last:[],res:null,nb:null,over:false,myRv:null};
- $('log').innerHTML='';['mWait','mEnd','mLobby'].forEach(m=>$(m).classList.remove('on'));startRound()}
-const selector=()=>S.round%2===1?1:2;
-const inB=(r,c)=>r>=0&&c>=0&&r<N&&c<N;
-function triple(r,c,d){const[dr,dc]=DIRS[d];return[[r-dr,c-dc],[r,c],[r+dr,c+dc]]}
-const okTri=t=>t.every(([r,c])=>inB(r,c)&&!S.b[r][c]);
-function lineVal(r,c,who){let s=0;for(const[dr,dc]of DIRS){let n=1,op=0;for(const k of[1,-1]){let i=1;while(inB(r+dr*i*k,c+dc*i*k)&&S.b[r+dr*i*k][c+dc*i*k]===who){n++;i++}const rr=r+dr*i*k,cc=c+dc*i*k;if(inB(rr,cc)&&!S.b[rr][cc])op++}
- s+=n>5?-50:n===5?100000:n===4?(op===2?10000:op?1200:0):n===3?(op===2?900:op?120:0):n===2?(op===2?60:op?12:0):(op===2?3:1)}
- return s+(7-Math.max(Math.abs(r-7),Math.abs(c-7)))*.4}
-function bestTri(who){const opp=3-who;let best=null,bs=-1e9;for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(let d=0;d<4;d++){const t=triple(r,c,d);if(!okTri(t))continue;
- let s=0;for(const[a,b]of t)s+=lineVal(a,b,who)-.75*lineVal(a,b,opp);s+=Math.random()*25;if(s>bs){bs=s;best={r,c,d}}}return best}
-function aiBids(){const AI=OPP(),ME=MY,t=S.tri,B=S.bud[AI],H=S.bud[ME],tieAI=selector()===ME,need=Math.max(1,tieAI?H-2:H-1);
- const av=t.map(([r,c])=>lineVal(r,c,AI)),hv=t.map(([r,c])=>lineVal(r,c,ME));
- const bids=[1,1,1];let rem=B-3;
- const crit=[0,1,2].filter(i=>av[i]>=100000||hv[i]>=100000).sort((x,y)=>(av[y]>=1e5)-(av[x]>=1e5));
- for(const i of crit){const add=Math.min(need-bids[i],rem);if(add>0){bids[i]+=add;rem-=add}}
- const mx=Math.max(...av,...hv);const ratio=mx>=9000?.95:mx>=900?.8:mx>=120?.6:.35+Math.random()*.2;
- let spend=Math.floor(rem*ratio);const w=[0,1,2].map(i=>crit.includes(i)?0:Math.sqrt(Math.max(av[i],hv[i]*1.1))+1+Math.random()*2),ws=w.reduce((a,b)=>a+b,0);
- if(ws>0&&spend>0){let used=0;for(let i=0;i<3;i++){const g=Math.floor(spend*w[i]/ws);bids[i]+=g;used+=g}const top=w.indexOf(Math.max(...w));bids[top]+=spend-used}
- return bids}
-function hasMove(){for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(let d=0;d<4;d++)if(okTri(triple(r,c,d)))return true;return false}
-
-function startRound(){S.tri=null;S.sel=null;S.bets=[1,1,1];S.myRv=null;S.res=null;if(S.pend&&S.round<=30){const n=S.pend;S.pend=0;addPts(n)}
- if(S.round>30||!hasMove())return finish(null,'30라운드가 끝났습니다.');
- if(selector()===MY){S.phase='select';say('세 점을 고르십시오. 확정을 눌러야 정해집니다.');resetT()}
- else{S.phase='osel';stopT();
-  if(MODE==='ai'){say('수석 악마가 세 점을 고르고 있습니다.');aiT=setTimeout(()=>{if(S.phase!=='osel')return;const p=bestTri(OPP());S.sel=[p.r,p.c];S.dir=p.d;S.tri=triple(p.r,p.c,p.d);toBet()},1200)}
-  else say(`${oppName()} 님이 세 점을 고르고 있습니다.`)}
- render();sync()}
-function chooseDone(){if(MODE==='net')setH(S.round,{t:[S.sel[0],S.sel[1],S.dir]});toBet()}
-function toBet(){S.phase='bet';say('세 점에 포인트를 몰래 나눠 거십시오.');resetT();render();sync()}
-function submit(){if(S.phase!=='bet')return;stopT();
- if(MODE==='ai')return resolve({[MY]:S.bets.slice(),[OPP()]:aiBids()});
- const s=Math.random().toString(36).slice(2)+Date.now().toString(36);S.myRv={b:S.bets.slice(),s};
- S.phase='sent';say('제출했습니다. 상대의 걸기를 기다립니다.');setH(S.round,{c:hash(JSON.stringify(S.myRv.b)+s)});render();sync()}
-function resolve(bc){const sl=selector(),res=[];
- S.tri.forEach(([r,c],i)=>{const a=bc[1][i],b=bc[2][i],w=a>b?1:b>a?2:3-sl;S.b[r][c]=w;res.push({my:bc[MY][i],op:bc[OPP()][i],w})});
- S.last=S.tri.map(x=>x.join());
- const sum=a=>a.reduce((x,y)=>x+y,0);S.nb={1:10+Math.floor((S.bud[1]-sum(bc[1]))/2),2:10+Math.floor((S.bud[2]-sum(bc[2]))/2)};
- S.res=res;S.phase='reveal';
- const mine=res.filter(x=>x.w===MY).length;
- const li=document.createElement('li');li.textContent=`라운드 ${S.round} · ${sl===MY?'내 선택':'상대 선택'} · `+res.map((x,i)=>`${LET[i]} 나 ${x.my}→${CN(x.w)}`).join(', ');$('log').prepend(li);
- say(`내가 ${mine}점, 상대가 ${3-mine}점을 가져갔습니다.`);
- if(MODE==='ai'&&Math.random()<.6)bubble('bubAi',pick(mine>=2?AILINES.lose:mine===0?AILINES.win:AILINES.any));
- render();
- const fm=five(1),fa=five(2);
- if(fm||fa){setTimeout(()=>finish(fm&&fa?0:fm?1:2,fm&&fa?'같은 라운드에 둘 다 오목을 완성했습니다.':`${CN(fm?1:2)}이 정확히 다섯 개를 먼저 이었습니다.`),1200);return}
- autoT=setTimeout(next,3500)}
-function next(){if(S.phase!=='reveal')return;clearTimeout(autoT);S.bud=S.nb;S.round++;startRound()}
-function five(who){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(S.b[r][c]!==who)continue;for(const[dr,dc]of DIRS){if(inB(r-dr,c-dc)&&S.b[r-dr][c-dc]===who)continue;let k=1;while(inB(r+dr*k,c+dc*k)&&S.b[r+dr*k][c+dc*k]===who)k++;if(k===5)return true}}return false}
-function finish(w,why){S.over=true;S.phase='over';stopT();clearTimeout(autoT);
- if(w===null){let m=0,a=0;S.b.flat().forEach(v=>{if(v===1)m++;if(v===2)a++});w=m>a?1:a>m?2:0;why+=` 돌 수 흑 ${m} : 백 ${a}.`}
- const r=w===MY?'win':w?'lose':'draw';
- $('endBig').textContent=r==='win'?'승리':r==='lose'?'패배':'무승부';$('endT').textContent=r==='win'?`${oppName()}을(를) 이겼습니다`:r==='lose'?`${oppName()}의 승리`:'승부가 나지 않았습니다';$('endP').textContent=why;
- say(r==='win'?'당신의 승리입니다.':r==='lose'?`${oppName()}이(가) 이겼습니다.`:'무승부입니다.');render();endNote();setTimeout(()=>$('mEnd').classList.add('on'),400)}
-function resetT(){S.t=30;stopT();$('timer').textContent=30;$('timer').classList.remove('low');tid=setInterval(()=>{S.t--;$('timer').textContent=S.t;$('timer').classList.toggle('low',S.t<=5);if(S.t<=0){stopT();timeout()}},1000)}
-function stopT(){clearInterval(tid)}
-function timeout(){if(S.phase==='select'){if(!S.tri){const p=bestTri(MY);S.sel=[p.r,p.c];S.dir=p.d;S.tri=triple(p.r,p.c,p.d)}chooseDone()}else if(S.phase==='bet')submit()}
-function say(t){$('dealer').textContent=t}
-const pick=a=>a[Math.floor(Math.random()*a.length)];
-function bubble(id,t){const e=$(id);e.textContent=t;e.classList.remove('on');void e.offsetWidth;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),5000)}
-function hash(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(h2>>>0).toString(16)+(h1>>>0).toString(16)}
-const oppName=()=>MODE==='ai'?'수석 악마':(opp&&typeof opp.presence.name==='string'&&opp.presence.name.slice(0,12))||'상대';
-const myName=()=>($('nick').value.trim()||'이름 없는 책략가').slice(0,12);
-
-/* ---- 온라인 ---- */
-function push(){if(conn&&conn.open)try{conn.send(JSON.stringify({app:P.app,code:P.code,side:P.side,name:P.name,gen:P.gen,h:P.h,say:P.say}))}catch(e){}}
-const PID=c=>'devilplan-pointomok-'+c;
-function setupConn(c){conn=c;c.on('open',()=>{push();sync()});c.on('data',d=>{try{const o=typeof d==='string'?JSON.parse(d):d;if(o&&o.app==='pomok')oppState=o}catch(e){}sync()});c.on('close',()=>{if(conn===c){conn=null;oppState=null;sync()}})}
-function killNet(){try{conn&&conn.close()}catch(e){}try{peer&&peer.destroy()}catch(e){}conn=null;peer=null;oppState=null}
-setInterval(()=>{if(MODE==='net')push()},3000);
-function setH(R,patch){P.h[R]={...(P.h[R]||{}),...patch};for(const k in P.h)if(+k<R-2)delete P.h[k];push()}
-function findOpp(){return conn&&conn.open&&oppState&&oppState.code===P.code&&oppState.side===OPP()?{presence:oppState}:null}
+const $=id=>document.getElementById(id);
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
-function sync(){if(MODE!=='net')return;opp=findOpp();
- $('oName').textContent=oppName();$('oSub').textContent=opp?`친구 · ${CN(OPP())}`:'연결 끊김';
- if(!opp){if(!['wait','lobby','over'].includes(S.phase))say(`${oppName()} 님의 연결이 끊겼습니다. 다시 들어오길 기다립니다.`);render();return}
- const sy=opp.presence.say;if(sy&&typeof sy.t==='string'&&sy.at!==lastSay){lastSay=sy.at;bubble('bubAi',sy.t.slice(0,60))}
- if(S.phase==='wait'){if(opp.presence.gen===P.gen)newGame();return}
- if(S.phase==='over'){endNote();return}
- const R=S.round,oh=opp.presence.h&&opp.presence.h[R];
- if(S.phase==='osel'&&oh&&Array.isArray(oh.t)){const[r,c,d]=oh.t;if(isInt(r,0,N-1)&&isInt(c,0,N-1)&&isInt(d,0,3)&&okTri(triple(r,c,d))){S.sel=[r,c];S.dir=d;S.tri=triple(r,c,d);toBet();return}}
- if(S.phase==='sent'&&oh&&oh.c&&!(P.h[R]&&P.h[R].v))setH(R,{v:S.myRv});
- if(S.phase==='sent'&&P.h[R]&&P.h[R].v&&oh&&oh.v){const ob=oh.v.b,ox=isInt(oh.x,0,999)?oh.x:0;
-  const ok=Array.isArray(ob)&&ob.length===3&&ob.every(x=>isInt(x,1,999))&&ob.reduce((a,b)=>a+b,0)<=S.bud[OPP()]+ox&&typeof oh.v.s==='string'&&hash(JSON.stringify(ob)+oh.v.s)===oh.c;
-  if(!ok)return finish(MY,'상대가 보낸 포인트 기록이 맞지 않아 부정으로 처리했습니다.');
-  S.bud[OPP()]+=ox;return resolve({[MY]:S.myRv.b,[OPP()]:ob})}
- render()}
-function endNote(){$('endR').textContent=MODE==='net'&&opp&&opp.presence.gen>P.gen?`${oppName()} 님이 재대결을 원합니다.`:MODE==='net'&&S.phase==='wait'?'상대의 수락을 기다리는 중…':''}
-function goNet(code,side){MODE='net';MY=side;P={app:'pomok',code,side,name:myName(),gen:0,h:{},say:null};push();
- S.phase='wait';$('waitCode').textContent=code;$('mLobby').classList.remove('on');$('mWait').classList.add('on');
- $('vs').innerHTML=`<div class="seat me"><i class="st s${MY}"></i><b>${escH(myName())}</b><small>${CN(MY)} · 나</small></div><div class="vsmark">VS</div><div class="seat empty"><div class="ring"></div><b>상대를 찾는 중…</b><small>${CN(3-MY)} 자리</small></div>`;
- $('myName').textContent=P.name;setTimeout(sync,300)}
-function leave(){stopT();clearTimeout(autoT);clearTimeout(aiT);if(MODE==='net'){P.code=null;P.h={};killNet()}MODE='ai';MY=1;S.phase='lobby';
- ['mWait','mEnd','mExit'].forEach(m=>$(m).classList.remove('on'));$('mLobby').classList.add('on');render()}
-
-/* ---- 접속 기록 (제목을 5번 연속 누르면 열림) ---- */
 const LOGT='https://ntfy.sh/pomok-log-7f3a9c2e51b84d06';
-function logVisit(kind,name){try{fetch(LOGT,{method:'POST',body:JSON.stringify({k:kind,n:name||'(이름 없음)'})}).catch(()=>{})}catch(e){}}
-const fmtT=t=>new Date(t*1000).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-const escH=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function showVisits(){const box=$('visitList');box.innerHTML='<p style="color:var(--dim)">불러오는 중…</p>';
- let saved={},fail=false;try{saved=JSON.parse(localStorage.getItem('pomok-visits')||'{}')}catch(e){}
- try{const r=await fetch(LOGT+'/json?poll=1&since=all');const txt=await r.text();
-  for(const line of txt.split('\n')){if(!line.trim())continue;try{const o=JSON.parse(line);if(o.event!=='message')continue;let m={};try{m=JSON.parse(o.message)}catch(e){m={k:'접속',n:o.message}}saved[o.id]={t:o.time,k:m.k,n:m.n}}catch(e){}}
-  try{localStorage.setItem('pomok-visits',JSON.stringify(saved))}catch(e){}
- }catch(e){fail=true}
- const list=Object.values(saved).sort((a,b)=>b.t-a.t);
- const warn=fail?'<p style="color:var(--red);margin:8px 0">새 기록을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.</p>':'';
- if(!list.length){box.innerHTML=warn||'<p style="color:var(--dim)">아직 기록이 없습니다.</p>';return}
- const groups={};for(const v of list)(groups[v.n]=groups[v.n]||[]).push(v);
- const people=Object.entries(groups).sort((a,b)=>b[1][0].t-a[1][0].t);
- box.innerHTML=warn+'<p style="margin:8px 0;color:var(--gold)">'+people.length+'명 · 총 '+list.length+'건 · 이름을 누르면 자세히 보여요</p>'+people.map(([n,vs])=>{
-  const kinds={};vs.forEach(v=>kinds[v.k]=(kinds[v.k]||0)+1);
-  return '<details style="border-bottom:1px solid #3a2f30"><summary style="display:flex;justify-content:space-between;gap:10px;padding:9px 2px;cursor:pointer;list-style:none"><span><b>'+escH(n)+'</b> <span style="color:var(--gold);font-size:14px">'+vs.length+'건</span></span><span style="color:var(--dim);white-space:nowrap;font-size:13px">최근 '+fmtT(vs[0].t)+'</span></summary>'
-   +'<div style="padding:0 2px 8px 12px;font-size:13px;color:var(--dim)"><div style="margin-bottom:4px">'+Object.entries(kinds).map(([k,c])=>escH(k)+' '+c).join(' · ')+'</div>'
-   +vs.map(v=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0"><span>'+escH(v.k)+'</span><span style="white-space:nowrap">'+fmtT(v.t)+'</span></div>').join('')+'</div></details>'}).join('')}
-{let taps=0,tapT=null;const tap=()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;$('mVisit').classList.add('on');showVisits()}};document.querySelectorAll('header h1, #mLobby h2').forEach(e=>e.addEventListener('click',tap))}
-$('bVisitRe').onclick=showVisits;$('bVisitX').onclick=()=>$('mVisit').classList.remove('on');
-logVisit('페이지 접속',(()=>{try{return localStorage.getItem('pomok-name')}catch(e){return ''}})());
-function saveName(){try{localStorage.setItem('pomok-name',$('nick').value.trim())}catch(e){}}
-function needName(){if($('nick').value.trim())return true;$('lobbyMsg').textContent='먼저 이름을 정해 주세요.';$('nick').focus();return false}
-$('bSolo').onclick=()=>{if(!needName())return;saveName();$('mSoloPick').classList.add('on')};
-$('bSolo3').onclick=()=>{location.href='3p.html#solo'};
-$('bSolo2').onclick=()=>{$('mSoloPick').classList.remove('on');logVisit('혼자 연습',$('nick').value.trim());MODE='ai';MY=1;$('myName').textContent=myName();$('oName').textContent='수석 악마';$('oSub').textContent='계산으로 둡니다';newGame()};
-const noNet=()=>typeof Peer==='undefined';
-$('bCreate').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent='온라인 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.';return}saveName();logVisit('방 만들기',$('nick').value.trim());killNet();
- const code=String(Math.floor(1000+Math.random()*9000));$('lobbyMsg').textContent='방을 여는 중…';
- peer=new Peer(PID(code));
- peer.on('open',()=>{$('lobbyMsg').textContent='';goNet(code,1)});
- peer.on('connection',c=>{if(conn&&conn.open){c.on('open',()=>c.close());return}setupConn(c)});
- peer.on('error',e=>{if(e.type==='unavailable-id'){killNet();$('bCreate').onclick()}else $('lobbyMsg').textContent='연결 오류: '+e.type})};
-$('bJoin').onclick=()=>{if(!needName())return;if(noNet()){$('lobbyMsg').textContent='온라인 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.';return}
- const code=$('codeIn').value.trim();if(!/^\d{4}$/.test(code)){$('lobbyMsg').textContent='방 코드 4자리를 넣어 주세요.';return}
- saveName();logVisit('방 참가',$('nick').value.trim());killNet();$('lobbyMsg').textContent='방에 연결하는 중…';
- peer=new Peer();
- peer.on('open',()=>{const c=peer.connect(PID(code),{reliable:true});setupConn(c);c.on('open',()=>{$('lobbyMsg').textContent='';goNet(code,2)})});
- peer.on('error',e=>{$('lobbyMsg').textContent=e.type==='peer-unavailable'?'그 코드의 방이 없습니다. 코드를 다시 확인해 주세요.':'연결 오류: '+e.type;killNet()})};
-$('bCancel').onclick=leave;$('bReset').onclick=leave;
-$('bAgain').onclick=()=>{$('mEnd').classList.remove('on');if(MODE==='ai')return newGame();P.gen++;P.h={};S.phase='wait';push();say('재대결 신청을 보냈습니다. 상대를 기다립니다.');render();sync()};
-
-/* ---- 조작 ---- */
-svg.addEventListener('click',e=>{if(S.phase!=='select')return;const b=svg.getBoundingClientRect(),c=Math.floor((e.clientX-b.left)/b.width*N),r=Math.floor((e.clientY-b.top)/b.height*N);if(!inB(r,c)||S.b[r][c])return;
- const same=S.sel&&S.sel[0]===r&&S.sel[1]===c;const start=same?S.dir+1:S.dir;
- for(let k=0;k<4;k++){const d=(start+k)%4;if(okTri(triple(r,c,d))){S.sel=[r,c];S.dir=d;S.tri=triple(r,c,d);render();return}}});
-document.querySelectorAll('.dir').forEach(b=>b.onclick=()=>{if(!S.sel||S.phase!=='select')return;const d=+b.dataset.d,t=triple(S.sel[0],S.sel[1],d);if(okTri(t)){S.dir=d;S.tri=t;render()}});
-$('bUndo').onclick=()=>{if(S.phase!=='select')return;S.sel=null;S.tri=null;render()};
-$('bOk').onclick=()=>{if(S.phase==='select'&&S.tri)chooseDone()};
-$('bSubmit').onclick=()=>{if(S.phase==='bet')submit();else if(S.phase==='reveal')next()};
-$('cols').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b||S.phase!=='bet')return;const i=+b.dataset.i,v=+b.dataset.v,left=S.bud[MY]-S.bets.reduce((a,x)=>a+x,0);if(v<0&&S.bets[i]<=1)return;if(v>0&&left<=0)return;S.bets[i]+=v;render()});
-$('chatF').addEventListener('submit',e=>{e.preventDefault();const t=$('chatIn').value.trim().slice(0,60);if(!t)return;$('chatIn').value='';bubble('bubMe',t);
- if(MODE==='net'){P.say={t,at:Date.now()};push()}else if(Math.random()<.7)setTimeout(()=>bubble('bubAi',pick(AILINES.any.concat(AILINES.win))),1100)});
-$('bRule').onclick=()=>$('mRule').classList.add('on');
-$('bExit').onclick=()=>{if(S.phase==='lobby')return;$('mExit').classList.add('on')};
-/* ---- 관리자: 게임 중 상단 지시 띠를 꾹 누르면 코드 입력 ---- */
-const ADMIN_H='78fd30064e67a9d1',INGAME=['select','osel','bet','sent','reveal'];
-function addPts(n){const R=S.round;S.bud[MY]+=n;if(MODE!=='ai')setH(R,{x:((P.h[R]&&P.h[R].x)||0)+n});render()}
-function grantBonus(n){if(['select','osel','bet'].includes(S.phase))addPts(n);else S.pend=(S.pend||0)+n}
-{let lpT=null;const bn=document.querySelector('.banner');
- const start=e=>{if(!INGAME.includes(S.phase))return;clearTimeout(lpT);lpT=setTimeout(()=>{$('adminIn').value='';$('adminMsg').textContent='';$('mAdmin').classList.add('on');setTimeout(()=>$('adminIn').focus(),50)},800)};
- const stop=()=>clearTimeout(lpT);
- bn.addEventListener('pointerdown',start);['pointerup','pointerleave','pointercancel'].forEach(t=>bn.addEventListener(t,stop));
- bn.addEventListener('contextmenu',e=>e.preventDefault());bn.style.webkitUserSelect='none';bn.style.userSelect='none'}
-$('bAdmin').onclick=()=>{const v=$('adminIn').value.trim();
- if(hash(v)!==ADMIN_H){$('adminMsg').textContent='코드가 맞지 않습니다.';$('adminIn').value='';return}
- if(!INGAME.includes(S.phase)){$('adminMsg').textContent='게임 중에만 쓸 수 있습니다.';return}
- grantBonus(3);$('mAdmin').classList.remove('on')};
-$('adminIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('bAdmin').onclick()});
-/* ---- 공개 방: 방장이 ntfy 게시판에 "열림"을 알리고, 첫 화면이 목록을 읽어 옴 ---- */
-const GAME='2p',roomOpen=()=>!(conn&&conn.open),roomCount=()=>conn&&conn.open?2:1;
-const ROOMT='https://ntfy.sh/pomok-rooms-b6e19d42a7c3';
-let WANTPUB=false,PUB=null;
-function annRoom(t){if(!PUB)return;try{fetch(ROOMT,{method:'POST',body:JSON.stringify({v:1,t,g:GAME,c:PUB.code,n:myName(),p:roomCount()})}).catch(()=>{})}catch(e){}}
-function pubTick(){
- if(WANTPUB&&MODE==='net'&&MY===1&&S.phase==='wait'&&P.code){WANTPUB=false;PUB={code:P.code,last:0,cnt:0};}
- if(!PUB)return;
- if(MODE==='net'&&MY===1&&S.phase==='wait'&&P.code===PUB.code&&roomOpen()){const c=roomCount();if(Date.now()-PUB.last>40000||c!==PUB.cnt){PUB.last=Date.now();PUB.cnt=c;annRoom('open')}}
- else{annRoom('close');PUB=null}}
-setInterval(pubTick,2000);
-$('bPub').onclick=()=>{WANTPUB=true;$('mWait').classList.add('pub');$('bCreate').onclick()};
-$('bCreate').addEventListener('pointerdown',()=>{WANTPUB=false;$('mWait').classList.remove('pub')});$('bCreate').addEventListener('keydown',()=>{WANTPUB=false;$('mWait').classList.remove('pub')});
-$('bJoin').addEventListener('pointerdown',()=>$('mWait').classList.remove('pub'));
-function joinRoom(g,c){if(g!==GAME){location.href=(g==='3p'?'3p.html':'index.html')+'#join='+c;return}$('codeIn').value=c;WANTPUB=false;$('mWait').classList.add('pub');$('bJoin').onclick()}
-async function loadRooms(){if(!$('mLobby').classList.contains('on'))return;const box=$('roomList');let txt='';
+try{fetch(LOGT,{method:'POST',body:JSON.stringify({k:'첫 화면 접속',n:(()=>{try{return localStorage.getItem('pomok-name')}catch(e){return ''}})()||'(이름 없음)'})}).catch(()=>{})}catch(e){}
+{let taps=0,tapT=null;$('hubT').addEventListener('click',()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5)location.href='omok.html#log'})}
+const ROOMT='https://ntfy.sh/pomok-rooms-b6e19d42a7c3',PAGE={'2p':'omok.html','3p':'3p.html','hb':'hb.html'},LABEL={'2p':'오목 2인','3p':'오목 3인 4목','hb':'흑과 백'};
+async function loadRooms(){const box=$('roomList');let txt='';
  try{const r=await fetch(ROOMT+'/json?poll=1&since=3m');if(!r.ok)throw 0;txt=await r.text()}catch(e){box.innerHTML='<p class="empty">공개 방 목록을 불러오지 못했습니다. 잠시 후 다시 시도합니다.</p>';return}
  const latest={};for(const line of txt.split('\n')){if(!line.trim())continue;try{const o=JSON.parse(line);if(o.event!=='message')continue;const m=JSON.parse(o.message);
-  if(m.v!==1||!['2p','3p'].includes(m.g)||!/^\d{4}$/.test(m.c))continue;const k=m.g+m.c;if(!latest[k]||o.time>=latest[k].time)latest[k]={...m,time:o.time}}catch(e){}}
- const now=Date.now()/1000,rooms=Object.values(latest).filter(m=>m.t==='open'&&now-m.time<95).sort((a,b)=>(a.g===GAME?0:1)-(b.g===GAME?0:1)||b.time-a.time);
- if(!rooms.length){box.innerHTML='<p class="empty">지금 열린 공개 방이 없습니다. 공개 방을 만들어 보세요.</p>';return}
- box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':''}">${m.g==='3p'?'3인 4목':'2인'}</span><span class="rn">${escH(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,3)?m.p:1}/${m.g==='3p'?3:2}명</span><button class="btn red" data-g="${m.g}" data-c="${m.c}">들어가기</button></div>`).join('')}
-$('roomList').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b)joinRoom(b.dataset.g,b.dataset.c)});
+  if(m.v!==1||!PAGE[m.g]||!/^\d{4}$/.test(m.c))continue;const k=m.g+m.c;if(!latest[k]||o.time>=latest[k].time)latest[k]={...m,time:o.time}}catch(e){}}
+ const now=Date.now()/1000,rooms=Object.values(latest).filter(m=>m.t==='open'&&now-m.time<95).sort((a,b)=>b.time-a.time);
+ if(!rooms.length){box.innerHTML='<p class="empty">지금 열린 공개 방이 없습니다. 게임을 골라 공개 방을 만들어 보세요.</p>';return}
+ box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':''}">${LABEL[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,3)?m.p:1}/${m.g==='3p'?3:2}명</span><a class="btn red" href="${PAGE[m.g]}#join=${m.c}" style="display:inline-flex;align-items:center;text-decoration:none;color:#fff">들어가기</a></div>`).join('')}
 setInterval(loadRooms,6000);loadRooms();
-const TIPS=["동점이면 선택자가 아닌 쪽이 가져가요. 내가 고를 때는 1포인트 차이가 승부를 갈라요.", "안 쓴 포인트는 절반만 다음 라운드로 넘어가요. 아끼기만 하면 손해예요.", "상대가 한 점만 더 두면 오목이 되는 자리가 세 점에 들어 있으면, 그 점에 크게 거세요.", "내가 고를 차례에는 상대가 한꺼번에 막기 어려운 자리를 세 점에 섞어 넣으세요.", "정확히 다섯 개만 승리예요. 여섯 개 이상 이어지면 인정되지 않아요.", "상대의 보유 포인트는 비공개예요. 지난 결과를 보고 상대가 얼마나 썼을지 추리해 보세요.", "30초 안에 제출하지 않으면 지금 값 그대로 제출돼요."];let tipI=Math.floor(Math.random()*TIPS.length);
-function showTip(){$('tipT').textContent=TIPS[tipI];$('tipN').textContent=(tipI+1)+'/'+TIPS.length}
-$('tipBox').onclick=()=>{tipI=(tipI+1)%TIPS.length;showTip()};showTip();
-$('bRuleW').onclick=()=>$('mRule').classList.add('on');
-/* ---- 화면 정리: 채팅은 아래로, 진행 안내는 지시 띠 아래 한 줄로 ---- */
-{const c=document.querySelector('.center');c.appendChild($('chatF'));
- const n=document.createElement('span');n.id='note';$('banner').after(n);
- const sync1=()=>{const p=S.phase,t=$('dealer').textContent;n.textContent=(p==='reveal'||p==='over'||/연결|기다/.test(t))&&t!==$('banner').textContent?t:'';
-  $('timer').classList.toggle('idle',!(p==='select'||p==='bet'));
-  document.querySelectorAll('.side .card').forEach(cd=>cd.classList.toggle('mine',cd.style.order==='0'||cd.id==='cMe'))};
- new MutationObserver(sync1).observe($('dealer'),{childList:true,characterData:true,subtree:true});
- new MutationObserver(sync1).observe($('banner'),{childList:true,characterData:true,subtree:true});sync1()}
 /* ---- 앱 설치 ---- */
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 {let dp=null;const bar=$('instBar'),standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
@@ -611,41 +349,7 @@ if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWo
   $('instIos').classList.toggle('hide',!ios);$('instOther').classList.toggle('hide',ios);$('mInstall').classList.add('on')}}
 $('bInstDone').onclick=()=>{try{localStorage.setItem('pomok-installed','1')}catch(e){}$('instBar').classList.add('hide');$('mInstall').classList.remove('on')};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
-
-function render(){const p=S.phase,sl=selector(),ON=oppName();
- $('cMe').classList.toggle('sel',sl===MY&&p!=='lobby');$('cAi').classList.toggle('sel',sl===OPP()&&p!=='lobby');
- $('pMe').textContent=S.bud[MY];$('pAi').textContent='비공개';
- $('myStone').classList.toggle('w',MY===2);$('myColor').textContent=CN(MY)+'돌';
- for(const[id,sd]of[['Me',MY],['Ai',OPP()]]){$('st'+id).className='st s'+sd;$('cc'+id).className='colchip c'+sd;$('cc'+id).textContent=CN(sd)+'돌'}
- const oc=MODE==='net'&&opp&&opp.presence.h&&opp.presence.h[S.round]&&opp.presence.h[S.round].c;
- $('sAi').textContent=p==='osel'?'고르는 중':(p==='bet'||p==='sent')?(oc?'제출 완료':'거는 중'):'';
- $('banner').textContent=p==='select'?'세 점을 고르십시오':p==='osel'?'상대가 세 점을 고르는 중':p==='bet'?'세 점에 포인트를 거십시오':p==='sent'?'상대의 걸기를 기다리는 중':p==='reveal'?'결과가 공개되었습니다':p==='over'?'게임 종료':p==='wait'?'상대를 기다리는 중':'포인트 오목';
- $('info').textContent=`라운드 ${Math.min(S.round,30)}/30`;
- if(p!=='select'&&p!=='bet')$('timer').textContent='–';
- $('selUI').classList.toggle('hide',!(p==='select'||p==='osel'||p==='lobby'||p==='wait'));
- $('betUI').classList.toggle('hide',!(p==='bet'||p==='sent'||p==='reveal'));
- document.querySelectorAll('.dir').forEach(b=>{const d=+b.dataset.d;b.classList.toggle('on',!!S.sel&&d===S.dir);b.disabled=p!=='select'||!S.sel||!okTri(triple(S.sel[0],S.sel[1],d))});
- $('bOk').disabled=!(p==='select'&&S.tri);$('bUndo').disabled=!(p==='select'&&S.sel);
- const spent=S.bets.reduce((a,b)=>a+b,0),left=S.bud[MY]-spent,lock=p!=='bet';
- $('left').textContent=left;$('tot').textContent=S.bud[MY];
- $('tieRule').textContent=sl===MY?'= 같으면 상대가 가져갑니다':'= 같으면 내가 가져갑니다';
- $('carry').textContent=p==='reveal'?'잠시 후 다음 라운드로 넘어갑니다':`쓸 수 있음 ${S.bud[MY]} · 남기면 이월 +${Math.floor(left/2)}`;
- $('bSubmit').textContent=p==='reveal'?'바로 넘어가기':p==='sent'?'기다리는 중':'제출';$('bSubmit').disabled=p==='sent'||(p==='reveal'&&S.over);
- $('cols').innerHTML=[0,1,2].map(i=>{if(p==='reveal'&&S.res){const x=S.res[i];return`<div class="col ${x.w===MY?'win-me':'win-ai'}"><span class="tok">${LET[i]}</span><div class="won-by"><i class="st s${x.w}"></i>${x.w===MY?'나':'상대'}</div><div class="rv">가져감 · 내 베팅 ${x.my}</div></div>`}
-  return`<div class="col"><span class="tok">${LET[i]}</span><div class="step"><button data-i="${i}" data-v="-1" ${lock||S.bets[i]<=1?'disabled':''} aria-label="${LET[i]} 빼기">−</button><output>${S.bets[i]}</output><button data-i="${i}" data-v="1" ${lock||left<=0?'disabled':''} aria-label="${LET[i]} 더하기">+</button></div></div>`}).join('');
- draw()}
-function draw(){let h='<defs><radialGradient id="gb" cx=".35" cy=".3"><stop offset="0" stop-color="#666"/><stop offset=".6" stop-color="#0a0a0a"/></radialGradient><radialGradient id="gw" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d8d2c4"/></radialGradient><radialGradient id="gg" cx=".4" cy=".35"><stop offset="0" stop-color="#f8e09a"/><stop offset="1" stop-color="#d4a033"/></radialGradient></defs>';
- for(let i=0;i<N;i++)h+=`<path d="M.5 ${i+.5}H${N-.5}M${i+.5} .5V${N-.5}" stroke="#c8d0f0" stroke-opacity=".75" stroke-width=".035"/>`;
- STAR.forEach(([r,c])=>h+=`<circle cx="${c+.5}" cy="${r+.5}" r=".09" fill="#dfe4ff"/>`);
- for(let r=0;r<N;r++)for(let c=0;c<N;c++){const v=S.b[r][c];if(!v)continue;const nw=S.last.includes(r+','+c);
-  h+=`<g class="${nw&&S.phase==='reveal'?'newst':''}"><circle cx="${c+.5}" cy="${r+.5}" r=".43" fill="url(#${v===1?'gb':'gw'})" stroke="${v===1?'#000':'#9c9583'}" stroke-width=".04"/>${v===2?`<circle cx="${c+.5}" cy="${r+.5}" r=".36" fill="none" stroke="#a49d8b" stroke-width=".025" stroke-dasharray=".05 .05"/>`:''}${nw?`<circle cx="${c+.5}" cy="${r+.5}" r=".1" fill="${v===1?'#e9c46a':'#b3343a'}"/>`:''}</g>`}
- if(S.tri&&['select','bet','sent'].includes(S.phase))S.tri.forEach(([r,c],i)=>h+=`<g><circle cx="${c+.5}" cy="${r+.5}" r=".42" fill="url(#gg)" stroke="#6b4f12" stroke-width=".06"/><text x="${c+.5}" y="${r+.68}" text-anchor="middle" font-size=".5" font-weight="800" fill="#2b1d05" font-family="Hahmlet,serif">${LET[i]}</text></g>`);
- if(h!==lastSvg){lastSvg=h;svg.innerHTML=h}}
-render();
-if(/^#join=\d{4}$/.test(location.hash)){const c=location.hash.slice(6);history.replaceState(null,'',location.pathname);$('codeIn').value=c;if($('nick').value.trim())$('bJoin').onclick();else $('lobbyMsg').textContent='이름을 정하고 참가를 누르세요.'}
-$('lobbyMsg').textContent='';
 }
-
 </script>
 </body>
 </html>
