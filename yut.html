@@ -556,16 +556,16 @@ $('bDo').onclick=()=>{if(myTurn()&&G.phase==='throw')act({t:'throw',k:'도'})};
 $('bGae').onclick=()=>{if(myTurn()&&G.phase==='throw')act({t:'throw',k:'개'})};
 $('bNew').onclick=()=>{if(!myTurn()||G.phase!=='move')return;const st=G.seats[MY];const pi=st.pieces.findIndex(p=>p.n==='H'&&p.t!=='pawn'&&!p.t)>=0?st.pieces.findIndex(p=>p.n==='H'&&!p.t):st.pieces.findIndex(p=>p.n==='H'&&p.t!=='pawn');if(pi>=0)tryMove(pi)};
 $('bCancelT').onclick=()=>{target=null;render()};
-function tryMove(pi){if(!myTurn()||G.phase!=='move')return;if(!G.results[sel])sel=0;
- if(!Y.preview(G,MY,sel,pi)){const alt=G.results.findIndex((r,ri)=>Y.preview(G,MY,ri,pi));if(alt<0){flash('그 말은 지금 움직일 수 없습니다.');return}sel=alt}
- act({t:'move',ri:sel,pi});sel=0}
+function tryMove(pi,o){if(!myTurn()||G.phase!=='move')return;if(!G.results[sel])sel=0;const w=o==null?MY:o;
+ if(!Y.preview(G,w,sel,pi)){const alt=G.results.findIndex((r,ri)=>Y.preview(G,w,ri,pi));if(alt<0){flash('그 말은 지금 움직일 수 없습니다.');return}sel=alt}
+ act(o==null?{t:'move',ri:sel,pi}:{t:'move',ri:sel,pi,o});sel=0}
 $('yres').addEventListener('click',e=>{const b=e.target.closest('[data-ri]');if(!b)return;sel=+b.dataset.ri;render()});
 function flash(t){$('yhint').textContent=t;clearTimeout(flash.t);flash.t=setTimeout(()=>render(),2200)}
 $('board').addEventListener('click',e=>{if(!G)return;const nd=e.target.closest('[data-node]');const t=e.target.closest('[data-s]');
  if(target&&target.tg==='node'){const n=t?G.seats[+t.dataset.s].pieces[+t.dataset.p].n:nd&&nd.dataset.node;if(n){act({t:'use',id:target.id,x:{n}});target=null;render()}return}
  if(!t)return;const s=+t.dataset.s,pi=+t.dataset.p;
  if(target){targetClick(s,pi);return}
- if(s===MY)tryMove(pi)});
+ if(s===MY)tryMove(pi);else if(G.chaos===MY&&myTurn())tryMove(pi,s)});
 $('yplMe').addEventListener('click',e=>{const h=e.target.closest('[data-home]');if(!h||!G)return;$('bNew').onclick()});
 document.addEventListener('click',e=>{const sl=e.target.closest('.slot[data-aug]');if(!sl||!G)return;const st=G.seats[+sl.dataset.seat],a=st&&st.aug[+sl.dataset.k];if(!a)return;const A=Y.AUG[a.id];
  $('tgT').textContent=`${a.off?'🐈':A.icon} ${A.name}`;$('tgList').innerHTML=`<p class="aug-pop">${esc(A.d)}</p><p class="aug-pop s">${esc(st.name)} · ${({g:'범용',start:'시작 전용',mid:'중간 전용',end:'마무리 전용'})[A.tag]}${A.use?` · 남은 횟수 ${Math.max(0,A.use-(st.used[a.id]||0))}/${A.use}`:''}${a.off?' · 지금은 착각으로 고양이':''}</p>`;$('mTarget').classList.add('on')});

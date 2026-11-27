@@ -82,6 +82,7 @@ const AUGS=[
  {id:'notme',tag:'g',icon:'🙈',name:'나만 아니면 돼',d:'얻는 즉시 무작위 상대 한 명의 판 위 말이 모두 잡힙니다.'},
  {id:'illusion',tag:'g',icon:'🐱',name:'착각',d:'상대 증강 하나를 3라운드 동안 고양이로 바꿉니다. (다 쓴 증강은 못 바꿈)',use:1,tg:'oppAug'},
  {id:'hit',tag:'g',icon:'🥏',name:'윷 맞히기',d:'상대 한 명에게 윷을 맞혀서, 그 사람의 턴 2번을 건너뛰게 합니다.',use:1,tg:'opp'},
+ {id:'chaos',tag:'g',icon:'🌀',name:'혼돈의 말',d:'이번 턴 동안 내 윷 결과로 상대 말도 움직일 수 있습니다. (한 번) 상대 말이 도착한 칸에 있던 다른 말은 누구 것이든 잡힙니다. 내 말로 잡을 때처럼 한 번 더 던지지는 않습니다.',use:2},
  {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
@@ -248,7 +249,7 @@ function endRound(G){
    if(hit&&hit!==R.n){let c=hit;while(prev[c]!==R.n)c=prev[c];R.n=c}
    killAt(G,R.n,R.s,{exceptSeat:R.s,cause:'💀 사신'})}}}
 function tickDuel(G,s){G.duels.forEach(d=>{if(d.done||d.o!==s)return;d.left--;if(d.left<=0){d.done=true;eliminate(G,s,'🤺 승부에서 졌습니다 (3턴 안에 골인 실패).')}})}
-function endTurn(G){if(G.phase==='over')return;const s=G.turn,st=G.seats[s];st.st.turns++;G.results=[];G.throws=0;
+function endTurn(G){if(G.phase==='over')return;const s=G.turn,st=G.seats[s];st.st.turns++;G.results=[];G.throws=0;G.chaos=null;
  if(G.dance===s){G.dance=-1;eliminate(G,s,'💃 라스트 댄스가 끝났습니다.')}
  G.grail=-1;tickDuel(G,s);if(G.phase==='over')return;
  advance(G);if(G.phase==='pick'||G.phase==='over')return;beginTurn(G)}
@@ -284,7 +285,7 @@ function groupOf(G,s,pi){const st=G.seats[s],p=st.pieces[pi];
  return st.pieces.map((q,k)=>q.n===p.n&&q.t!=='pawn'?k:-1).filter(k=>k>=0)}
 function canUse(G,s,r,pi){const st=G.seats[s],p=st.pieces[pi];if(!p||p.n==='F'||p.t==='pawn')return false;if(p.n==='H'&&r.v<0)return false;
  return!groupOf(G,s,pi).some(k=>st.pieces[k].lock>=G.round||st.pieces[k].dom>0)}
-function anyMove(G,s){return G.results.some(r=>G.seats[s].pieces.some((p,pi)=>canUse(G,s,r,pi)))}
+function anyMove(G,s){return G.results.some(r=>G.seats[s].pieces.some((p,pi)=>canUse(G,s,r,pi))||G.chaos===s&&G.seats.some((x,o)=>o!==s&&!x.out&&!x.done&&x.pieces.some((p,pi)=>onBoard(p)&&canUse(G,o,r,pi))))}
 function toMove(G){G.phase='move';if(!anyMove(G,G.turn)){if(G.results.length)addLog(G,'쓸 수 있는 결과가 없어 넘어갑니다.');endTurn(G)}}
 function moveLen(G,s,r){let v=r.v;if(v<0)return v;if(G.seats[s].pieces.some(p=>p.t==='van'&&onBoard(p)))v++;if(G.dance===s)v*=2;return v}
 function preview(G,s,ri,pi){const r=G.results[ri];if(!r||!canUse(G,s,r,pi))return null;const p=G.seats[s].pieces[pi],g=groupOf(G,s,pi);
@@ -315,7 +316,11 @@ function land(G,s,g,dest,back){const st=G.seats[s];let caught=0;
  if(has(G,s,'cannibal')){const own=st.pieces.map((q,k)=>q.n===dest&&!g.includes(k)?k:-1).filter(k=>k>=0);if(own.length){own.forEach(k=>sendHome(G,s,k));addLog(G,`🍖 ${st.name}이(가) 자기 말을 잡았습니다.`);G.throws++}}
  if(caught)G.throws+=caught;
  boardWins(G);return caught}
-function movePiece(G,s,ri,pi){if(G.phase!=='move'||s!==G.turn)return false;const pv=preview(G,s,ri,pi);if(!pv)return false;
+function movePiece(G,s,ri,pi,o){if(G.phase!=='move'||s!==G.turn)return false;
+ if(o!=null&&o!==s){const ot=G.seats[o];if(G.chaos!==s||!ot||ot.out||ot.done||!onBoard(ot.pieces[pi]||{}))return false;const pv=preview(G,o,ri,pi);if(!pv)return false;
+  G.results.splice(ri,1);G.chaos=null;const t0=G.throws;addLog(G,`🌀 ${G.seats[s].name}이(가) ${ot.name}의 말을 움직입니다!`);doMove(G,o,pv.g,pv.path,pv.back);if(G.phase!=='over')G.throws=t0;
+  G.ev++;afterAction(G,s);return true}
+const pv=preview(G,s,ri,pi);if(!pv)return false;
  G.results.splice(ri,1);const t0=G.throws;doMove(G,s,pv.g,pv.path,pv.back);
  if(G.throws>t0&&G.phase!=='over')addLog(G,'한 번 더 던집니다.');
  G.ev++;afterAction(G,s);return true}
@@ -359,6 +364,7 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'baduk':{if(!ownOn(t.a)||!ownOn(t.b))return false;const A1=st.pieces[t.a].n,B1=st.pieces[t.b].n;if(A1===B1)return false;
    const line=LINES.find(l=>l.includes(A1)&&l.includes(B1));if(!line)return false;let i=line.indexOf(A1),j=line.indexOf(B1);if(i>j)[i,j]=[j,i];
    let n=0;line.slice(i+1,j).forEach(nd=>{n+=killAt(G,nd,s,{exceptSeat:s,cause:'⚫ 바둑'})});G.throws+=n;break}
+  case'chaos':if(G.chaos===s)return false;G.chaos=s;break;
   case'fix':{if(!KINDS.includes(t.k))return false;G.force[s]=t.k;break}
   case'flip':{const r=G.results[t.ri];if(!r||![1,-1].includes(t.d))return false;const f=FLATS[r.k]+t.d;if(f<0||f>4)return false;G.results[t.ri]=mk(BYFLATS[f],'슬쩍');break}
   case'lonely':G.force[s]='도';break;
@@ -430,7 +436,7 @@ function autoStep(G,s){
 function apply(G,s,a){if(!a||G.phase==='over')return false;
  if(a.t==='pick')return pickAug(G,s,a.id);
  if(a.t==='throw')return!!throwYut(G,s,a.k);
- if(a.t==='move')return movePiece(G,s,a.ri,a.pi);
+ if(a.t==='move')return movePiece(G,s,a.ri,a.pi,a.o);
  if(a.t==='use')return useAug(G,s,a.id,a.x);
  return false}
 const API0={HALF,FOLDS,foldNode,CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
