@@ -69,6 +69,7 @@ const AUGS=[
  {id:'four',tag:'g',icon:'🧩',name:'사목',d:'내 말이 한 줄로 이어진 4칸을 차지하거나, 말 4개가 한 무리로 업히면 승리합니다.'},
  {id:'backwin',tag:'g',icon:'🐄',name:'소 뒷걸음질',d:'빽도로 상대 말을 잡으면 승리합니다.'},
  {id:'score',tag:'g',icon:'🎼',name:'악보',d:'이번 판에서 빽도·도·개·걸·윷·모를 모두 한 번 이상 내면 승리합니다.'},
+ {id:'prophet',tag:'g',icon:'🔮',name:'예언',d:'플레이어 한 명과 윷 결과를 고릅니다. 그 사람이 다음에 던질 첫 결과가 맞으면 다음 내 턴에 모를 하나 받습니다.',use:2,tg:'predict'},
  // 1라운드 전용
  {id:'exch',tag:'start',icon:'⚖️',name:'등가교환',d:'내 말이 3개가 되고 윷가락 3개로 던집니다. (윷은 안 나오고 모·걸이 잘 나옴)'},
  {id:'fast',tag:'start',icon:'⏩',name:'스피드 게임',d:'모든 플레이어의 말이 2개가 되고, 내 말은 도·개 자리에서 시작합니다.'},
@@ -85,7 +86,10 @@ const AUGS=[
  {id:'treason',tag:'mid',icon:'🗝️',name:'역모',d:'나보다 골인한 말이 많은 사람의 말을 잡으면 한 번 더 던집니다.'},
  {id:'halt',tag:'mid',icon:'⛔',name:'잠깐!',d:'얻는 즉시 상대들의 가장 앞선 말 무리 하나를 2라운드 동안 못 움직이게 합니다.'},
  {id:'peace',tag:'mid',icon:'🕊️',name:'평화 협정',d:'나는 상대 말을 잡을 수 없고, 어떤 방법으로도 잡히지 않습니다.'},
+ {id:'gambler',tag:'mid',icon:'🃏',name:'도박사',d:'다음에 상대 말을 잡을 사람을 예측합니다. (나 포함) 맞으면 다음 내 턴에 모 2개를 받습니다.',use:1,tg:'anyp'},
  // 12라운드 전용
+ {id:'plan',tag:'end',icon:'📜',name:'계획대로',d:'이 판의 최종 순위를 1위부터 끝까지 예측합니다. 끝났을 때 순위가 모두 맞으면 내가 단독 1위가 됩니다.',use:1,tg:'order'},
+ {id:'bronze',tag:'end',icon:'🥉',name:'동메달도 잘한 거야',d:'얻는 즉시 3위가 되어 판에서 빠집니다. (3명 이상일 때만 나옴)'},
  {id:'grail',tag:'end',icon:'🍷',name:'독이 든 성배',d:'던지기 3번을 얻습니다. 이번 턴에 모가 나오면 탈락합니다.',use:1},
  {id:'lastdance',tag:'end',icon:'💃',name:'라스트 댄스',d:'던지기 2번을 얻고 이번 턴 이동이 2배가 됩니다. 이번 턴이 끝나면 탈락합니다.',use:1},
  {id:'comeback',tag:'end',icon:'🎁',name:'역전 찬스',d:'무작위 범용 증강 4개를 얻습니다.'},
@@ -105,7 +109,7 @@ const pickR=(G,a)=>a[Math.floor(rnd(G)*a.length)];
 function fx(G,t,n,c){G.fxN=(G.fxN||0)+1;G.fx=(G.fx||[]).concat([{t,n,c:c||1,id:G.fxN}]).slice(-8)}
 function addLog(G,t){G.log.push(t);if(G.log.length>80)G.log.shift()}
 function has(G,s,id){return G.seats[s].aug.some(a=>a.id===id&&!a.off)}
-const alive=G=>G.seats.map((x,i)=>i).filter(i=>!G.seats[i].out);
+const alive=G=>G.seats.map((x,i)=>i).filter(i=>!G.seats[i].out&&!G.seats[i].done);
 const onBoard=p=>p.n!=='H'&&p.n!=='F';
 function newPiece(){return{n:'H',prev:null,t:'',sh:0,lock:0,asn:0,dom:0}}
 function newGame(players,seed){
@@ -113,15 +117,15 @@ function newGame(players,seed){
   pieces:Array.from({length:PIECES},newPiece),aug:[],offers:null,used:{},skip:0,bankRes:[],out:false,sticks:4,
   st:{kills:0,gae:0,geol:0,thrown:{},killedBy:[],coupBase:-1,nfOn:false,bys:0,kimTurns:0,turns:0}})),
   order:0,turn:0,round:1,turnNo:0,phase:'pick',results:[],throws:0,turnRes:[],traps:{},rewards:{},poop:{},garlic:null,fires:{},marks:[],reaper:null,
-  echo:false,echoSecond:false,duels:[],log:[],winner:null,pickRound:1,picked:{},ev:0,lastThrow:null,force:{},snTurn:{},dance:-1,grail:-1};
+  echo:false,echoSecond:false,duels:[],log:[],winner:null,ranks:players.map(()=>null),plans:[],props:[],bets:[],pickRound:1,picked:{},ev:0,lastThrow:null,force:{},snTurn:{},dance:-1,grail:-1};
  G.order=G.turn=Math.floor(rnd(G)*players.length);
  addLog(G,'게임 시작! 1라운드 증강을 고르세요.');startPick(G);return G}
 function startPick(G){G.phase='pick';G.pickRound=G.round;G.picked[G.round]=1;
  const tag=G.round===1?'start':G.round===6?'mid':'end';
- G.seats.forEach((st,s)=>{if(st.out){st.offers=null;return}st.offers=offersFor(G,s,tag)});
+ G.seats.forEach((st,s)=>{if(st.out||st.done){st.offers=null;return}st.offers=offersFor(G,s,tag)});
  if(G.seats.every(x=>!x.offers))return beginTurn(G)}
 function offersFor(G,s,tag){const st=G.seats[s],own=new Set(st.aug.map(a=>a.id));
- const pool=AUGS.filter(a=>(a.tag==='g'||a.tag===tag)&&!own.has(a.id)&&!(st.redoUsed&&a.id==='redo')).map(a=>a.id);
+ const pool=AUGS.filter(a=>(a.tag==='g'||a.tag===tag)&&!own.has(a.id)&&!(st.redoUsed&&a.id==='redo')&&!(a.id==='bronze'&&(G.seats.length<3||G.ranks[2]!=null))).map(a=>a.id);
  const off=[];while(off.length<3&&pool.length)off.push(pool.splice(Math.floor(rnd(G)*pool.length),1)[0]);return off}
 function catForced(G,s){const st=G.seats[s];return!!(st.offers&&st.offers.includes('cat')&&(has(G,s,'cat_me')||G.seats.some((x,i)=>has(G,i,'cat_all'))))}
 function pickAug(G,s,id){const st=G.seats[s];if(G.phase!=='pick'||!st.offers||!st.offers.includes(id))return false;
@@ -149,19 +153,28 @@ function gain(G,s,id){const st=G.seats[s],A=AUG[id];st.aug.push({id});addLog(G,`
   case'kim':{const k=pickPiece(st,false);if(k>=0){st.pieces[k].t='kim';st.st.kimTurns=0}break}
   case'party':for(let i=0;i<5;i++){const k=freeNode(G);if(k)G.traps[k]=s}for(let i=0;i<3;i++){const k=freeNode(G);if(k)G.rewards[k]=1}break;
   case'coup':st.st.coupBase=st.st.kills;break;
-  case'nofriend':st.st.nfOn=true;st.st.killedBy=[];break}
+  case'nofriend':st.st.nfOn=true;st.st.killedBy=[];break;
+  case'bronze':if(G.seats.length>=3)place(G,s,true,'🥉 동메달도 잘한 거야',2);break}
  checkCat(G)}
 function pickPiece(st,anyOk){let k=st.pieces.findIndex(p=>!p.t&&p.n==='H');if(k<0&&anyOk)k=st.pieces.findIndex(p=>!p.t&&p.n!=='F');return k}
 function freeNode(G,extra){const occ=new Set(extra||[]);G.seats.forEach(st=>st.pieces.forEach(p=>occ.add(p.n)));Object.keys(G.traps).concat(Object.keys(G.rewards),Object.keys(G.poop)).forEach(k=>occ.add(k));
  if(G.garlic)G.garlic.nodes.forEach(k=>occ.add(k));const free=NODES.filter(k=>!['o0','o1','C'].includes(k)&&!occ.has(k));return free.length?pickR(G,free):null}
-function checkCat(G){G.seats.forEach((st,s)=>{if(G.phase==='over'||st.out)return;if(st.aug.filter(isCat).length>=3)return win(G,s,'🐾 고양이 시너지: 고양이 계열 3마리가 모였습니다!');if(has(G,s,'catlover')&&G.seats.some((x,i)=>!x.out&&x.aug.some(a=>a.id==='cat'||(a.off&&a.until))))win(G,s,'😺 애묘인: 고양이가 나타났습니다!')})}
+function checkCat(G){G.seats.forEach((st,s)=>{if(G.phase==='over'||st.out||st.done)return;if(st.aug.filter(isCat).length>=3)return win(G,s,'🐾 고양이 시너지: 고양이 계열 3마리가 모였습니다!');if(has(G,s,'catlover')&&G.seats.some((x,i)=>!x.out&&x.aug.some(a=>a.id==='cat'||(a.off&&a.until))))win(G,s,'😺 애묘인: 고양이가 나타났습니다!')})}
 
-/* ---- 승리 · 탈락 ---- */
-function win(G,s,why){if(G.phase==='over')return;G.phase='over';G.winner=s;G.winWhy=why||'';addLog(G,`🎉 ${G.seats[s].name} 승리! ${why||''}`);G.ev++}
-function eliminate(G,s,why){const st=G.seats[s];if(st.out||G.phase==='over')return;st.out=true;st.offers=null;st.pieces.forEach(p=>{if(p.n!=='F'){p.n='H';p.prev=null}});addLog(G,`☠️ ${st.name} 탈락. ${why||''}`);
- const al=alive(G);if(al.length===1)win(G,al[0],'마지막까지 살아남았습니다.')}
+/* ---- 순위 · 승리 · 탈락 (한 명이 이겨도 끝까지 순위를 가립니다) ---- */
+function place(G,s,top,why,at){const st=G.seats[s];if(G.phase==='over'||st.out||st.done)return;
+ let idx=at!=null&&G.ranks[at]==null?at:top?G.ranks.indexOf(null):G.ranks.lastIndexOf(null);if(idx<0)return;
+ G.ranks[idx]=s;st.rank=idx+1;if(top||at!=null)st.done=true;else st.out=true;st.offers=null;st.why=why||'';
+ st.pieces.forEach(p=>{if(p.n!=='F'){p.n='H';p.prev=null;p.lock=0;p.dom=0;p.asn=0}});
+ addLog(G,top||at!=null?`🏅 ${st.name} ${idx+1}위 확정! ${why||''}`:`☠️ ${st.name} 탈락 (${idx+1}위). ${why||''}`);fx(G,'rank','C',idx+1);G.ev++;
+ G.duels.forEach(d=>{if(!d.done&&(d.o===s||d.by===s))d.done=true});if(G.reaper&&G.reaper.s===s){G.reaper=null;addLog(G,'💀 사신이 사라졌습니다.')}
+ const left=alive(G);if(left.length<=1){if(left.length===1){const k=left[0];G.ranks[G.ranks.indexOf(null)]=k;G.seats[k].rank=G.ranks.indexOf(k)+1;G.seats[k].done=true;addLog(G,`${G.seats[k].name} ${G.seats[k].rank}위.`)}finishGame(G)}}
+function finishGame(G){G.plans.forEach(pl=>{if(G.phase==='over')return;if(JSON.stringify(pl.order)===JSON.stringify(G.ranks)){G.ranks=[pl.by].concat(G.ranks.filter(x=>x!==pl.by));G.ranks.forEach((x,i)=>G.seats[x].rank=i+1);addLog(G,`📜 계획대로! ${G.seats[pl.by].name}이(가) 순위를 모두 맞혀 단독 1위가 됩니다.`)}});
+ G.phase='over';G.winner=G.ranks[0];G.winWhy=G.seats[G.winner].why||'';addLog(G,`🎉 최종 1위: ${G.seats[G.winner].name}`);G.ev++}
+function win(G,s,why){place(G,s,true,why)}
+function eliminate(G,s,why){place(G,s,false,why)}
 function boardWins(G){if(G.phase==='over')return;
- G.seats.forEach((st,s)=>{if(st.out||G.phase==='over')return;
+ G.seats.forEach((st,s)=>{if(st.out||st.done||G.phase==='over')return;
   if(has(G,s,'four')){const mine=new Set(st.pieces.filter(onBoard).map(p=>p.n));
    if(st.pieces.length>=4&&st.pieces.every(p=>onBoard(p)&&p.n===st.pieces[0].n))return win(G,s,'🧩 사목: 말 4개가 한 무리!');
    for(const l of LINES)for(let i=0;i+4<=l.length;i++)if(l.slice(i,i+4).every(n=>mine.has(n)))return win(G,s,'🧩 사목: 한 줄 4칸!')}
@@ -178,7 +191,8 @@ function killStack(G,o,idx,by,cause){// o의 말 idx를 잡음. 반환: 잡힌 �
  if(has(G,o,'friend')&&idx.length>1){idx=[idx[0]];addLog(G,`🤝 동료 방패: ${ot.name}의 말 1개만 잡힙니다.`)}
  fx(G,'kill',ot.pieces[idx[0]].n,idx.length);idx.forEach(k=>sendHome(G,o,k));
  addLog(G,`${cause?cause+': ':''}${by!=null&&by!==o?G.seats[by].name+'이(가) ':''}${ot.name}의 말 ${idx.length}개를 잡았습니다.`);
- if(by!=null&&by!==o){const bs=G.seats[by].st;bs.kills+=idx.length;
+ if(by!=null&&by!==o){G.bets=G.bets.filter(b=>{const bb=G.seats[b.by];if(b.who===by){bb.bankRes.push(mk('모','도박사'),mk('모','도박사'));addLog(G,`🃏 ${bb.name}의 도박 적중! 다음 턴에 모 2개.`)}else addLog(G,`🃏 ${bb.name}의 도박은 빗나갔습니다.`);return false});
+  const bs=G.seats[by].st;bs.kills+=idx.length;
   if(ot.st.nfOn&&!ot.st.killedBy.includes(by)){ot.st.killedBy.push(by);if(alive(G).filter(x=>x!==o).every(x=>ot.st.killedBy.includes(x)))win(G,o,'🥲 나만 친구 없어: 모두에게 잡혔습니다!')}
   if(has(G,by,'coup')&&bs.coupBase>=0&&bs.kills-bs.coupBase>=4)win(G,by,'⚔️ 무신정변: 말 4개를 잡았습니다!')}
  G.seats.forEach((x,i)=>{if(i===o||i===G.turn||x.out||!has(G,i,'bystander'))return;x.st.bys+=idx.length;while(x.st.bys>=2){x.st.bys-=2;x.bankRes.push(mk('개','어부지리'));addLog(G,`🎣 ${x.name}: 어부지리로 개를 얻었습니다.`)}});
@@ -189,7 +203,7 @@ function killAt(G,node,by,opt){opt=opt||{};let n=0;G.seats.forEach((st,o)=>{if(o
 function beginTurn(G){
  if(G.phase!=='over')G.phase='wait';
  for(let guard=0;guard<30&&G.phase!=='over';guard++){const s=G.turn,st=G.seats[s];
-  if(st.out){advance(G);if(G.phase==='pick')return;continue}
+  if(st.out||st.done){advance(G);if(G.phase==='pick'||G.phase==='over')return;continue}
   if(st.skip>0){st.skip--;st.st.turns++;addLog(G,`⏸️ ${st.name}의 턴을 건너뜁니다.`);tickDuel(G,s);advance(G);if(G.phase==='pick')return;continue}
   break}
  if(G.phase==='over')return;
@@ -198,13 +212,14 @@ function beginTurn(G){
  G.marks=G.marks.filter(m=>{if(m.s!==s)return true;const c=killAt(G,m.n,s,{cause:'🎯 명사수'});if(!c)addLog(G,`🎯 ${st.name}의 조준이 빗나갔습니다.`);return false});
  st.pieces.forEach(p=>{if(p.dom>0){p.dom--;if(p.dom===0&&onBoard(p))win(G,s,'🌌 영역 전개: 끝까지 버텼습니다!')}});
  if(st.pieces.some(p=>p.t==='kim'&&p.n!=='F'))st.st.kimTurns++;
- G.ev++}
+ G.ev++;if(G.phase!=='over'&&(st.done||st.out))endTurn(G)}
 function advance(G){// 다음 사람으로
- if(G.echo&&!G.echoSecond&&!G.seats[G.turn].out){G.echoSecond=true;return}
+ if(G.echo&&!G.echoSecond&&!G.seats[G.turn].out&&!G.seats[G.turn].done){G.echoSecond=true;return}
  G.echoSecond=false;const n=G.seats.length;G.turn=(G.turn+1)%n;
  if(G.turn===G.order){G.round++;endRound(G);if(G.phase==='over')return;
   if(PICK_ROUNDS.includes(G.round)&&!G.picked[G.round]){addLog(G,`${G.round}라운드! 증강을 고르세요.`);startPick(G);return}}}
 function endRound(G){
+ if(G.round>40){addLog(G,'40라운드가 지나 골인한 말 수로 남은 순위를 정합니다.');alive(G).sort((a,b)=>G.seats[b].pieces.filter(p=>p.n==='F').length-G.seats[a].pieces.filter(p=>p.n==='F').length).forEach(k=>{if(G.phase!=='over')place(G,k,true,'40라운드 판정')});return}
  G.seats.forEach(st=>st.aug.forEach(a=>{if(a.off&&a.until&&G.round>=a.until){a.off=false;delete a.until;addLog(G,`🐱 ${st.name}의 ${AUG[a.id].name}이(가) 돌아왔습니다.`)}}));
  if(G.reaper){const R=G.reaper;// 가장 가까운 상대 말 쪽으로 한 칸
   const targets=new Set();G.seats.forEach((st,o)=>{if(o===R.s||st.out)return;st.pieces.forEach(p=>{if(onBoard(p))targets.add(p.n)})});
@@ -212,7 +227,7 @@ function endRound(G){
    if(hit&&hit!==R.n){let c=hit;while(prev[c]!==R.n)c=prev[c];R.n=c}
    killAt(G,R.n,R.s,{exceptSeat:R.s,cause:'💀 사신'})}}}
 function tickDuel(G,s){G.duels.forEach(d=>{if(d.done||d.o!==s)return;d.left--;if(d.left<=0){d.done=true;eliminate(G,s,'🤺 승부에서 졌습니다 (3턴 안에 골인 실패).')}})}
-function endTurn(G){const s=G.turn,st=G.seats[s];st.st.turns++;G.results=[];G.throws=0;
+function endTurn(G){if(G.phase==='over')return;const s=G.turn,st=G.seats[s];st.st.turns++;G.results=[];G.throws=0;
  if(G.dance===s){G.dance=-1;eliminate(G,s,'💃 라스트 댄스가 끝났습니다.')}
  G.grail=-1;tickDuel(G,s);if(G.phase==='over')return;
  advance(G);if(G.phase==='pick'||G.phase==='over')return;beginTurn(G)}
@@ -233,9 +248,13 @@ function throwYut(G,s,choose){if(G.phase!=='throw'||s!==G.turn||G.throws<=0)retu
  if(k==='모'&&G.grail===s){G.ev++;eliminate(G,s,'🍷 독이 든 성배를 마신 뒤 모가 나왔습니다.');if(G.phase!=='over')endTurn(G);return res}
  if(has(G,s,'s777')&&G.turnRes.filter(x=>x===k).length>=3)win(G,s,`🎰 777: ${k}가 세 번!`);
  if(has(G,s,'score')&&KINDS.every(x=>st.st.thrown[x]))win(G,s,'🎼 악보 완성!');
+ // 예언 확인 (이 사람의 첫 결과)
+ if(G.turnRes.length===1)G.props=G.props.filter(pr=>{if(pr.o!==s)return true;const by=G.seats[pr.by];if(pr.k===k){by.bankRes.push(mk('모','예언'));addLog(G,`🔮 ${by.name}의 예언 적중! (${st.name}: ${k}) 다음 턴에 모를 받습니다.`)}else addLog(G,`🔮 ${by.name}의 예언은 빗나갔습니다. (${pr.k} 예상, 실제 ${k})`);return false});
+ if(st.done||st.out){if(G.phase!=='over')endTurn(G);G.ev++;return res}
  // 폰 전진
  st.pieces.forEach((p,k2)=>{if(G.phase==='over'||p.t!=='pawn'||p.n==='F'||p.lock>=G.round)return;doMove(G,s,[k2],walk(p.n,1),false)});
  if(G.phase==='over'){G.ev++;return res}
+ if(st.done||st.out){endTurn(G);G.ev++;return res}
  if(G.throws<=0)toMove(G);G.ev++;return res}
 
 /* ---- 움직이기 ---- */
@@ -279,7 +298,7 @@ function movePiece(G,s,ri,pi){if(G.phase!=='move'||s!==G.turn)return false;const
  G.results.splice(ri,1);const t0=G.throws;doMove(G,s,pv.g,pv.path,pv.back);
  if(G.throws>t0&&G.phase!=='over')addLog(G,'한 번 더 던집니다.');
  G.ev++;afterAction(G,s);return true}
-function afterAction(G,s){if(G.phase==='over'||G.phase==='pick')return;if(G.seats[s].out){if(G.turn===s)endTurn(G);return}
+function afterAction(G,s){if(G.phase==='over'||G.phase==='pick')return;if(G.seats[s].out||G.seats[s].done){if(G.turn===s)endTurn(G);return}
  if(G.throws>0){G.phase='throw';return}
  if(!G.results.length||!anyMove(G,s)){if(G.results.length)addLog(G,'남은 결과를 쓸 수 없어 넘어갑니다.');endTurn(G)}else G.phase='move'}
 
@@ -330,18 +349,23 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'duel':{const o=G.seats[t.o];if(!o||t.o===s||o.out)return false;G.duels.push({by:s,o:t.o,left:3,done:false});break}
   case'domain':if(!ownOn(t.pi))return false;st.pieces[t.pi].dom=2;break;
   case'fold':if(!FOLDS[t.dir])return false;foldBoard(G,s,t.dir);break;
+  case'prophet':{if(!G.seats[t.o]||G.seats[t.o].out||G.seats[t.o].done||!KINDS.includes(t.k))return false;if(t.o===s&&G.turnRes.length>0)return false;G.props.push({by:s,o:t.o,k:t.k});break}
+  case'gambler':{if(!G.seats[t.o]||G.seats[t.o].out||G.seats[t.o].done)return false;G.bets.push({by:s,who:t.o});break}
+  case'plan':{const n=G.seats.length;if(!Array.isArray(t.order)||t.order.length!==n||new Set(t.order).size!==n||t.order.some(x=>!Number.isInteger(x)||x<0||x>=n))return false;
+   if(t.order.some((x,i)=>G.ranks[i]!=null&&G.ranks[i]!==x))return false;G.plans.push({by:s,order:t.order});break}
   default:return false}
  if(!ok)return false;
  if(A.perTurn)G.snTurn[s]=G.turnNo;else st.used[id]=(st.used[id]||0)+1;
- addLog(G,`${A.icon} ${st.name}: ${A.name}${t.o!=null&&G.seats[t.o]?' → '+G.seats[t.o].name:''}`);
+ addLog(G,`${A.icon} ${st.name}: ${A.name}${['prophet','gambler','plan'].includes(id)?' (예측은 비밀)':t.o!=null&&G.seats[t.o]?' → '+G.seats[t.o].name:''}`);
  G.ev++;if(G.catCheck){delete G.catCheck;checkCat(G);if(G.phase==='over')return true}
+ if(st.done||st.out){endTurn(G);return true}
  if(G.phase==='move'&&G.throws>0)G.phase='throw';
  else if(G.phase==='throw'&&G.throws<=0)toMove(G);
  else if(G.phase==='move'&&!anyMove(G,s)&&G.phase!=='over'){if(G.results.length)addLog(G,'쓸 수 있는 결과가 없어 넘어갑니다.');endTurn(G)}
  return true}
 
 /* ---- 악마 AI ---- */
-const PREF=['peace','shield','fire','vanguard','dogs','dober','four','coup','treason','assassin','friend','sniper','hit','illusion','marathon','jinmori','poop','reaper','notme','halt','bystander','fix','baduk','kim','piggy','bear','party','alone','s777','echo','comeback','pawn','loan','modo','dogae','flip','lonely','redbtn','exch','fast','sacri','cat','cat_me','cat_all','catlover','backwin','nofriend','domain','duel','cannibal','score','grail','lastdance','redo'];
+const PREF=['peace','shield','fire','vanguard','dogs','dober','four','coup','treason','assassin','friend','sniper','hit','illusion','marathon','jinmori','poop','reaper','notme','halt','bystander','fix','baduk','kim','piggy','bear','party','alone','s777','echo','comeback','pawn','loan','modo','dogae','flip','lonely','redbtn','exch','fast','sacri','cat','cat_me','cat_all','catlover','backwin','nofriend','domain','duel','cannibal','score','prophet','gambler','plan','bronze','grail','lastdance','redo'];
 function aiPick(G,s){const st=G.seats[s];if(!st.offers)return null;if(catForced(G,s))return'cat';return st.offers.slice().sort((a,b)=>PREF.indexOf(a)-PREF.indexOf(b)+(rnd(G)-.5)*12)[0]}
 function aiMove(G,s){let best=null,bs=-1e9;const st=G.seats[s];
  G.results.forEach((r,ri)=>st.pieces.forEach((p,pi)=>{const pv=preview(G,s,ri,pi);if(!pv)return;let sc=0;const d=pv.dest;
@@ -361,6 +385,9 @@ function aiActive(G,s){const st=G.seats[s];if(rnd(G)>.4)return null;
   switch(a.id){case'dogs':if(G.phase==='move')return{id:'dogs'};break;case'dober':if(st.st.gae>0)return{id:'dober'};break;
    case'shield':case'fire':case'assassin':if(f>=0&&!st.pieces[f].sh)return{id:a.id,t:{pi:f}};break;
    case'hit':return{id:'hit',t:{o:lead}};
+   case'prophet':{const o=others[Math.floor(rnd(G)*others.length)];return{id:'prophet',t:{o,k:'개'}}}
+   case'gambler':return{id:'gambler',t:{o:lead}};
+   case'plan':{const order=G.ranks.slice();const rest=alive(G).sort((a,b)=>G.seats[b].pieces.filter(p=>p.n==='F').length-G.seats[a].pieces.filter(p=>p.n==='F').length);for(let i=0;i<order.length;i++)if(order[i]==null)order[i]=rest.shift();return{id:'plan',t:{order}}}
    case'fold':{let bd=null,bv=3;for(const dir in FOLDS){let v=0;G.seats.forEach((x,o)=>x.pieces.forEach(p=>{if(!onBoard(p))return;const m=foldNode(p.n,dir);const d=distFin(p.n)-distFin(m);v+=o===s?d:-d*.6}));if(v>bv){bv=v;bd=dir}}if(bd)return{id:'fold',t:{dir:bd}};break}
    case'illusion':{const x=G.seats[lead].aug.find(y=>!y.off&&y.id!=='cat');if(x)return{id:'illusion',t:{o:lead,aug:x.id}};break}
    case'marathon':if(st.pieces.some(p=>p.n==='H'&&!p.t))return{id:'marathon'};break;
