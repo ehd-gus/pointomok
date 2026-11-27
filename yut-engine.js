@@ -36,9 +36,9 @@ const mk=(k,tag)=>({k,v:KV[k],tag:tag||''});
 /* ---- 증강 (tag: g 범용 · start 1라운드 · mid 6라운드 · end 12라운드 / use: 직접 쓰는 횟수 / tg: 대상) ---- */
 const AUGS=[
  // 범용
- {id:'cat',tag:'g',icon:'🐈',name:'고양이',d:'아무 능력도 없습니다. 대신 귀엽습니다.'},
- {id:'cat_all',tag:'g',icon:'🙀',name:'집사 모집',d:'이제 모든 플레이어는 선택지에 고양이가 나오면 반드시 고양이를 골라야 합니다.'},
- {id:'cat_me',tag:'g',icon:'😻',name:'고양이 홀릭',d:'내 선택지에 고양이가 나오면 반드시 고양이를 골라야 합니다.'},
+ {id:'cat',tag:'g',icon:'🐈',name:'고양이',d:'아무 능력도 없습니다. 대신 귀엽습니다. (고양이 계열: 3개를 모으면 승리)'},
+ {id:'cat_all',tag:'g',icon:'🙀',name:'집사 모집',d:'이제 모든 플레이어는 선택지에 고양이가 나오면 반드시 고양이를 골라야 합니다. (고양이 계열)'},
+ {id:'cat_me',tag:'g',icon:'😻',name:'고양이 홀릭',d:'내 선택지에 고양이가 나오면 반드시 고양이를 골라야 합니다. (고양이 계열)'},
  {id:'dogs',tag:'g',icon:'🐕',name:'개 풀기',d:'개 결과를 하나 얻습니다.',use:3},
  {id:'dogae',tag:'g',icon:'🐖',name:'도개 선택',d:'던질 때마다 도와 개 중에서 골라서 냅니다. 다른 결과는 나오지 않습니다.'},
  {id:'loan',tag:'g',icon:'💳',name:'대출',d:'지금 던지기 1번을 얻고, 다음 내 턴을 쉽니다.',use:2},
@@ -73,7 +73,7 @@ const AUGS=[
  {id:'fast',tag:'start',icon:'⏩',name:'스피드 게임',d:'모든 플레이어의 말이 2개가 되고, 내 말은 도·개 자리에서 시작합니다.'},
  {id:'piggy',tag:'start',icon:'🎒',name:'업고 놀자',d:'내 말 모두가 업힌 채 도 자리에서 시작합니다.'},
  {id:'alone',tag:'start',icon:'👑',name:'유아독존',d:'판 위에 말 무리가 내 것 하나뿐이면 승리합니다.'},
- {id:'catlover',tag:'start',icon:'😺',name:'애묘인',d:'누구든 고양이 증강을 가지고 있으면 승리합니다.'},
+ {id:'catlover',tag:'start',icon:'😺',name:'애묘인',d:'누구든 고양이 증강을 가지고 있으면 승리합니다. (고양이 계열)'},
  {id:'bear',tag:'start',icon:'🧄',name:'웅녀',d:'판 위 무작위 칸에 마늘 4개가 생깁니다. 내 말로 모두 밟으면 승리합니다.'},
  {id:'kim',tag:'start',icon:'🛺',name:'김첨지',d:'내 말 하나가 김첨지가 됩니다. 김첨지가 내 턴 6번 안에 골인하면 승리합니다.'},
  {id:'party',tag:'start',icon:'🎪',name:'함정 파티',d:'판에 함정 5개와 보상 3개가 생깁니다. 함정에 멈춘 상대 말은 집으로, 보상에 멈춘 말은 3칸 더 갑니다.'},
@@ -94,6 +94,8 @@ const AUGS=[
  {id:'domain',tag:'end',icon:'🌌',name:'영역 전개',d:'판 위 내 말 하나를 못 움직이게 묶습니다. 내 턴 2번 동안 살아남으면 승리, 잡히면 탈락합니다.',use:1,tg:'own'},
  {id:'cannibal',tag:'end',icon:'🍖',name:'카니발리즘',d:'내 말끼리 업히지 않고 서로 잡을 수 있습니다. 내 말을 잡으면 한 번 더 던집니다.'}];
 const AUG={};AUGS.forEach(a=>AUG[a.id]=a);
+const CATS=['cat','cat_all','cat_me','catlover'];// 고양이 계열: 3개 모으면 시너지 승리 (착각으로 고양이가 된 증강도 셈)
+const isCat=a=>CATS.includes(a.id)||!!(a.off&&a.until);
 const TYPEICON={van:'🚩',pawn:'♟️',kim:'🛺',mara:'🏃'};
 
 /* ---- 기본 ---- */
@@ -150,7 +152,7 @@ function gain(G,s,id){const st=G.seats[s],A=AUG[id];st.aug.push({id});addLog(G,`
 function pickPiece(st,anyOk){let k=st.pieces.findIndex(p=>!p.t&&p.n==='H');if(k<0&&anyOk)k=st.pieces.findIndex(p=>!p.t&&p.n!=='F');return k}
 function freeNode(G,extra){const occ=new Set(extra||[]);G.seats.forEach(st=>st.pieces.forEach(p=>occ.add(p.n)));Object.keys(G.traps).concat(Object.keys(G.rewards),Object.keys(G.poop)).forEach(k=>occ.add(k));
  if(G.garlic)G.garlic.nodes.forEach(k=>occ.add(k));const free=NODES.filter(k=>!['o0','o1','C'].includes(k)&&!occ.has(k));return free.length?pickR(G,free):null}
-function checkCat(G){G.seats.forEach((st,s)=>{if(G.phase==='over'||st.out)return;if(has(G,s,'catlover')&&G.seats.some((x,i)=>!x.out&&x.aug.some(a=>a.id==='cat'||(a.off&&a.until))))win(G,s,'😺 애묘인: 고양이가 나타났습니다!')})}
+function checkCat(G){G.seats.forEach((st,s)=>{if(G.phase==='over'||st.out)return;if(st.aug.filter(isCat).length>=3)return win(G,s,'🐾 고양이 시너지: 고양이 계열 3마리가 모였습니다!');if(has(G,s,'catlover')&&G.seats.some((x,i)=>!x.out&&x.aug.some(a=>a.id==='cat'||(a.off&&a.until))))win(G,s,'😺 애묘인: 고양이가 나타났습니다!')})}
 
 /* ---- 승리 · 탈락 ---- */
 function win(G,s,why){if(G.phase==='over')return;G.phase='over';G.winner=s;G.winWhy=why||'';addLog(G,`🎉 ${G.seats[s].name} 승리! ${why||''}`);G.ev++}
@@ -355,6 +357,6 @@ function apply(G,s,a){if(!a||G.phase==='over')return false;
  if(a.t==='move')return movePiece(G,s,a.ri,a.pi);
  if(a.t==='use')return useAug(G,s,a.id,a.x);
  return false}
-const API={PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
+const API={CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
 if(typeof module!=='undefined')module.exports=API;else root.YUT=API;
 })(this);
