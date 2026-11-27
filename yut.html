@@ -538,6 +538,7 @@ $('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if
   case'opp':openList(`${A.name}: 상대를 고르세요`,others.map(o=>({l:G.seats[o].name,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o}})})));break;
   case'oppAug':{const items=[];others.forEach(o=>G.seats[o].aug.forEach(a=>{const B=Y.AUG[a.id];if(a.off||a.id==='cat'||(B.use&&(G.seats[o].used[a.id]||0)>=B.use))return;items.push({l:`${G.seats[o].name} · ${B.icon} ${B.name}`,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o,aug:a.id}})})}));
    if(!items.length){flash('바꿀 수 있는 상대 증강이 없습니다.');return}openList('착각: 고양이로 바꿀 증강을 고르세요',items);break}
+  case'fold':openList('판 접기: 어느 쪽을 접을까요?',Object.entries(Y.FOLDS).map(([dir,l])=>({l:{up:'⬇️ ',down:'⬆️ ',left:'➡️ ',right:'⬅️ '}[dir]+l,c:'#d8b26a',f:()=>act({t:'use',id,x:{dir}})})));break;
   case'kind':openList('조작된 윷: 다음 결과를 고르세요',Y.KINDS.map(k=>({l:k,c:'#d8b26a',f:()=>act({t:'use',id,x:{k}})})));break;
   case'flip':{const items=[];G.results.forEach((r,ri)=>{const f=Y.FLATS[r.k];[[-1,'아래로'],[1,'위로']].forEach(([d,w])=>{const nf=f+d;if(nf<0||nf>4)return;items.push({l:`${r.k} → ${Y.BYFLATS[nf]}`,c:'#d8b26a',f:()=>act({t:'use',id,x:{ri,d}})})})});
    if(!items.length){flash('뒤집을 결과가 없습니다. 먼저 던지세요.');return}openList('슬쩍: 뒤집을 결과를 고르세요',items);break}

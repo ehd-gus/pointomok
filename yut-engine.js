@@ -61,6 +61,7 @@ const AUGS=[
  {id:'notme',tag:'g',icon:'🙈',name:'나만 아니면 돼',d:'얻는 즉시 무작위 상대 한 명의 판 위 말이 모두 잡힙니다.'},
  {id:'illusion',tag:'g',icon:'🐱',name:'착각',d:'상대 증강 하나를 3라운드 동안 고양이로 바꿉니다. (다 쓴 증강은 못 바꿈)',use:1,tg:'oppAug'},
  {id:'hit',tag:'g',icon:'🥏',name:'윷 맞히기',d:'상대 한 명에게 윷을 맞혀서, 그 사람의 턴 2번을 건너뛰게 합니다.',use:1,tg:'opp'},
+ {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 반으로 접습니다. 접는 방향을 고르면 그쪽 절반의 말과 물건이 반대편 같은 자리로 넘어가고, 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
  {id:'vanguard',tag:'g',icon:'🚩',name:'선봉장',d:'내 말 하나가 선봉장이 됩니다. 선봉장이 판 위에 있는 동안 내 모든 이동이 1칸 늘어납니다.'},
@@ -281,6 +282,25 @@ function afterAction(G,s){if(G.phase==='over'||G.phase==='pick')return;if(G.seat
  if(G.throws>0){G.phase='throw';return}
  if(!G.results.length||!anyMove(G,s)){if(G.results.length)addLog(G,'남은 결과를 쓸 수 없어 넘어갑니다.');endTurn(G)}else G.phase='move'}
 
+/* ---- 판 접기 ---- */
+const FOLDS={up:'위쪽 절반을 아래로',down:'아래쪽 절반을 위로',left:'왼쪽 절반을 오른쪽으로',right:'오른쪽 절반을 왼쪽으로'};
+const AT={};NODES.forEach(n=>AT[POS[n].map(v=>Math.round(v)).join(',')]=n);
+function foldNode(n,dir){if(!POS[n])return n;const[x,y]=POS[n];let nx=x,ny=y;
+ if(dir==='up'&&y<49)ny=100-y;else if(dir==='down'&&y>51)ny=100-y;else if(dir==='left'&&x<49)nx=100-x;else if(dir==='right'&&x>51)nx=100-x;else return n;
+ return AT[[nx,ny].map(v=>Math.round(v)).join(',')]||n}
+function foldBoard(G,s,dir){const moved=[];// 접히는 쪽 말 옮기기
+ G.seats.forEach((st,o)=>{if(st.out)return;st.pieces.forEach((p,k)=>{if(!onBoard(p))return;const m=foldNode(p.n,dir);if(m!==p.n){moved.push({o,k,to:m});}})});
+ const dests=new Set(moved.map(m=>m.to));
+ // 받는 쪽에 원래 있던 상대 말은 깔림
+ dests.forEach(n=>{G.seats.forEach((st,o)=>{if(o===s)return;const idx=st.pieces.map((p,k)=>p.n===n&&!moved.some(m=>m.o===o&&m.k===k)?k:-1).filter(k=>k>=0);if(idx.length)killStack(G,o,idx,s,'📄 판 접기')})});
+ moved.forEach(m=>{const p=G.seats[m.o].pieces[m.k];if(p.n==='H'||p.n==='F')return;p.n=m.to;p.prev=null});
+ const mv=obj=>{const out={};for(const k in obj)out[foldNode(k,dir)]=obj[k];return out};
+ G.traps=mv(G.traps);G.rewards=mv(G.rewards);G.poop=mv(G.poop);
+ for(const k in G.fires)G.fires[k]=foldNode(G.fires[k],dir);G.marks.forEach(m=>m.n=foldNode(m.n,dir));
+ if(G.garlic){G.garlic.nodes=G.garlic.nodes.map(n=>foldNode(n,dir));G.garlic.got=G.garlic.got.map(n=>foldNode(n,dir))}
+ if(G.reaper)G.reaper.n=foldNode(G.reaper.n,dir);
+ G.fold={dir,id:Math.random()};addLog(G,`📄 ${G.seats[s].name}이(가) 판을 접었습니다: ${FOLDS[dir]}. 말 ${moved.length}개가 넘어갔습니다.`);boardWins(G)}
+
 /* ---- 직접 쓰는 증강 ---- */
 function usesLeft(G,s,id){const A=AUG[id];if(A.perTurn)return G.snTurn[s]===G.turnNo?0:1;return(A.use||0)-(G.seats[s].used[id]||0)}
 function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!has(G,s,id))return false;const A=AUG[id];if(!A.use&&!A.perTurn)return false;if(usesLeft(G,s,id)<=0)return false;
@@ -308,6 +328,7 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'marathon':{const k=st.pieces.findIndex(p=>p.n==='H'&&!p.t);if(k<0)return false;st.pieces[k].t='mara';break}
   case'duel':{const o=G.seats[t.o];if(!o||t.o===s||o.out)return false;G.duels.push({by:s,o:t.o,left:3,done:false});break}
   case'domain':if(!ownOn(t.pi))return false;st.pieces[t.pi].dom=2;break;
+  case'fold':if(!FOLDS[t.dir])return false;foldBoard(G,s,t.dir);break;
   default:return false}
  if(!ok)return false;
  if(A.perTurn)G.snTurn[s]=G.turnNo;else st.used[id]=(st.used[id]||0)+1;
@@ -339,6 +360,7 @@ function aiActive(G,s){const st=G.seats[s];if(rnd(G)>.4)return null;
   switch(a.id){case'dogs':if(G.phase==='move')return{id:'dogs'};break;case'dober':if(st.st.gae>0)return{id:'dober'};break;
    case'shield':case'fire':case'assassin':if(f>=0&&!st.pieces[f].sh)return{id:a.id,t:{pi:f}};break;
    case'hit':return{id:'hit',t:{o:lead}};
+   case'fold':{let bd=null,bv=3;for(const dir in FOLDS){let v=0;G.seats.forEach((x,o)=>x.pieces.forEach(p=>{if(!onBoard(p))return;const m=foldNode(p.n,dir);const d=distFin(p.n)-distFin(m);v+=o===s?d:-d*.6}));if(v>bv){bv=v;bd=dir}}if(bd)return{id:'fold',t:{dir:bd}};break}
    case'illusion':{const x=G.seats[lead].aug.find(y=>!y.off&&y.id!=='cat');if(x)return{id:'illusion',t:{o:lead,aug:x.id}};break}
    case'marathon':if(st.pieces.some(p=>p.n==='H'&&!p.t))return{id:'marathon'};break;
    case'fix':if(G.phase==='throw')return{id:'fix',t:{k:'모'}};break;
@@ -357,6 +379,6 @@ function apply(G,s,a){if(!a||G.phase==='over')return false;
  if(a.t==='move')return movePiece(G,s,a.ri,a.pi);
  if(a.t==='use')return useAug(G,s,a.id,a.x);
  return false}
-const API={CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
+const API={FOLDS,foldNode,CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
 if(typeof module!=='undefined')module.exports=API;else root.YUT=API;
 })(this);
