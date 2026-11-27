@@ -350,6 +350,13 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  .yt>.chat,.yt>.log{grid-column:1/-1}.yside .chat,.yside .log{grid-column:auto}}
 @media(max-width:999px){.yt{display:flex}.yside{order:2}.ymid{order:1}.yplO{order:0}}
 .slot.catf{border-color:#f0a8c0;background:linear-gradient(180deg,#2a1820,#170f12)}
+.yaug{display:flex;flex-direction:column;gap:6px}.yab-t{margin:4px 0 0;font-family:var(--serif);font-size:15px;font-weight:600}
+.yab{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line2);border-radius:10px;background:#1a1314}
+.yab.off{opacity:.6}.yab.catf{border-color:#f0a8c0}.yab-i{font-size:24px;flex:none;width:30px;text-align:center}
+.yab-b{flex:1;min-width:0}.yab-b b{font-size:14px}.yab-b p{margin:2px 0;font-size:12.5px;color:var(--dim);line-height:1.45}.yab-b small{font-size:11.5px;color:var(--gold)}
+.ya-use{flex:none;min-height:38px!important;padding:0 14px!important;font-size:14px!important}.yab-none{margin:0;font-size:13px;color:var(--dim)}
+.slot[data-aug]{cursor:pointer}.slot[data-aug]:hover{border-color:var(--gold2)}
+.aug-pop{margin:0 0 8px;font-size:15px;line-height:1.6}.aug-pop.s{font-size:13px;color:var(--gold)}
 </style>
 </head>
 <body>
@@ -374,7 +381,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  </section>
 </main>
 <div class="modal" id="mPick"><div class="mbox ypick"><h2 id="pickT">증강을 고르세요</h2><p class="ypick-s" id="pickS"></p><div class="pcards" id="pcards"></div><div class="pmine" id="pmine"></div></div></div>
-<div class="modal" id="mTarget"><div class="mbox"><h2 id="tgT">대상을 고르세요</h2><div class="tglist" id="tgList"></div><button class="btn wide" data-close>취소</button></div></div>
+<div class="modal" id="mTarget"><div class="mbox"><h2 id="tgT">대상을 고르세요</h2><div class="tglist" id="tgList"></div><button class="btn wide" data-close>닫기</button></div></div>
 <div class="modal" id="mRule"><div class="mbox"><h2>마법 윷놀이 규칙</h2><ul>
  <li><b>2~4명</b>이 각자 말 <b>4개</b>를 가지고, 말 4개를 먼저 모두 골인시키는 사람이 이깁니다.</li>
  <li>윷을 던져 <b>도 1 · 개 2 · 걸 3 · 윷 4 · 모 5</b>칸을 갑니다. <b>빽도</b>는 뒤로 1칸입니다. <b>윷·모</b>가 나오면 한 번 더 던집니다.</li>
@@ -529,6 +536,8 @@ $('board').addEventListener('click',e=>{if(!G)return;const nd=e.target.closest('
  if(target){targetClick(s,pi);return}
  if(s===MY)tryMove(pi)});
 $('yplMe').addEventListener('click',e=>{const h=e.target.closest('[data-home]');if(!h||!G)return;$('bNew').onclick()});
+document.addEventListener('click',e=>{const sl=e.target.closest('.slot[data-aug]');if(!sl||!G)return;const st=G.seats[+sl.dataset.seat],a=st&&st.aug[+sl.dataset.k];if(!a)return;const A=Y.AUG[a.id];
+ $('tgT').textContent=`${a.off?'🐈':A.icon} ${A.name}`;$('tgList').innerHTML=`<p class="aug-pop">${esc(A.d)}</p><p class="aug-pop s">${esc(st.name)} · ${({g:'범용',start:'시작 전용',mid:'중간 전용',end:'마무리 전용'})[A.tag]}${A.use?` · 남은 횟수 ${Math.max(0,A.use-(st.used[a.id]||0))}/${A.use}`:''}${a.off?' · 지금은 착각으로 고양이':''}</p>`;$('mTarget').classList.add('on')});
 // 직접 쓰는 증강
 $('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if(!b||!myTurn())return;const id=b.dataset.use,A=Y.AUG[id],others=G.seats.map((s,i)=>i).filter(i=>i!==MY&&!G.seats[i].out);
  switch(A.tg){
@@ -595,7 +604,7 @@ function drawBoard(){const P=Y.POS,g=$('ypieces');if(!G){g.innerHTML='';$('yfx')
   if(pv.dest==='FIN'){dh+=`<text x="100" y="94" text-anchor="end" font-size="4" fill="#ffd77a">골인 가능</text>`;return}const[x,y]=P[pv.dest];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.6" fill="none" stroke="#ffd77a" stroke-width=".9" stroke-dasharray="1.6 1.2" pointer-events="none"/>`})}
  $('ydest').innerHTML=dh;$('board').classList.toggle('pick-node',!!(target&&target.tg==='node'))}
 function card(st,s){const home=st.pieces.filter(p=>p.n==='H').length,fin=st.pieces.filter(p=>p.n==='F').length;
- const slots=st.aug.map(a=>{const A=Y.AUG[a.id],left=A.use?A.use-(st.used[a.id]||0):null;return`<span class="slot${a.off?' off':''}${A.use&&left<=0?' used':''}${Y.isCat(a)?' catf':''}" title="${esc(A.name+': '+A.d)}"><i>${a.off?'🐈':A.icon}</i><b>${esc(a.off?'고양이(착각)':A.name)}</b>${A.use?`<small>${Math.max(0,left)}/${A.use}</small>`:''}</span>`});
+ const slots=st.aug.map((a,ai)=>{const A=Y.AUG[a.id],left=A.use?A.use-(st.used[a.id]||0):null;return`<span data-seat="${s}" data-k="${ai}" data-aug="1" class="slot${a.off?' off':''}${A.use&&left<=0?' used':''}${Y.isCat(a)?' catf':''}" title="${esc(A.name+': '+A.d)}"><i>${a.off?'🐈':A.icon}</i><b>${esc(a.off?'고양이(착각)':A.name)}</b>${A.use?`<small>${Math.max(0,left)}/${A.use}</small>`:''}</span>`});
  while(slots.length<3)slots.push('<span class="slot empty">—</span>');
  const nc=st.aug.filter(Y.isCat).length;
  const extra=[];if(st.skip)extra.push(`⏸️×${st.skip}`);if(nc)extra.push(`🐾 ${nc}/3`);if(G.garlic&&G.garlic.s===s)extra.push(`🧄 ${G.garlic.got.length}/4`);if(st.pieces.some(p=>p.t==='kim'&&p.n!=='F'))extra.push(`🛺 ${st.st.kimTurns}/6턴`);
@@ -619,8 +628,10 @@ function render(){
  $('bThrow').disabled=$('bDo').disabled=$('bGae').disabled=!canThrow;$('bThrow').textContent=canThrow&&G.throws>1?`윷 던지기 (${G.throws}번)`:'윷 던지기';
  const homeLeft=me?me.pieces.filter(x=>x.n==='H'&&x.t!=='pawn').length:0;$('bNew').disabled=!(mine&&p==='move'&&homeLeft&&G.results.some(r=>r.v>0));$('bNew').textContent=`새 말 내기${homeLeft?` (${homeLeft})`:''}`;
  $('bNew').classList.toggle('hide',!!target);$('bCancelT').classList.toggle('hide',!target);
- $('yaug').innerHTML=me?me.aug.map(a=>{const A=Y.AUG[a.id];if(!A.use&&!A.perTurn)return'';const left=Y.usesLeft(G,MY,a.id);const ok=mine&&!a.off&&left>0&&!target&&(a.id!=='sniper'||(p==='throw'&&G.throws>0));
-  return`<button class="ya act" data-use="${a.id}" ${ok?'':'disabled'} title="${esc(A.d)}">${A.icon} ${esc(A.name)} <small>${A.perTurn?(left?'이번 턴 가능':'이번 턴 씀'):`${left}/${A.use}`}</small></button>`}).join(''):'';
+ $('yaug').innerHTML=me&&me.aug.length?'<h3 class="yab-t">내 능력</h3>'+me.aug.map(a=>{const A=Y.AUG[a.id],act=A.use||A.perTurn,left=act?Y.usesLeft(G,MY,a.id):0;
+  const ok=act&&mine&&!a.off&&left>0&&!target&&(a.id!=='sniper'||(p==='throw'&&G.throws>0));
+  const state=a.off?`🐈 착각으로 고양이가 됨 (${a.until}라운드에 돌아옴)`:A.perTurn?(left?'이번 턴에 쓸 수 있음':'이번 턴에 씀'):A.use?`남은 횟수 ${Math.max(0,left)}/${A.use}`:'자동 적용';
+  return`<div class="yab${a.off?' off':''}${Y.isCat(a)?' catf':''}"><span class="yab-i">${a.off?'🐈':A.icon}</span><div class="yab-b"><b>${esc(A.name)}</b><p>${esc(A.d)}</p><small>${state}</small></div>${act?`<button class="btn red ya-use" data-use="${a.id}" ${ok?'':'disabled'}>사용</button>`:''}</div>`}).join(''):(me?'<p class="yab-none">아직 능력이 없습니다. 1·6·12라운드에 고를 수 있어요.</p>':'');
  if(!target)$('yhint').textContent=p==='pick'?'':mine?(p==='throw'?(G.results.length?'한 번 더 던질 수 있어요!':'윷 던지기를 누르세요.'):'결과를 고르고 움직일 말(판 위 말이나 새 말 내기)을 누르세요. 점선 원이 도착할 곳이에요.'):p==='over'?(G.winWhy||''):`${cur.name}의 차례를 기다리는 중…`;
  $('log').innerHTML=G.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join('');
  if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k,t.sticks||4)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
