@@ -474,7 +474,7 @@ function resetT(){S.t=TLIM;stopT();$('timer').textContent=TLIM;$('timer').classL
 function stopT(){clearInterval(tid);$('timer').classList.add('idle')}
 
 /* ---- 수석 악마 ---- */
-const AIL={win:['예상대로입니다.','그 정도로는 부족합니다.','흑이었을까요, 백이었을까요?'],lose:['…흥미롭군요.','이번만 양보하지요.','포인트를 아꼈습니다.'],any:['다음 수를 읽고 있습니다.','당신의 표시등이 보입니다.']};
+const AIL={win:['예상대로입니다.','좋습니다.'],lose:['…흥미롭군요.','다음 판은 다를 겁니다.'],any:['다음 수를 읽고 있습니다.','당신 차례입니다.']};
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 function aiBid(me,isFirst,oppInfo){const op=3-me,P0=S.pts[me],left=S.maxR-S.round+1,needMe=WINS-S.score[me],needOp=WINS-S.score[op];
