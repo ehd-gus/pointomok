@@ -379,6 +379,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <div id="instIos" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>Safari 아래쪽의 <b>공유</b> 버튼(네모에 위쪽 화살표)을 누르세요.</li><li><b>홈 화면에 추가</b>를 누르세요.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝입니다.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">아이폰은 Safari에서만 설치할 수 있어요. 카카오톡이나 다른 앱 안에서 열었다면 Safari로 다시 열어 주세요.</p></div>
  <div id="instOther" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>브라우저 오른쪽 위 <b>⋮</b> 메뉴를 누르세요.</li><li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누르세요.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">카카오톡이나 인스타그램 안에서 열었다면 설치가 안 돼요. 크롬이나 삼성 인터넷으로 다시 열어 주세요.</p></div>
  <button class="btn red wide" data-close>확인</button><button class="btn wide" id="bInstDone" style="margin-top:8px">이미 설치했어요</button></div></div>
+<script src="config.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 {
@@ -447,6 +448,7 @@ function finish(w,why){S.over=true;S.phase='over';stopT();clearTimeout(autoT);
  if(w===null){let m=0,a=0;S.b.flat().forEach(v=>{if(v===1)m++;if(v===2)a++});w=m>a?1:a>m?2:0;why+=` 돌 수 흑 ${m} : 백 ${a}.`}
  const r=w===MY?'win':w?'lose':'draw';
  $('endBig').textContent=r==='win'?'승리':r==='lose'?'패배':'무승부';$('endT').textContent=r==='win'?`${oppName()}을(를) 이겼습니다`:r==='lose'?`${oppName()}의 승리`:'승부가 나지 않았습니다';$('endP').textContent=why;
+ if(r==='win'&&MODE==='net'&&!S.cheat)setTimeout(()=>reportWin('2p'),0);
  say(r==='win'?'당신의 승리입니다.':r==='lose'?`${oppName()}이(가) 이겼습니다.`:'무승부입니다.');render();endNote();setTimeout(()=>$('mEnd').classList.add('on'),400)}
 function resetT(){S.t=30;stopT();$('timer').textContent=30;$('timer').classList.remove('low');tid=setInterval(()=>{S.t--;$('timer').textContent=S.t;$('timer').classList.toggle('low',S.t<=5);if(S.t<=0){stopT();timeout()}},1000)}
 function stopT(){clearInterval(tid)}
@@ -478,7 +480,7 @@ function sync(){if(MODE!=='net')return;opp=findOpp();
  if(S.phase==='sent'&&oh&&oh.c&&!(P.h[R]&&P.h[R].v))setH(R,{v:S.myRv});
  if(S.phase==='sent'&&P.h[R]&&P.h[R].v&&oh&&oh.v){const ob=oh.v.b,ox=isInt(oh.x,0,999)?oh.x:0;
   const ok=Array.isArray(ob)&&ob.length===3&&ob.every(x=>isInt(x,1,999))&&ob.reduce((a,b)=>a+b,0)<=S.bud[OPP()]+ox&&typeof oh.v.s==='string'&&hash(JSON.stringify(ob)+oh.v.s)===oh.c;
-  if(!ok)return finish(MY,'상대가 보낸 포인트 기록이 맞지 않아 부정으로 처리했습니다.');
+  if(!ok){S.cheat=true;return finish(MY,'상대가 보낸 포인트 기록이 맞지 않아 부정으로 처리했습니다.')}
   S.bud[OPP()]+=ox;return resolve({[MY]:S.myRv.b,[OPP()]:ob})}
  render()}
 function endNote(){$('endR').textContent=MODE==='net'&&opp&&opp.presence.gen>P.gen?`${oppName()} 님이 재대결을 원합니다.`:MODE==='net'&&S.phase==='wait'?'상대의 수락을 기다리는 중…':''}
@@ -612,6 +614,10 @@ if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWo
  $('bInstall').onclick=async()=>{if(dp){dp.prompt();try{const r=await dp.userChoice;if(r.outcome==='accepted')done()}catch(e){}dp=null;return}
   $('instIos').classList.toggle('hide',!ios);$('instOther').classList.toggle('hide',ios);$('mInstall').classList.add('on')}}
 $('bInstDone').onclick=()=>{try{localStorage.setItem('pomok-installed','1')}catch(e){}$('instBar').classList.add('hide');$('mInstall').classList.remove('on')};
+/* ---- 랭킹: 온라인 대전에서 이기면 1승 기록 (혼자 연습 제외) ---- */
+function reportWin(g){if(S.reported)return;S.reported=true;const FB=(window.POMOK_FB||'').replace(/\/+$/,'');const n=(P.name||'').trim().slice(0,12);if(!FB||!n)return;
+ const key=encodeURIComponent(n.replace(/[.#$\[\]\/\x00-\x1f\x7f]/g,'_'));
+ fetch(`${FB}/ranking/${g}/${key}.json`,{method:'PATCH',body:JSON.stringify({n,w:{'.sv':{increment:1}},t:{'.sv':'timestamp'}})}).then(r=>{if(r.ok){const e=$('endP');e.textContent+=' 랭킹에 1승이 기록되었습니다.'}}).catch(()=>{})}
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 
 function render(){const p=S.phase,sl=selector(),ON=oppName();
