@@ -150,7 +150,7 @@ function gain(G,s,id){const st=G.seats[s],A=AUG[id];st.aug.push({id});addLog(G,`
 function pickPiece(st,anyOk){let k=st.pieces.findIndex(p=>!p.t&&p.n==='H');if(k<0&&anyOk)k=st.pieces.findIndex(p=>!p.t&&p.n!=='F');return k}
 function freeNode(G,extra){const occ=new Set(extra||[]);G.seats.forEach(st=>st.pieces.forEach(p=>occ.add(p.n)));Object.keys(G.traps).concat(Object.keys(G.rewards),Object.keys(G.poop)).forEach(k=>occ.add(k));
  if(G.garlic)G.garlic.nodes.forEach(k=>occ.add(k));const free=NODES.filter(k=>!['o0','o1','C'].includes(k)&&!occ.has(k));return free.length?pickR(G,free):null}
-function checkCat(G){G.seats.forEach((st,s)=>{if(G.phase==='over'||st.out)return;if(has(G,s,'catlover')&&G.seats.some((x,i)=>x.aug.some(a=>a.id==='cat')))win(G,s,'😺 애묘인: 고양이가 나타났습니다!')})}
+function checkCat(G){G.seats.forEach((st,s)=>{if(G.phase==='over'||st.out)return;if(has(G,s,'catlover')&&G.seats.some((x,i)=>!x.out&&x.aug.some(a=>a.id==='cat'||(a.off&&a.until))))win(G,s,'😺 애묘인: 고양이가 나타났습니다!')})}
 
 /* ---- 승리 · 탈락 ---- */
 function win(G,s,why){if(G.phase==='over')return;G.phase='over';G.winner=s;G.winWhy=why||'';addLog(G,`🎉 ${G.seats[s].name} 승리! ${why||''}`);G.ev++}
@@ -299,7 +299,7 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'sacri':if(!ownOn(t.pi))return false;sendHome(G,s,t.pi);st.pieces.forEach(p=>{if(onBoard(p))p.sh=1});break;
   case'sniper':{if(G.phase!=='throw'||G.throws<=0||!NODES.includes(t.n))return false;G.throws--;G.marks.push({n:t.n,s});G.snTurn[s]=G.turnNo;break}
   case'assassin':if(!ownOn(t.pi))return false;st.pieces[t.pi].asn=1;break;
-  case'illusion':{const o=G.seats[t.o];if(!o||t.o===s||o.out)return false;const a=o.aug.find(x=>x.id===t.aug&&!x.off&&!(AUG[x.id].use&&(o.used[x.id]||0)>=AUG[x.id].use));if(!a)return false;a.off=true;a.until=G.round+3;break}
+  case'illusion':{const o=G.seats[t.o];if(!o||t.o===s||o.out)return false;const a=o.aug.find(x=>x.id===t.aug&&!x.off&&!(AUG[x.id].use&&(o.used[x.id]||0)>=AUG[x.id].use));if(!a)return false;a.off=true;a.until=G.round+3;G.catCheck=1;break}
   case'hit':{const o=G.seats[t.o];if(!o||t.o===s||o.out)return false;o.skip+=2;break}
   case'grail':G.throws+=3;G.grail=s;break;
   case'lastdance':G.throws+=2;G.dance=s;break;
@@ -310,7 +310,7 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
  if(!ok)return false;
  if(A.perTurn)G.snTurn[s]=G.turnNo;else st.used[id]=(st.used[id]||0)+1;
  addLog(G,`${A.icon} ${st.name}: ${A.name}${t.o!=null&&G.seats[t.o]?' → '+G.seats[t.o].name:''}`);
- G.ev++;
+ G.ev++;if(G.catCheck){delete G.catCheck;checkCat(G);if(G.phase==='over')return true}
  if(G.phase==='move'&&G.throws>0)G.phase='throw';
  else if(G.phase==='throw'&&G.throws<=0)toMove(G);
  else if(G.phase==='move'&&!anyMove(G,s)&&G.phase!=='over'){if(G.results.length)addLog(G,'쓸 수 있는 결과가 없어 넘어갑니다.');endTurn(G)}
