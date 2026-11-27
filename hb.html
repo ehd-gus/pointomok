@@ -395,6 +395,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <div id="instIos" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>Safari 아래쪽의 <b>공유</b> 버튼(네모에 위쪽 화살표)을 누르세요.</li><li><b>홈 화면에 추가</b>를 누르세요.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝입니다.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">아이폰은 Safari에서만 설치할 수 있어요. 카카오톡이나 다른 앱 안에서 열었다면 Safari로 다시 열어 주세요.</p></div>
  <div id="instOther" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>브라우저 오른쪽 위 <b>⋮</b> 메뉴를 누르세요.</li><li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누르세요.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">카카오톡이나 인스타그램 안에서 열었다면 설치가 안 돼요. 크롬이나 삼성 인터넷으로 다시 열어 주세요.</p></div>
  <button class="btn red wide" data-close>확인</button><button class="btn wide" id="bInstDone" style="margin-top:8px">이미 설치했어요</button></div></div>
+<script src="config.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 {
@@ -464,6 +465,7 @@ function finish(o){S.over=true;S.phase='over';stopT();clearTimeout(autoT);clearT
  let w=0,why='';
  if(o&&o.cheat){why=`${nameOf(OPP())}이(가) 보낸 기록이 맞지 않아 부정으로 처리했습니다. 이 판은 무효입니다.`}
  else{w=S.score[1]>S.score[2]?1:S.score[2]>S.score[1]?2:0;why=`승점 ${S.score[MY]} : ${S.score[OPP()]}`+(S.score[w]>=WINS?' · 5점을 먼저 얻었습니다.':S.ot?' · 연장까지 끝났습니다.':' · 9라운드가 끝났습니다.')}
+ if(w===MY&&MODE==='net'&&!(o&&o.cheat))setTimeout(()=>reportWin('hb'),0);
  $('endBig').textContent=o&&o.cheat?'무효':!w?'무승부':w===MY?'승리':'패배';
  $('endT').textContent=o&&o.cheat?'승부가 나지 않았습니다':!w?'무승부':`${nameOf(w)} 승리`;$('endP').textContent=why;
  say(!w?'승부가 나지 않았습니다.':w===MY?'당신의 승리입니다.':`${nameOf(w)}이(가) 이겼습니다.`);
@@ -632,6 +634,10 @@ setInterval(loadRooms,6000);loadRooms();
 const TIPS=["선은 상대의 흑·백을 보지 못하고 먼저 내야 해요. 대신 이기면 다음 라운드도 선이에요.", "후는 선의 흑·백과 표시등을 보고 낼 수 있어요. 선이 흑이면 10만 내도 반드시 이겨요.", "적은 차이로 이기고, 질 때는 크게 지는 게 핵심이에요. 질 라운드엔 0~1만 내서 아끼세요.", "표시등은 내는 순간 바뀌어요. 표시등 한 칸이 꺼지는 숫자를 내면 상대가 눈치챌 수 있어요.", "상대가 4점이면 한 판만 져도 끝나요. 그때는 아끼지 말고 크게 내야 해요.", "9라운드가 끝났을 때 승점이 같으면 33포인트로 3라운드를 더 해요.", "흑끼리, 백끼리 붙으면 누가 더 냈는지 끝까지 알 수 없어요. 숫자 심리전을 노려 보세요."];let tipI=Math.floor(Math.random()*TIPS.length);
 function showTip(){$('tipT').textContent=TIPS[tipI];$('tipN').textContent=(tipI+1)+'/'+TIPS.length}
 $('tipBox').onclick=()=>{tipI=(tipI+1)%TIPS.length;showTip()};showTip();
+/* ---- 랭킹: 온라인 대전에서 이기면 1승 기록 (혼자 연습 제외) ---- */
+function reportWin(g){if(S.reported)return;S.reported=true;const FB=(window.POMOK_FB||'').replace(/\/+$/,'');const n=(P.name||'').trim().slice(0,12);if(!FB||!n)return;
+ const key=encodeURIComponent(n.replace(/[.#$\[\]\/\x00-\x1f\x7f]/g,'_'));
+ fetch(`${FB}/ranking/${g}/${key}.json`,{method:'PATCH',body:JSON.stringify({n,w:{'.sv':{increment:1}},t:{'.sv':'timestamp'}})}).then(r=>{if(r.ok){const e=$('endP');e.textContent+=' 랭킹에 1승이 기록되었습니다.'}}).catch(()=>{})}
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 if(/^#join=\d{4}$/.test(location.hash)){const c=location.hash.slice(6);history.replaceState(null,'',location.pathname);$('codeIn').value=c;if($('nick').value.trim())$('bJoin').onclick();else $('lobbyMsg').textContent='이름을 정하고 참가를 누르세요.'}
 if(location.hash==='#solo'){history.replaceState(null,'',location.pathname);if($('nick').value.trim())$('bSolo').onclick()}

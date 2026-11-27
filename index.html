@@ -295,6 +295,14 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .gtxt span{font-size:14px;color:var(--dim);line-height:1.45}
 .gtags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}.gtags i{font-style:normal;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--ink)}
 .go{flex:none;font-size:22px;color:var(--gold)}
+.rank{border:1px solid var(--line2);border-radius:14px;background:#181213;overflow:hidden}
+.rtabs{display:flex;border-bottom:1px solid var(--line)}.rtabs button{flex:1;min-height:44px;border:0;background:none;color:var(--dim);font:inherit;font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent}
+.rtabs button.on{color:var(--ink);border-bottom-color:var(--gold)}
+.rlist{list-style:none;margin:0;padding:4px 0}.rlist li{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #2a2021}.rlist li:last-child{border-bottom:0}
+.rlist .rno{width:26px;text-align:center;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+.rlist li:nth-child(1) .rno{color:#e9c46a}.rlist li:nth-child(2) .rno{color:#d6d6d6}.rlist li:nth-child(3) .rno{color:#d99a5e}
+.rlist .rname{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rlist .rw{font-variant-numeric:tabular-nums;font-weight:700}.rlist .rw small{font-weight:500;color:var(--dim);margin-left:2px}
+.rnote{padding:16px;text-align:center;color:var(--dim);font-size:14px}
 </style>
 </head>
 <body>
@@ -308,6 +316,8 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
   <svg class="gart" viewBox="0 0 92 92" aria-hidden="true"><rect width="92" height="92" fill="#1a1213"/><rect x="10" y="22" width="34" height="48" rx="6" fill="#0b0b0b" stroke="#6b6464"/><rect x="48" y="22" width="34" height="48" rx="6" fill="#f2ede4"/><g fill="#e9b949"><circle cx="18" cy="80" r="3.2"/><circle cx="28" cy="80" r="3.2"/><circle cx="38" cy="80" r="3.2"/><circle cx="48" cy="80" r="3.2" fill="#3d3132"/><circle cx="58" cy="80" r="3.2" fill="#3d3132"/></g><text x="27" y="51" text-anchor="middle" font-family="Hahmlet,serif" font-weight="700" font-size="15" fill="#f2ede4">흑</text><text x="65" y="51" text-anchor="middle" font-family="Hahmlet,serif" font-weight="700" font-size="15" fill="#141011">백</text></svg>
   <div class="gtxt"><b>흑과 백</b><span>99포인트로 9라운드. 숫자는 숨기고 흑·백만 보고 승부하세요.</span><div class="gtags"><i>2인</i><i>5승 먼저</i><i>혼자 연습</i></div></div><span class="go" aria-hidden="true">›</span>
  </a>
+ <h2 id="rank">랭킹 · 온라인 대전 승리 수</h2>
+ <div class="rank"><div class="rtabs" role="tablist"><button class="on" data-g="all">전체</button><button data-g="2p">오목 2인</button><button data-g="3p">오목 3인</button><button data-g="hb">흑과 백</button></div><ol class="rlist" id="rlist"><li class="rnote">랭킹을 불러오는 중…</li></ol></div>
  <h2>열려 있는 공개 방</h2>
  <div class="rooms" id="roomList" style="max-height:none"><p class="empty">공개 방을 찾는 중…</p></div>
 </main>
@@ -316,6 +326,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <div id="instIos" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>Safari 아래쪽의 <b>공유</b> 버튼(네모에 위쪽 화살표)을 누르세요.</li><li><b>홈 화면에 추가</b>를 누르세요.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝입니다.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">아이폰은 Safari에서만 설치할 수 있어요. 카카오톡이나 다른 앱 안에서 열었다면 Safari로 다시 열어 주세요.</p></div>
  <div id="instOther" class="hide"><ol style="padding-left:20px;line-height:1.8;margin:0 0 14px"><li>브라우저 오른쪽 위 <b>⋮</b> 메뉴를 누르세요.</li><li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누르세요.</li></ol><p style="color:var(--dim);font-size:14px;margin:0 0 14px">카카오톡이나 인스타그램 안에서 열었다면 설치가 안 돼요. 크롬이나 삼성 인터넷으로 다시 열어 주세요.</p></div>
  <button class="btn red wide" data-close>확인</button><button class="btn wide" id="bInstDone" style="margin-top:8px">이미 설치했어요</button></div></div>
+<script src="config.js"></script>
 <script>
 {
 const $=id=>document.getElementById(id);
@@ -348,6 +359,19 @@ if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWo
  $('bInstall').onclick=async()=>{if(dp){dp.prompt();try{const r=await dp.userChoice;if(r.outcome==='accepted')done()}catch(e){}dp=null;return}
   $('instIos').classList.toggle('hide',!ios);$('instOther').classList.toggle('hide',ios);$('mInstall').classList.add('on')}}
 $('bInstDone').onclick=()=>{try{localStorage.setItem('pomok-installed','1')}catch(e){}$('instBar').classList.add('hide');$('mInstall').classList.remove('on')};
+/* ---- 랭킹 ---- */
+let RK=null,RG='all';
+async function loadRank(){const FB=(window.POMOK_FB||'').replace(/\/+$/,''),box=$('rlist');
+ if(!FB){box.innerHTML='<li class="rnote">랭킹 저장소가 아직 연결되지 않았습니다.</li>';return}
+ try{const r=await fetch(FB+'/ranking.json');if(!r.ok)throw 0;RK=await r.json()||{}}catch(e){box.innerHTML='<li class="rnote">랭킹을 불러오지 못했습니다. 잠시 후 다시 시도합니다.</li>';return}
+ drawRank()}
+function drawRank(){const box=$('rlist');if(!RK)return;const tot={};
+ for(const g of['2p','3p','hb']){if(RG!=='all'&&RG!==g)continue;const t=RK[g]||{};for(const k in t){const v=t[k];if(!v||typeof v.n!=='string'||!isInt(v.w,1,1e6))continue;const n=v.n.slice(0,12);tot[n]=(tot[n]||0)+v.w}}
+ const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).slice(0,30);
+ if(!list.length){box.innerHTML='<li class="rnote">아직 기록이 없습니다. 온라인 대전에서 이기면 이름이 올라가요.</li>';return}
+ let rank=0,prev=null;box.innerHTML=list.map(([n,w],i)=>{if(w!==prev){rank=i+1;prev=w}return`<li><span class="rno">${rank}</span><span class="rname">${esc(n)}</span><span class="rw">${w}<small>승</small></span></li>`}).join('')}
+document.querySelector('.rtabs').addEventListener('click',e=>{const b=e.target.closest('button[data-g]');if(!b)return;RG=b.dataset.g;document.querySelectorAll('.rtabs button').forEach(x=>x.classList.toggle('on',x===b));drawRank()});
+loadRank();setInterval(loadRank,30000);
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 }
 </script>
