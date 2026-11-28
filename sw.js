@@ -1,9 +1,9 @@
 // 포인트 오목 앱: 화면 파일은 항상 새 버전을 먼저 받고, 인터넷이 끊겼을 때만 저장본을 씁니다.
-const CACHE='pomok-v42';
+const CACHE='pomok-v40';
 const SHELL=['./','./index.html','./omok.html','./3p.html','./hb.html','./yut.html','./scale.html','./yut-engine.js','./config.js','./net.js','./rooms.js','./manifest.webmanifest','./icons/icon-192-v2.png','./icons/icon-512-v2.png','./icons/apple-touch-icon-v2.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);
  if(e.request.method!=='GET'||u.origin!==location.origin)return;
- e.respondWith(fetch(e.request.url,{cache:'no-cache',credentials:'same-origin'}).then(r=>{if(r.ok){const cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp))}return r})
+ e.respondWith(fetch(e.request).then(r=>{if(r.ok){const cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp))}return r})
   .catch(()=>caches.match(e.request,{ignoreSearch:true}).then(r=>r||caches.match('./index.html'))))});
