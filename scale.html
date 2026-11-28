@@ -385,7 +385,8 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <li>한 판은 <b>둘 중 한 사람의 손패가 다 없어질 때까지</b> 계속합니다. 내 턴에는 셋 중 하나를 합니다.<br>① <b>카드 올리기</b>: 손의 카드 1장을 원하는 쪽에 뒷면으로 올립니다.<br>② <b>엿보기</b>: 저울 위 뒷면 카드 1장을 나만 몰래 봅니다. (한 판에 1번)<br>③ <b>뽑기</b>: 더미에서 1장을 가져옵니다.</li>
  <li>카드를 올려서 <b>한쪽 접시의 합</b>이 <b>10보다 크거나 −10보다 작아지면</b> 저울이 엎어지고, 그 카드를 올린 사람이 그 판에서 집니다. (어느 접시든)</li>
  <li><b>각자 5턴이 지난 뒤</b>(11번째 턴부터) 카드를 올려서 그 접시의 합을 <b>딱 0</b>으로 만들면 그 즉시 이깁니다.</li>
- <li>누구든 손패가 다 떨어지면 그 즉시 판이 끝나고 카드를 모두 공개합니다. 카드를 올린 순간 <b>그 접시의 합을 10(또는 −10)에 가장 가깝게</b> 만든 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
+ <li>누구든 손패가 다 떨어지면 카드를 올리는 건 끝나고, <b>손패를 다 쓴 사람이 먼저 왼쪽·오른쪽 접시 중 하나를 고릅니다.</b> 남은 접시는 상대 것이 됩니다. 카드는 아직 뒷면이라 합을 추리해서 골라야 합니다.</li>
+ <li>고른 뒤 카드를 모두 공개합니다. <b>접시 합이 10(또는 −10)에 더 가까운 접시를 가진 사람</b>이 그 판을 이깁니다. 똑같으면 무승부입니다.</li>
  <li><b>3판을 먼저 이긴 사람</b>이 승리합니다. 첫 판 선공은 무작위, 다음 판은 진 사람이 선공입니다.</li>
  <li>한 턴은 40초이고, 시간이 지나면 자동으로 행동합니다.</li>
 </ul><button class="btn red" data-close>닫기</button></div></div>
@@ -442,11 +443,14 @@ function tilt(g){const o=pans(g);return o.L-o.R}
 const PN={L:'왼쪽',R:'오른쪽'};
 function newMatch(){G={round:0,wins:{1:0,2:0},first:Math.random()<.5?1:2,phase:'play',log:[],nid:1,names:{1:'',2:''}};newRound()}
 function newRound(){const g=G;g.round++;g.deck=shuffle(FULL.slice());g.hands={1:g.deck.splice(0,HAND),2:g.deck.splice(0,HAND)};
- g.scale=[{id:g.nid++,v:g.deck.pop(),side:Math.random()<.5?'L':'R',by:0}];g.peek={1:1,2:1};g.seen={1:[],2:[]};g.t=0;g.turn=g.first;g.best=null;g.res=null;g.phase='play';g.dirs=[Math.sign(tilt(g))];
+ g.scale=[{id:g.nid++,v:g.deck.pop(),side:Math.random()<.5?'L':'R',by:0}];g.peek={1:1,2:1};g.seen={1:[],2:[]};g.t=0;g.turn=g.first;g.best=null;g.res=null;g.own=null;g.chooser=0;g.phase='play';g.dirs=[Math.sign(tilt(g))];
  addLog(`— ${g.round}판 시작 · 고정 카드가 올라갔습니다.`);tick()}
 function addLog(t){G.log.push(t);if(G.log.length>80)G.log.shift()}
 function nm(s){return G.names[s]||(s===1?'방장':'상대')}
-function act(s,a){const g=G;if(!g||g.phase!=='play'||g.turn!==s||!a)return false;const h=g.hands[s];
+function choosePan(s,side){const g=G;if(!g||g.phase!=='choose'||g.chooser!==s||!['L','R'].includes(side))return false;const o=3-s,P=pans(g),mine=P[side],other=P[side==='L'?'R':'L'];
+ const dm=10-Math.abs(mine),dothers=10-Math.abs(other);g.own={[s]:side,[o]:side==='L'?'R':'L'};addLog(`${nm(s)}이(가) 접시를 골랐습니다.`);
+ const w=dm<dothers?s:dothers<dm?o:0;endRound(w,`${nm(s)}의 접시 합 ${mine}, ${nm(o)}의 접시 합 ${other} → ${w?nm(w)+'의 접시가 10에 더 가까움':'똑같이 가까워 무승부'}`,tilt(g));return true}
+function act(s,a){const g=G;if(a&&a.t==='pan')return choosePan(s,a.side);if(!g||g.phase!=='play'||g.turn!==s||!a)return false;const h=g.hands[s];
  if(a.t==='place'){if(!isInt(a.i,0,h.length-1)||!['L','R'].includes(a.side))return false;const v=h.splice(a.i,1)[0];const c={id:g.nid++,v,side:a.side,by:s};g.scale.push(c);
   const T=tilt(g),S=pans(g)[a.side];g.dirs.push(Math.sign(T));addLog(`${nm(s)}: 카드를 올렸습니다.`);
   if(Math.abs(S)>10){endRound(3-s,`${nm(s)}이(가) 올린 ${sgn(v)} 때문에 저울이 엎어졌습니다! (그 접시 합 ${S})`,T);return true}
@@ -456,16 +460,16 @@ function act(s,a){const g=G;if(!g||g.phase!=='play'||g.turn!==s||!a)return false
  else if(a.t==='draw'){if(!g.deck.length)return false;h.push(g.deck.pop());addLog(`${nm(s)}: 카드를 1장 뽑았습니다.`)}
  else if(a.t==='pass'){if(h.length)return false;addLog(`${nm(s)}: 손패가 없어 넘깁니다.`)}
  else return false;
- g.t++;if(!g.hands[1].length||!g.hands[2].length){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (그 접시 합 ${b.S})`,tilt(g));return true}
+ g.t++;if(!g.hands[1].length||!g.hands[2].length){g.phase='choose';g.chooser=!g.hands[s].length?s:3-s;addLog(`${nm(g.chooser)}이(가) 손패를 다 써서 먼저 접시를 고릅니다.`);tick();return true;const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (그 접시 합 ${b.S})`,tilt(g));return true}
  g.turn=3-s;tick();return true}
 const peekable=(g,s)=>g.scale.filter(c=>c.by!==s&&!g.seen[s].includes(c.id));
 function endRound(w,why,T){const g=G;g.phase='rend';g.res={w,why,T,best:g.best,round:g.round};if(w)g.wins[w]++;addLog(`★ ${g.round}판: ${w?nm(w)+' 승리':'무승부'} — ${why}`);
  if(w&&g.wins[w]>=WINS){g.phase='over';g.winner=w;addLog(`🏆 ${nm(w)}이(가) 최종 승리했습니다!`)}
  else g.first=w?3-w:3-g.first;tick()}
-function view(s){const g=G;if(!g)return null;const open=g.phase!=='play';
+function view(s){const g=G;if(!g)return null;const open=g.phase==='rend'||g.phase==='over';
  return{round:g.round,wins:g.wins,turn:g.turn,t:g.t,phase:g.phase,first:g.first,me:s,names:g.names,hand:g.hands[s].slice(),oppHand:g.hands[3-s].length,deck:g.deck.length,peek:g.peek[s],oppPeek:g.peek[3-s],
   scale:g.scale.map(c=>({id:c.id,side:c.side,by:c.by,v:open||c.by===s||g.seen[s].includes(c.id)?c.v:null,peeked:g.seen[s].includes(c.id)})),dir:Math.sign(tilt(g)),res:g.res,log:g.log.slice(-40),winner:g.winner||0,
-  T:open?tilt(g):null}}
+  T:open?tilt(g):null,chooser:g.chooser||0,own:g.own||null}}
 
 /* ---- 수석 악마 (보이는 정보만 사용) ---- */
 function aiMove(v){const me=v.me,op=3-me,known=v.scale.filter(c=>c.v!=null);
@@ -484,22 +488,26 @@ function aiMove(v){const me=v.me,op=3-me,known=v.scale.filter(c=>c.v!=null);
    if(first){first=false;if(c.pass){}else if(c.draw){if(deck.length)H[me].push(deck.pop())}else{const i=H[me].indexOf(c.x);r=place(me,i,c.side)}}
    else{const g=greedy(H[turn],S,deck,tt);if(g.pass){}else if(g.draw)H[turn].push(deck.pop());else if(g.force){if(H[turn].length)r=place(turn,0,'L')}else r=place(turn,g.i,g.sd)}
    if(r)return r;steps--;tt++;turn=3-turn}
-  return best?best.by:0};
+  if(H[me].length&&H[op].length)return 0;const ch=!H[me].length?me:op,dl=10-Math.abs(S.L),dr=10-Math.abs(S.R);if(dl===dr)return 0;return Math.random()<.7?ch:3-ch};
  let top=null;cands.forEach(c=>{let w=0;worlds.forEach(W=>{const r=roll(W,c);if(r===me)w++;else if(r===0)w+=.5});c.wr=w/Math.max(1,worlds.length)+(c.draw?-.02:0)+Math.random()*.01;if(!top||c.wr>top.wr)top=c});
  const tg=v.scale.filter(c=>c.v==null&&c.by!==me);if(v.peek>0&&tg.length&&unkN>=2&&left>4&&top.wr<.75&&Math.random()<.3)return{t:'peek',id:tg[tg.length-1].id};
  return top.a}
+function aiPan(v){const known=v.scale.filter(c=>c.v!=null),unk=v.scale.filter(c=>c.v==null);const pool=FULL.slice();const rm=x=>{const i=pool.indexOf(x);if(i>=0)pool.splice(i,1)};v.hand.forEach(rm);known.forEach(c=>rm(c.v));
+ let wl=0,n=0;for(let k=0;k<2000&&n<300;k++){const p=shuffle(pool.slice());const S={L:0,R:0};known.forEach(c=>S[c.side]+=c.v);unk.forEach((c,i)=>S[c.side]+=p[i]);if(Math.sign(S.L-S.R)!==v.dir&&k<1500)continue;n++;const dl=10-Math.abs(S.L),dr=10-Math.abs(S.R);wl+=dl<dr?1:dl===dr?.5:0}
+ return wl/Math.max(1,n)>=.5?'L':'R'}
 /* ---- 방장 진행 ---- */
 function tick(){clearTimeout(aiT);clearInterval(tid);const g=G;if(!g)return;
  if(g.phase==='play'){deadline=Date.now()+TLIM*1000;const s=g.turn;
   if(MODE==='ai'&&s===2)aiT=setTimeout(()=>{if(G===g&&g.phase==='play'&&g.turn===2)act(2,aiMove(view(2)))},900+Math.random()*900);
   else aiT=setTimeout(()=>{if(G===g&&g.phase==='play'&&g.turn===s)act(s,aiMove(view(s)))},TLIM*1000)}
+ else if(g.phase==='choose'){deadline=Date.now()+TLIM*1000;const s=g.chooser;aiT=setTimeout(()=>{if(G===g&&g.phase==='choose')choosePan(s,aiPan(view(s)))},MODE==='ai'&&s===2?1200:TLIM*1000)}
  else deadline=0;
  tid=setInterval(()=>{if(host)broadcastT()},1000);broadcast()}
 function broadcast(){if(!host)return;V=view(MY);render();if(gconn&&gconn.open)try{gconn.send(JSON.stringify({app:'sc',code:P.code,t:'v',v:view(2),tl:deadline?Math.max(0,deadline-Date.now()):0}))}catch(e){}}
 function broadcastT(){showTimer(deadline?Math.max(0,deadline-Date.now()):0)}
 function doAct(a){if(host)act(MY,a);else if(hconn&&hconn.open)try{hconn.send(JSON.stringify({app:'sc',code:P.code,t:'a',a}))}catch(e){}}
 function showTimer(ms){const s=Math.ceil(ms/1000);$('timer').textContent=ms?s:TLIM;$('timer').classList.toggle('idle',!ms);$('timer').classList.toggle('low',ms>0&&s<=10)}
-let gTl=0,gTlAt=0;setInterval(()=>{if(!host&&V&&V.phase==='play'&&gTl)showTimer(Math.max(0,gTl-(Date.now()-gTlAt)))},500);
+let gTl=0,gTlAt=0;setInterval(()=>{if(!host&&V&&(V.phase==='play'||V.phase==='choose')&&gTl)showTimer(Math.max(0,gTl-(Date.now()-gTlAt)))},500);
 
 /* ---- 그리기 ---- */
 const winDots=n=>Array.from({length:WINS},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('');
@@ -519,12 +527,12 @@ function render(){const v=V,me=v?v.me:1,op=3-me,inG=!!v;
  $('iMe').textContent=v?`손패 ${v.hand.length} · 엿보기 ${v.peek}`:'';$('iOp').textContent=v?`손패 ${v.oppHand} · 엿보기 ${v.oppPeek}`:'';
  const my=v&&v.phase==='play'&&v.turn===me;$('plMe').classList.toggle('turn',!!my);$('plOp').classList.toggle('turn',!!(v&&v.phase==='play'&&v.turn===op));
  $('meta').textContent=v?`${v.round}판 · 턴 ${v.t+1} · 더미 ${v.deck}장 · ${WINS}판 먼저 이기면 승리`:'3판 먼저 이기면 승리';
- $('banner').textContent=!v?'저울':v.phase==='over'?'게임 종료':v.phase==='rend'?'판 종료':my?(peekMode?'엿볼 카드를 누르세요':'내 차례'):`${v.names[op]||'상대'}의 차례`;
+ const ch=v&&v.phase==='choose';$('banner').textContent=!v?'저울':ch?(v.chooser===me?'가질 접시를 고르세요':`${v.names[op]||'상대'}이(가) 접시를 고르는 중`):v.phase==='over'?'게임 종료':v.phase==='rend'?'판 종료':my?(peekMode?'엿볼 카드를 누르세요':'내 차례'):`${v.names[op]||'상대'}의 차례`;
  drawScale(v);
- $('note').textContent=v&&v.phase==='play'?'':'';
+ $('note').textContent=ch?(v.chooser===me?'손패를 다 썼습니다. 접시 합이 10(또는 −10)에 더 가까울 것 같은 접시를 고르세요.':'상대가 고르고 남은 접시가 내 것이 됩니다.'):'';
  if(sel>=(v?v.hand.length:0))sel=-1;
  $('hand').innerHTML=v&&v.hand.length?v.hand.map((x,i)=>`<button class="cd${cls(x)}${i===sel?' sel':''}" data-i="${i}" ${my?'':'disabled'}>${sgn(x)}</button>`).join(''):'<span class="empty">손에 카드가 없습니다.</span>';
- $('bL').disabled=$('bR').disabled=!(my&&sel>=0);$('bDraw').disabled=!(my&&v.deck>0);$('bDraw').textContent=`뽑기 (${v?v.deck:0})`;
+ $('bL').disabled=$('bR').disabled=ch?v.chooser!==me:!(my&&sel>=0);$('bL').textContent=ch?'◀ 이 접시 가지기':'◀ 올리기';$('bR').textContent=ch?'이 접시 가지기 ▶':'올리기 ▶';$('bDraw').disabled=!(my&&v.deck>0);$('bDraw').textContent=`뽑기 (${v?v.deck:0})`;
  const canPeek=my&&v.peek>0&&v.scale.some(c=>c.v==null&&c.by!==me);$('bPeek').disabled=!canPeek;$('bPeek').textContent=peekMode?'엿보기 취소':`엿보기 (${v?v.peek:1})`;
  $('bPass').classList.toggle('hide',!(v&&!v.hand.length&&v.phase==='play'));$('bPass').disabled=!my;
  $('log').innerHTML=v?v.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join(''):'';
@@ -532,13 +540,13 @@ function render(){const v=V,me=v?v.me:1,op=3-me,inG=!!v;
  if(v&&v.phase==='over'&&!endShown){endShown=true;setTimeout(()=>showEnd(v),v.res?2500:0)}}
 function showRound(v){const r=v.res,me=v.me;$('rdT').textContent=`${r.round}판 결과`;$('rdBig').textContent=r.w===0?'무승부':r.w===me?'승리!':'패배';$('rdP').textContent=r.why+(r.best&&r.w!==0&&!/엎어/.test(r.why)?'':'')+` 접시 합: ${v.scale.filter(c=>c.side==='L').reduce((a,c)=>a+c.v,0)} / ${v.scale.filter(c=>c.side==='R').reduce((a,c)=>a+c.v,0)}`;
  const col=side=>v.scale.filter(c=>c.side===side).map(c=>`<span class="mini${cls(c.v)}${c.by===0?' fx':c.by===me?' me':' op'}">${sgn(c.v)}</span>`).join('');
- $('rdC').innerHTML=`<div><div class="pan">${col('L')}</div></div><div><div class="pan">${col('R')}</div></div>`;
+ const lab=sd=>v.own?(v.own[me]===sd?'<small>내 접시</small>':'<small>상대 접시</small>'):'';$('rdC').innerHTML=`<div>${lab('L')}<div class="pan">${col('L')}</div></div><div>${lab('R')}<div class="pan">${col('R')}</div></div>`;
  $('bNext').textContent=v.phase==='over'?'결과 보기':host?'다음 판':'다음 판 (방장이 시작)';$('bNext').disabled=!host&&v.phase!=='over';$('mRound').classList.add('on')}
 function showEnd(v){$('mRound').classList.remove('on');const w=v.winner===v.me;$('endT').textContent='게임 종료';$('endBig').textContent=w?'승리!':'패배';$('endP').textContent=`${v.wins[v.me]} : ${v.wins[3-v.me]}`;$('endR').textContent='';$('mEnd').classList.add('on');if(w&&MODE==='net')reportWin('sc')}
 
 /* ---- 조작 ---- */
 $('hand').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b||b.disabled)return;sel=+b.dataset.i===sel?-1:+b.dataset.i;peekMode=false;render()});
-$('bL').onclick=()=>{if(sel<0)return;doAct({t:'place',i:sel,side:'L'});sel=-1};$('bR').onclick=()=>{if(sel<0)return;doAct({t:'place',i:sel,side:'R'});sel=-1};
+$('bL').onclick=()=>{if(V&&V.phase==='choose'){doAct({t:'pan',side:'L'});return}if(sel<0)return;doAct({t:'place',i:sel,side:'L'});sel=-1};$('bR').onclick=()=>{if(V&&V.phase==='choose'){doAct({t:'pan',side:'R'});return}if(sel<0)return;doAct({t:'place',i:sel,side:'R'});sel=-1};
 $('bDraw').onclick=()=>{peekMode=false;doAct({t:'draw'})};$('bPass').onclick=()=>doAct({t:'pass'});
 $('bPeek').onclick=()=>{peekMode=!peekMode;sel=-1;render()};
 $('scale').addEventListener('click',e=>{if(!peekMode)return;const g=e.target.closest('g[data-id]');if(!g||!g.classList.contains('pk'))return;peekMode=false;doAct({t:'peek',id:+g.dataset.id})});
