@@ -64,7 +64,7 @@ const AUGS=[
  {id:'dogae',tag:'g',icon:'🐖',name:'도개 선택',d:'던질 때마다 도와 개 중에서 골라서 냅니다. 다른 결과는 나오지 않습니다.'},
  {id:'loan',tag:'g',icon:'💳',name:'대출',d:'지금 던지기 1번을 얻고, 다음 내 턴을 쉽니다.',use:2},
  {id:'dober',tag:'g',icon:'🦮',name:'도베르만',d:'이번 판에서 지금까지 낸 개 수만큼 모를 얻습니다. (최대 3)',use:1},
- {id:'modo',tag:'g',icon:'🎲',name:'모 아니면 도',d:'모와 도만 나옵니다. (모 30%, 도 70%)'},
+ {id:'modo',tag:'g',icon:'🎲',name:'모 아니면 도',d:'모와 도만 나옵니다. (모 45%, 도 55%)'},
  {id:'baduk',tag:'g',icon:'⚫',name:'바둑',d:'한 줄에 있는 내 말 무리 두 개 사이의 상대 말을 모두 잡고, 잡은 수만큼 더 던집니다.',use:1,tg:'two'},
  {id:'fix',tag:'g',icon:'🪄',name:'조작된 윷',d:'다음에 던질 결과를 내가 정합니다.',use:1,tg:'kind'},
  {id:'flip',tag:'g',icon:'🤏',name:'슬쩍',d:'아직 안 쓴 결과 하나에서 윷가락 하나를 뒤집습니다. (한 단계 위나 아래)',use:2,tg:'flip'},
@@ -257,7 +257,7 @@ function endTurn(G){if(G.phase==='over')return;const s=G.turn,st=G.seats[s];st.s
 /* ---- 던지기 ---- */
 function rollKind(G,s){const st=G.seats[s];
  if(G.force[s]){const k=G.force[s];delete G.force[s];return[k,'조작']}
- if(has(G,s,'modo'))return[rnd(G)<.3?'모':'도',''];
+ if(has(G,s,'modo'))return[rnd(G)<.45?'모':'도',''];
  if(st.sticks===3){const r=rnd(G)*8;return[r<1?'모':r<2?'빽도':r<4?'도':r<7?'개':'걸','']}
  const w=[1,3,6,4,1,1];let r=rnd(G)*16,i=0;while(r>=w[i]){r-=w[i];i++}return[KINDS[i],'']}
 function throwYut(G,s,choose){if(G.phase!=='throw'||s!==G.turn||G.throws<=0)return null;const st=G.seats[s];
