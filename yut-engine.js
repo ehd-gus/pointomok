@@ -113,6 +113,7 @@ const AUGS=[
  {id:'monster',tag:'start',icon:'👾',name:'시작 변환: 괴물',d:'골인할 수 없는 괴물 하나만 가지고 시작합니다. (한 바퀴를 돌면 다시 돕니다) 괴물이 말을 12개 잡으면 승리합니다. 괴물은 잡혀도 죽지 않지만, 잡힐 때마다 목표 개수가 1개씩 늘어납니다.'},
  {id:'star',tag:'start',icon:'⭐',name:'시작 변환: 1성',d:'말이 8개가 되고 모두 1성이 됩니다. 내 말끼리 업힐 때마다 하나로 합쳐지며 성급이 더해집니다. 8성을 만들면 승리합니다.'},
  {id:'flick',tag:'g',icon:'🥌',name:'알까기',d:'1회: 내 차례(윷을 던지기 전)를 써서 알까기를 합니다. 판 위 내 말 하나와 방향을 고르고 힘을 정해 튕깁니다. 줄을 따라 날아가다 처음 부딪힌 상대 말을 쳐내고 그 자리에 섭니다. 너무 세게 튕겨 판 밖으로 나가면 내 말이 집으로 돌아갑니다.',use:1,tg:'flick'},
+ {id:'combo',tag:'g',icon:'🧮',name:'위치콤보',d:'판의 모든 칸에 숫자(1~9) 또는 부호(+ − × ÷) 카드가 생기고 목표 숫자가 정해집니다. 모두가 말이 멈춘 칸의 카드를 1장씩 얻고, 먹은 칸은 새 카드로 채워집니다. 새 말을 내보내면 숫자 카드 2장을 얻습니다. 가진 카드로 목표 숫자가 되는 수식을 먼저 제출한 사람이 승리합니다. (나는 숫자 카드 2장을 먼저 받고 시작)'},
  {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
@@ -178,6 +179,22 @@ function startPick(G){G.phase='pick';G.pickRound=G.round;G.picked[G.round]=1;
  if(G.nunchi&&!G.nunchi.on&&!G.nunchi.done){const by=G.nunchi.by;const base=offersFor(G,alive(G).includes(by)?by:alive(G)[0],tag).filter(x=>x!=='redo');
   G.nunchi.on=true;G.nunchi.picks={};G.seats.forEach(st=>{if(st.offers)st.offers=base.slice()});addLog(G,'👀 눈치싸움! 모두에게 같은 선택지가 나왔습니다. 가장 많이 고른 증강은 무효가 됩니다.')}
  if(G.seats.every(x=>!x.offers))return beginTurn(G)}
+function comboNum(G){return String(1+Math.floor(rnd(G)*9))}
+function comboCard(G){return rnd(G)<.68?comboNum(G):['+','-','×','÷'][Math.floor(rnd(G)*4)]}
+function comboGet(G,s,n){if(!G.combo||!G.combo.cells[n])return;const st=G.seats[s];st.cards=st.cards||[];const c=G.combo.cells[n];st.cards.push(c);G.combo.cells[n]=comboCard(G);addLog(G,`🧮 ${st.name}: 카드 「${c}」 획득`)}
+function comboEval(cards,seq){if(!Array.isArray(seq)||!seq.length||seq.length>20)return null;const used=new Set();let str='',ops=0,prevNum=false;
+ for(const i of seq){if(!Number.isInteger(i)||i<0||i>=cards.length||used.has(i))return null;used.add(i);const c=cards[i];
+  if(/^[0-9]$/.test(c)){str+=c;prevNum=true}else{if(!prevNum)return null;str+={'+':'+','-':'-','×':'*','÷':'/'}[c];ops++;prevNum=false}}
+ if(!prevNum||!ops)return null;const tk=str.match(/\d+|[-+*/]/g);
+ const nums=[],opsA=[];tk.forEach((t,i)=>{if(i%2===0)nums.push(+t);else opsA.push(t)});
+ let a=[nums[0]],o2=[];for(let i=0;i<opsA.length;i++){const op=opsA[i],b=nums[i+1];if(op==='*')a[a.length-1]*=b;else if(op==='/'){if(b===0)return null;a[a.length-1]/=b}else{o2.push(op);a.push(b)}}
+ let v=a[0];for(let i=0;i<o2.length;i++)v=o2[i]==='+'?v+a[i+1]:v-a[i+1];return v}
+function aiFormula(cards,target){const N=cards.map((c,i)=>/[0-9]/.test(c)?i:-1).filter(i=>i>=0),O=cards.map((c,i)=>/[0-9]/.test(c)?-1:i).filter(i=>i>=0);let tries=0;
+ for(const a of N)for(const o of O)for(const b of N){if(b===a)continue;const sq=[a,o,b];if(comboEval(cards,sq)===target)return sq}
+ for(const a of N)for(const o of O)for(const b of N){if(b===a)continue;for(const o2 of O){if(o2===o)continue;for(const c of N){if(c===a||c===b)continue;if(++tries>40000)return null;const sq=[a,o,b,o2,c];const v=comboEval(cards,sq);if(v!=null&&Math.abs(v-target)<1e-9)return sq}}}return null}
+function comboSubmit(G,s,seq){const st=G.seats[s];if(!G.combo||st.out||st.done||G.phase==='over'||G.phase==='pick')return false;const v=comboEval(st.cards||[],seq);
+ const txt=(seq||[]).map(i=>(st.cards||[])[i]).join(' ');if(v==null||Math.abs(v-G.combo.target)>1e-9){addLog(G,`🧮 ${st.name}: ${txt} — 틀렸습니다.`);G.ev++;return true}
+ addLog(G,`🧮 ${st.name}: ${txt} = ${G.combo.target}!`);win(G,s,`🧮 위치콤보: ${txt} = ${G.combo.target}`);if(G.phase!=='over'&&G.turn===s)endTurn(G);G.ev++;return true}
 function mapBoard(G,f){const h=G.half?HALF[G.half]:null;const m=n=>{if(!POS[n])return n;const[x,y]=f(POS[n][0],POS[n][1]);const k=AT[Math.round(x)+','+Math.round(y)]||n;return h?nearKeep(h,k):k};
  G.seats.forEach(x=>x.pieces.forEach(p=>{if(onBoard(p)){p.n=m(p.n);p.prev=null}}));const mo=o=>{const r={};for(const k in o)r[m(k)]=o[k];return r};
  G.traps=mo(G.traps);G.rewards=mo(G.rewards);G.poop=mo(G.poop);G.fires=mo(G.fires);if(G.reaper)G.reaper.n=m(G.reaper.n);if(G.garlic)G.garlic.nodes=G.garlic.nodes.map(m)}
@@ -234,6 +251,8 @@ function gain(G,s,id){const st=G.seats[s],A=AUG[id];st.aug.push({id});addLog(G,`
  switch(id){
   case'poop':{const k=freeNode(G);if(k)G.poop[k]=s;break}
   case'overflow':st.sticks=6;break;
+  case'combo':{if(!G.combo){const cells={};NODES.forEach(n=>{if(n!=='o0')cells[n]=comboCard(G)});G.combo={target:12+Math.floor(rnd(G)*37),cells};G.seats.forEach(x=>{x.cards=x.cards||[]});addLog(G,`🧮 위치콤보! 모든 칸에 카드가 생겼습니다. 목표 숫자: ${G.combo.target}`)}
+   st.cards=(st.cards||[]).concat([comboNum(G),comboNum(G)]);break}
   case'queen':{let k=st.pieces.findIndex(p=>p.n==='H'&&!p.t);if(k<0)k=st.pieces.findIndex(p=>p.n!=='F');if(k>=0){const p=st.pieces[k];p.t='queen';p.n='o10';p.prev=null}st.qLife=1;st.qThrows=0;addLog(G,`👑 ${st.name}: 중전마마가 좌측 상단에 등장했습니다. (목숨 1, 0/12)`);break}
   case'monster':{const p=newPiece();p.t='mon';st.pieces=[p];st.monK=0;st.monNeed=12;addLog(G,`👾 ${st.name}: 괴물 하나만 남았습니다. (잡은 말 0/12)`);break}
   case'star':{st.pieces=Array.from({length:8},()=>{const p=newPiece();p.lv=1;return p});addLog(G,`⭐ ${st.name}: 1성 말 8개!`);break}
@@ -403,6 +422,8 @@ function doMove(G,s,g,path,back){// 경로를 따라 이동하며 똥·자객 �
   if(!back&&!last){let as=null;G.seats.forEach((x,o)=>{if(o===s)return;x.pieces.forEach(q=>{if(q.n===n&&q.asn)as={o,q}})});
    if(as){as.q.asn=0;g.forEach(k=>{st.pieces[k].n=n});killStack(G,s,g.slice(),as.o,'🗡️ 자객');return 0}}}
  const dest=path[path.length-1],prevNode=path.length>=2?path[path.length-2]:from;
+ if(G.combo&&from==='H'){st.cards=(st.cards||[]).concat([comboNum(G),comboNum(G)]);addLog(G,`🧮 ${st.name}: 새 말 출발! 숫자 카드 2장`)}
+ if(G.combo&&dest!=='FIN')comboGet(G,s,dest);
  if(dest==='FIN'){g.forEach(k=>{st.pieces[k].n='F';st.pieces[k].prev=null;st.pieces[k].asn=0});finished(G,s,g);return 0}
  g.forEach(k=>{st.pieces[k].n=dest;st.pieces[k].prev=back?null:prevNode});
  return land(G,s,g,dest,back)}
@@ -582,6 +603,7 @@ function autoStep(G,s){
  if(G.phase==='vote'){const V=G.vote;if(V&&V.voters.includes(s)&&V.votes[s]==null)return castVote(G,s,aiVote(G,s));return false}
  if(G.phase==='pick'){const st=G.seats[s];if(st.offers)return pickAug(G,s,aiPick(G,s));return false}
  if(s!==G.turn)return false;const st=G.seats[s];
+ if(G.phase==='throw'&&st.ai&&G.combo&&(st.cards||[]).length>=3){const sq=aiFormula(st.cards,G.combo.target);if(sq)return comboSubmit(G,s,sq)}
  if(G.phase==='throw'){const u=st.ai?aiActive(G,s):null;if(u&&useAug(G,s,u.id,u.t))return true;return!!throwYut(G,s,rnd(G)<.6?'개':'도')}
  if(G.phase==='move'){const u=st.ai?aiActive(G,s):null;if(u&&u.id==='dogs'&&useAug(G,s,'dogs'))return true;const m=aiMove(G,s);if(m)return movePiece(G,s,m.ri,m.pi);endTurn(G);G.ev++;return true}
  return false}
@@ -591,9 +613,10 @@ function apply(G,s,a){if(!a||G.phase==='over')return false;
  if(a.t==='move')return movePiece(G,s,a.ri,a.pi,a.o);
  if(a.t==='use')return useAug(G,s,a.id,a.x);
  if(a.t==='vote')return castVote(G,s,a.v);
+ if(a.t==='formula')return comboSubmit(G,s,a.seq);
  if(a.t==='po')return poMove(G,s,a.pi,a.n);
  return false}
-const API0={HALF,FOLDS,foldNode,CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,poTargets,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
+const API0={HALF,FOLDS,foldNode,CATS,isCat,PIECES,PICK_ROUNDS,COLORS,CNAMES,POS,NODES,LINES,AUGS,AUG,TYPEICON,KINDS,FLATS,BYFLATS,step,walk,backOf,distFin,newGame,pickAug,poTargets,comboEval,throwYut,movePiece,useAug,usesLeft,preview,canUse,groupOf,apply,autoStep,endTurn,has,catForced,onBoard};
 const API={};for(const k in API0){const f=API0[k];API[k]=typeof f==='function'?function(G){if(G&&G.seats)FG=G;return f.apply(null,arguments)}:f}
 API.setGame=G=>{FG=G};
 if(typeof module!=='undefined')module.exports=API;else root.YUT=API;
