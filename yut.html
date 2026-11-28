@@ -457,11 +457,13 @@ function hostChange(){if(!host)return;broadcast();render();schedule()}
 function schedule(){clearTimeout(tickT);if(!G||G.phase==='over')return;
  if(G.phase==='pick'){const ai=G.seats.findIndex(s=>s.ai&&s.offers);if(ai>=0){tickT=setTimeout(()=>{Y.autoStep(G,ai);if(G.phase!=='pick')deadline=0;hostChange()},500);return}
   if(!deadline)deadline=Date.now()+PICK_MS;tickT=setTimeout(()=>{G.seats.forEach((s,i)=>{if(s.offers)Y.autoStep(G,i)});deadline=0;hostChange()},Math.max(0,deadline-Date.now()));return}
+ if(G.phase==='vote'&&G.vote){const ai=G.vote.voters.find(o=>G.seats[o].ai&&G.vote.votes[o]==null);if(ai!=null){tickT=setTimeout(()=>{Y.autoStep(G,ai);hostChange()},700);return}
+  if(!deadline)deadline=Date.now()+20000;tickT=setTimeout(()=>{G.vote&&G.vote.voters.slice().forEach(o=>{if(G.phase==='vote')Y.autoStep(G,o)});deadline=0;hostChange()},Math.max(0,deadline-Date.now()));return}
  const s=G.turn,st=G.seats[s];
  if(st.ai){tickT=setTimeout(()=>{Y.autoStep(G,s);deadline=0;hostChange()},G.phase==='throw'?850:700);return}
  if(!deadline)deadline=Date.now()+TURN_MS;
  tickT=setTimeout(()=>{for(let i=0;i<20&&G.turn===s&&(G.phase==='throw'||G.phase==='move');i++)Y.autoStep(G,s);deadline=0;hostChange()},Math.max(0,deadline-Date.now()))}
-function hostAct(s,a){if(!G)return;const before=G.turn,ph=G.phase;if(Y.apply(G,s,a)){if(G.turn!==before||G.phase!==ph&&(G.phase==='pick'||ph==='pick'))deadline=0;hostChange()}}
+function hostAct(s,a){if(!G)return;const before=G.turn,ph=G.phase;if(Y.apply(G,s,a)){if(G.turn!==before||G.phase!==ph&&(G.phase==='pick'||ph==='pick'||G.phase==='vote'||ph==='vote'))deadline=0;hostChange()}}
 function act(a){if(host||MODE==='ai')hostAct(MY,a);else if(hconn&&hconn.open)try{hconn.send(JSON.stringify({app:'yut',code:P.code,t:'act',a}))}catch(e){}}
 function startGame(){const players=L.seats.map(s=>({name:s.name,ai:s.ai}));G=Y.newGame(players,(Math.random()*4294967296)>>>0);L.started=true;deadline=0;reported=false;
  ['mWait','mLobby','mEnd'].forEach(m=>$(m).classList.remove('on'));hostChange()}
@@ -563,9 +565,11 @@ function tryMove(pi,o){if(!myTurn()||G.phase!=='move')return;if(!G.results[sel])
 $('yres').addEventListener('click',e=>{const b=e.target.closest('[data-ri]');if(!b)return;sel=+b.dataset.ri;render()});
 function flash(t){$('yhint').textContent=t;clearTimeout(flash.t);flash.t=setTimeout(()=>render(),2200)}
 $('board').addEventListener('click',e=>{if(!G)return;const nd=e.target.closest('[data-node]');const t=e.target.closest('[data-s]');
+ if(target&&target.tg==='po'){const n=nd?nd.dataset.node:t?G.seats[+t.dataset.s].pieces[+t.dataset.p].n:null;if(n&&Y.poTargets(G,MY,target.pi).includes(n)){act({t:'po',pi:target.pi,n});target=null;render()}else{target=null;flash('포 이동을 취소했습니다.')}return}
  if(target&&target.tg==='node'){const n=t?G.seats[+t.dataset.s].pieces[+t.dataset.p].n:nd&&nd.dataset.node;if(n){act({t:'use',id:target.id,x:{n}});target=null;render()}return}
  if(!t)return;const s=+t.dataset.s,pi=+t.dataset.p;
  if(target){targetClick(s,pi);return}
+ if(s===MY&&myTurn()&&G.phase==='throw'&&G.seats[MY].pieces[pi].t==='po'){const ts=Y.poTargets(G,MY,pi);if(!ts.length||G.poT&&G.poT[MY]===G.turnNo){flash('포는 지금 뛰어넘을 수 없습니다. (차례마다 한 번, 뛰어넘을 말 필요)');return}target={tg:'po',pi};flash('💣 포: 갈 칸을 누르세요.');render();return}
  if(s===MY)tryMove(pi);else if(myTurn()&&G.seats[MY].aug.some(a=>a.id==='chaos'&&!a.off))tryMove(pi,s)});
 $('yplMe').addEventListener('click',e=>{const h=e.target.closest('[data-home]');if(!h||!G)return;$('bNew').onclick()});
 document.addEventListener('click',e=>{const sl=e.target.closest('.slot[data-aug]');if(!sl||!G)return;const st=G.seats[+sl.dataset.seat],a=st&&st.aug[+sl.dataset.k];if(!a)return;const A=Y.AUG[a.id];
@@ -577,6 +581,8 @@ $('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if
   case'swap':target={id,tg:'swap',a:null};flash('자리 바꾸기: 먼저 판 위의 내 말을 누르세요.');render();break;
   case'two':target={id,tg:'two',a:null};flash('바둑: 같은 줄에 있는 내 말 두 개를 차례로 누르세요.');render();break;
   case'node':target={id,tg:'node'};flash('명사수: 조준할 칸(또는 말)을 누르세요.');render();break;
+  case'two_p':{const al=G.seats.map((x,o)=>o).filter(o=>!G.seats[o].out&&!G.seats[o].done);const nm=o=>o===MY?G.seats[o].name+' (나)':G.seats[o].name;
+   openList(`${A.name}: 첫 번째 플레이어`,al.map(a=>({l:nm(a),c:G.seats[a].color,f:()=>setTimeout(()=>openList(`${A.name}: 두 번째 플레이어`,al.filter(b=>b!==a).map(b=>({l:nm(b),c:G.seats[b].color,f:()=>act({t:'use',id,x:{a,b}})}))),50)})));break}
   case'dead':{const ds=G.seats.map((x,o)=>o).filter(o=>G.seats[o].out&&o!==MY);if(!ds.length){flash('부활시킬 탈락자가 없습니다.');break}openList(`${A.name}: 부활시킬 플레이어를 고르세요`,ds.map(o=>({l:G.seats[o].name,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o}})})));break}
   case'opp':openList(`${A.name}: 상대를 고르세요`,others.map(o=>({l:G.seats[o].name,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o}})})));break;
   case'oppAug':{const items=[];others.forEach(o=>G.seats[o].aug.forEach(a=>{const B=Y.AUG[a.id];if(a.off||a.id==='cat'||(B.use&&(G.seats[o].used[a.id]||0)>=B.use))return;items.push({l:`${G.seats[o].name} · ${B.icon} ${B.name}`,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o,aug:a.id}})})}));
@@ -596,6 +602,10 @@ function targetClick(s,pi){const p=G.seats[s].pieces[pi];
   if(s===MY||!Y.onBoard(p)){flash('판 위에 있는 상대 말을 누르세요.');return}act({t:'use',id:'swap',x:{a:target.a,o:s,b:pi}});target=null;render();return}
  if(target.tg==='two'){if(s!==MY||!Y.onBoard(p)){flash('판 위에 있는 내 말을 누르세요.');return}
   if(target.a==null){target.a=pi;flash('두 번째 내 말을 누르세요.');return}act({t:'use',id:'baduk',x:{a:target.a,b:pi}});target=null;render()}}
+let voteKey='';function voteUI(){if(!G||G.phase!=='vote'||!G.vote){voteKey='';return}const V=G.vote;if(!V.voters.includes(MY)||V.votes[MY]!=null)return;const key=V.kind+(V.step||'')+G.turnNo+MY;if(key===voteKey)return;voteKey=key;
+ if(V.kind==='bluff'&&V.step===1)openList(`🤫 블러핑: 실제 결과는 「${V.real}」. 뭐라고 말할까요?`,Y.KINDS.map(k=>({l:k+(k===V.real?' (진짜)':''),c:'#c9a34a',f:()=>act({t:'vote',v:k})})));
+ else if(V.kind==='bluff')openList(`🤫 ${G.seats[V.s].name}: "${V.decl}!" 믿나요? (진실을 의심하면 한 턴 쉼)`,[{l:'믿는다',c:'#6bbf7a',f:()=>act({t:'vote',v:'믿음'})},{l:'거짓말이다!',c:'#e06b5b',f:()=>act({t:'vote',v:'거짓'})}]);
+ else{const o=V.voters.find(x=>x!==MY);openList(`⛓️ 죄수의 딜레마 (상대: ${G.seats[o].name}) — 몰래 고르세요`,[{l:'협력',c:'#6bbf7a',f:()=>act({t:'vote',v:'협력'})},{l:'배신',c:'#e06b5b',f:()=>act({t:'vote',v:'배신'})}])}}
 function openList(title,items){$('tgT').textContent=title;$('tgList').innerHTML='';items.forEach(it=>{const b=document.createElement('button');b.className='btn wide';b.innerHTML=`<i class="ydot" style="background:${it.c}"></i>${esc(it.l)}`;b.onclick=()=>{$('mTarget').classList.remove('on');it.f()};$('tgList').appendChild(b)});$('mTarget').classList.add('on')}
 $('pcards').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||b.disabled)return;act({t:'pick',id:b.dataset.pick})});
 // 채팅
@@ -660,9 +670,10 @@ function drawBoard(){const hf=G&&G.half||null;if(hf!==drawnHalf){drawnHalf=hf;$(
  // 잡힘·골인 효과
  (G.fx||[]).forEach(f=>{if(f.id<=lastFx)return;lastFx=f.id;const[x,y]=P[f.n]||P.o0;const b=document.createElementNS(SV,'g');b.setAttribute('class','yburst');b.setAttribute('transform',`translate(${x} ${y})`);
   b.innerHTML=f.t==='fin'?`<text y="-6" text-anchor="middle" font-size="4.2" fill="#ffd77a" font-weight="800">골인 +${f.c}</text>`:`<text y="2" text-anchor="middle" font-size="7">💥</text>`;$('yfx').after(b);setTimeout(()=>b.remove(),1300)});
- let dh='';if(myTurn()&&G.phase==='move'&&!target){const seen=new Set();G.seats[MY].pieces.forEach((p,pi)=>{const pv=Y.preview(G,MY,sel,pi);if(!pv)return;const key=p.n+'>'+pv.dest;if(seen.has(key))return;seen.add(key);
+ let dh='';if(target&&target.tg==='po')Y.poTargets(G,MY,target.pi).forEach(n=>{const[x,y]=P[n];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.6" fill="none" stroke="#ff7a6b" stroke-width=".9" stroke-dasharray="1.6 1.2" pointer-events="none"/>`});
+ if(myTurn()&&G.phase==='move'&&!target){const seen=new Set();G.seats[MY].pieces.forEach((p,pi)=>{const pv=Y.preview(G,MY,sel,pi);if(!pv)return;const key=p.n+'>'+pv.dest;if(seen.has(key))return;seen.add(key);
   if(pv.dest==='FIN'){dh+=`<text x="100" y="94" text-anchor="end" font-size="4" fill="#ffd77a">골인 가능</text>`;return}const[x,y]=P[pv.dest];dh+=`<circle class="ydst" cx="${x}" cy="${y}" r="5.6" fill="none" stroke="#ffd77a" stroke-width=".9" stroke-dasharray="1.6 1.2" pointer-events="none"/>`})}
- $('ydest').innerHTML=dh;$('board').classList.toggle('pick-node',!!(target&&target.tg==='node'))}
+ $('ydest').innerHTML=dh;$('board').classList.toggle('pick-node',!!(target&&(target.tg==='node'||target.tg==='po')))}
 function card(st,s){const home=st.pieces.filter(p=>p.n==='H').length,fin=st.pieces.filter(p=>p.n==='F').length;
  const slots=st.aug.map((a,ai)=>{const A=Y.AUG[a.id],left=A.use?A.use-(st.used[a.id]||0):null;return`<span data-seat="${s}" data-k="${ai}" data-aug="1" class="slot${a.off?' off':''}${A.use&&left<=0?' used':''}${Y.isCat(a)?' catf':''}" title="${esc(A.name+': '+A.d)}"><i>${a.off?'🐈':A.icon}</i><b>${esc(a.off?'고양이(착각)':A.name)}</b>${A.use?`<small>${Math.max(0,left)}/${A.use}</small>`:''}</span>`});
  while(slots.length<3)slots.push('<span class="slot empty">—</span>');
@@ -680,7 +691,7 @@ function render(){
  $('yplMe').innerHTML=me?card(me,MY):'';$('yplO').innerHTML=G.seats.map((st,s)=>s===MY?'':card(st,s)).join('');
  const nextPick=Y.PICK_ROUNDS.find(r=>r>G.round);
  $('ymeta').innerHTML=`<i class="ydot" style="background:${me?me.color:'#888'}"></i>나는 ${me?me.cname:'관전'} · ${G.round}라운드${nextPick?` · 다음 증강 ${nextPick}라운드`:' · 증강 끝'}${G.echo?' · 🔁 메아리':''}`;
- $('banner').textContent=p==='pick'?`${G.pickRound}라운드 증강 고르기`:p==='over'?`${G.seats[G.winner].name} 1위!`:me&&me.rank?`${MED[me.rank-1]||''} 나는 ${me.rank}위 · ${cur.name}의 차례`:mine?(p==='throw'?'윷을 던지세요':'움직일 말을 고르세요'):`${cur.name}의 차례`;
+ voteUI();$('banner').textContent=p==='vote'&&G.vote?(G.vote.kind==='pd'?'⛓️ 죄수의 딜레마 진행 중…':G.vote.step===1?`🤫 ${G.seats[G.vote.s].name}이(가) 결과를 숨기는 중…`:`🤫 "${G.vote.decl}" — 믿을까요?`):p==='pick'?`${G.pickRound}라운드 증강 고르기`:p==='over'?`${G.seats[G.winner].name} 1위!`:me&&me.rank?`${MED[me.rank-1]||''} 나는 ${me.rank}위 · ${cur.name}의 차례`:mine?(p==='throw'?'윷을 던지세요':'움직일 말을 고르세요'):`${cur.name}의 차례`;
  if(G.results[sel]==null)sel=0;
  $('yres').innerHTML=G.results.length?G.results.map((r,ri)=>`<button class="rchip${ri===sel&&mine&&p==='move'?' on':''}${r.v<0?' back':''}" data-ri="${ri}">${r.k}${r.tag?`<small>${esc(r.tag)}</small>`:''}<em>${r.v<0?'뒤로 1':r.v+'칸'}</em></button>`).join(''):'<span class="rnone">아직 던진 결과가 없습니다</span>';
  const canThrow=mine&&p==='throw',dg=me&&Y.has(G,MY,'dogae')&&!(G.force&&G.force[MY]);
@@ -698,7 +709,7 @@ function render(){
    return`<div class="yab sm${a.off?' off':''}${Y.isCat(a)?' catf':''}"><span class="yab-i">${a.off?'🐈':A.icon}</span><div class="yab-b"><b>${esc(A.name)}</b><p>${esc(A.d)}</p><small>${state}</small></div></div>`}).join(''):'<p class="yab-none">아직 능력이 없습니다.</p>'}</details>`}).join(''))}
  if(!target)$('yhint').textContent=p!=='over'&&me&&(me.done||me.out)?(me.out?'탈락했습니다. 남은 사람의 순위가 정해질 때까지 지켜보세요.':`${me.rank}위 확정! 남은 사람의 순위가 정해질 때까지 지켜보세요.`):p==='pick'?'':mine?(p==='throw'?(G.results.length?'한 번 더 던질 수 있어요!':'윷 던지기를 누르세요.'):'결과를 고르고 움직일 말(판 위 말이나 새 말 내기)을 누르세요. 점선 원이 도착할 곳이에요.'):p==='over'?(G.winWhy||''):`${cur.name}의 차례를 기다리는 중…`;
  $('log').innerHTML=G.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join('');
- if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k,t.sticks||4)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
+ if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k,t.sticks||4,t.fl)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
  const st=me;if(p==='pick'&&st&&st.offers){const forced=Y.catForced(G,MY);$('pickT').textContent=`${G.pickRound}라운드 증강을 고르세요`;$('pickS').textContent=`3개 중 1개 · ${G.pickRound===1?'시작':G.pickRound===6?'중간':'마무리'} 전용 증강도 나옵니다${forced?' · 🐈 고양이를 꼭 골라야 합니다!':''}`;
   $('pcards').innerHTML=st.offers.map(id=>{const A=Y.AUG[id];return`<button class="pcard${A.tag!=='g'?' special':''}" data-pick="${id}" ${forced&&id!=='cat'?'disabled':''}><span class="pc-i">${A.icon}</span><b>${esc(A.name)}</b><span>${esc(A.d)}</span><em>${TAGN[A.tag]}${A.use?` · 사용 ${A.use}회`:A.perTurn?' · 턴마다 사용':''}</em></button>`}).join('');
   $('pmine').innerHTML=st.aug.length?'내 증강: '+st.aug.map(a=>Y.AUG[a.id].icon+' '+esc(Y.AUG[a.id].name)).join(', '):'';$('mPick').classList.add('on')}
@@ -707,7 +718,7 @@ function render(){
   $('bAgain').textContent=host?'다시 하기':'확인';setTimeout(()=>$('mEnd').classList.add('on'),700);if(w===MY&&MODE==='net'&&!G.seats[MY].ai)reportWin()}
  if(p!=='over')delete $('mEnd').dataset.shown;
  drawBoard()}
-function sticks(k,n){const flats={'빽도':1,'도':1,'개':2,'걸':3,'윷':4,'모':0}[k];return Array.from({length:n},(_,i)=>`<i class="${i<flats?'flat':'round'}${k==='빽도'&&i===0?' mark':''}"></i>`).join('')}
+function sticks(k,n,fl){const flats=fl!=null?fl:({'빽도':1,'도':1,'개':2,'걸':3,'윷':4,'모':0}[k]||0);return Array.from({length:n},(_,i)=>`<i class="${i<flats?'flat':'round'}${k==='빽도'&&i===0?' mark':''}"></i>`).join('')}
 setInterval(()=>{const end=host?deadline:tlLocal;const e=$('timer');if(!G||!end||G.phase==='over'){e.classList.add('idle');return}
  const left=Math.max(0,Math.ceil((end-Date.now())/1000));const relevant=G.phase==='pick'?!!(G.seats[MY]&&G.seats[MY].offers):myTurn();e.classList.toggle('idle',!relevant);e.textContent=left;e.classList.toggle('low',left<=5)},250);
 render();
