@@ -364,6 +364,20 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 #board.folding{animation:yfold .9s ease}#board.folding[data-dir=up],#board.folding[data-dir=down]{animation-name:yfoldY}@keyframes yfold{0%{transform:scaleX(1)}45%{transform:scaleX(.55) skewY(4deg)}100%{transform:none}}@keyframes yfoldY{0%{transform:scaleY(1)}45%{transform:scaleY(.55) skewX(4deg)}100%{transform:none}}
 .mx{position:fixed;top:14px;right:14px;z-index:10;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,14,15,.92);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}.mx:hover{background:#3a2a2b}
 .pbar{height:22px;border-radius:11px;background:#2b2021;border:1px solid var(--line2);overflow:hidden;margin:8px 0 4px}.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6bbf7a,#e8c25a 60%,#e06b5b)}.pbl{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:12px;padding:0 4px}
+
+@media(max-width:640px){
+ .yt{gap:8px!important;padding-top:8px}
+ .yplO{display:flex!important;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:2px}.yplO::-webkit-scrollbar{display:none}
+ .yplO .ycard{flex:1 0 108px;padding:6px 7px;gap:4px}.yplO .yc-top{font-size:12px}.yplO .yc-top small:not(.rk){display:none}
+ .yplO .slot{min-height:26px;padding:1px}.yplO .slot b,.yplO .slot small,.yplO .slot em{display:none}.yplO .slot i{font-size:15px;font-style:normal}
+ .ybar{padding:2px 0}.ybar #banner{font-size:17px}.timer{font-size:22px!important}
+ .yboard{width:min(100%,calc(100svh - 330px));min-width:250px;margin:0 auto}
+ .yside{display:flex;flex-direction:column;gap:8px}.yact{display:contents}
+ .yhint{order:-4;margin:0;font-size:13px}.yres{order:-3}.ybtns{order:-2;position:sticky;bottom:0;z-index:6;background:#140e0f;padding:8px 0 calc(8px + env(safe-area-inset-bottom));box-shadow:0 -10px 16px #140e0f}.yaug{order:1}
+ .ybtns .btn{min-height:52px;font-size:17px}
+ .yplMe{grid-template-columns:1fr!important}
+ body:has(#yplO .ycard) .instbar{display:none!important}
+}
 </style>
 </head>
 <body>
