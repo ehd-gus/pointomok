@@ -379,6 +379,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  body:has(#yplO .ycard) .instbar{display:none!important}
 }
 .cmb{border:1px solid var(--line2);border-radius:10px;padding:10px;background:#181213;margin-bottom:8px}.cmb-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.cmb-h .btn{min-height:38px;padding:0 14px}.cmb-c{display:flex;flex-wrap:wrap;gap:5px}.cmb-c i,.cmb-c button{font-style:normal;min-width:30px;height:34px;display:grid;place-items:center;border-radius:6px;font-weight:800;font-size:17px;border:1px solid #6b5a3a;background:#2a2118;color:#ffe7a0;padding:0 6px}.cmb-c .o{border-color:#3a5a6b;background:#16222a;color:#7ad0ff}.cmb-c.pick button{min-width:44px;height:46px;cursor:pointer}.cmb-c.pick button:disabled{opacity:.25}.fx-show{font-size:24px;font-weight:800;text-align:center;padding:10px;border:1px solid var(--line2);border-radius:8px;margin-bottom:10px;min-height:56px}.fx-b{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.fx-tip{font-size:12px;color:var(--dim);margin:10px 0 0}
+.augq{grid-column:1/-1;width:100%;height:44px;border-radius:8px;border:1px solid var(--line2);background:#140e0f;color:var(--ink);padding:0 12px;font:inherit;font-size:16px}
 </style>
 </head>
 <body>
@@ -637,7 +638,13 @@ let voteKey='';function voteUI(){if(!G||G.phase!=='vote'||!G.vote){voteKey='';re
  else if(V.kind==='bluff')openList(`🤫 ${G.seats[V.s].name}: "${V.decl}!" 믿나요? (진실을 의심하면 한 턴 쉼)`,[{l:'믿는다',c:'#6bbf7a',f:()=>act({t:'vote',v:'믿음'})},{l:'거짓말이다!',c:'#e06b5b',f:()=>act({t:'vote',v:'거짓'})}]);
  else{const o=V.voters.find(x=>x!==MY);openList(`⛓️ 죄수의 딜레마 (상대: ${G.seats[o].name}) — 몰래 고르세요`,[{l:'협력',c:'#6bbf7a',f:()=>act({t:'vote',v:'협력'})},{l:'배신',c:'#e06b5b',f:()=>act({t:'vote',v:'배신'})}])}}
 function openList(title,items){$('tgT').textContent=title;$('tgList').innerHTML='';items.forEach(it=>{const b=document.createElement('button');b.className='btn wide';b.innerHTML=`<i class="ydot" style="background:${it.c}"></i>${esc(it.l)}`;b.onclick=()=>{$('mTarget').classList.remove('on');it.f()};$('tgList').appendChild(b)});$('mTarget').classList.add('on')}
-$('pcards').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||b.disabled)return;act({t:'pick',id:b.dataset.pick})});
+$('pcards').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b||b.disabled)return;if(allPick&&MODE==='ai'&&G&&G.seats[MY]){G.seats[MY].offers=[b.dataset.pick];allPick=false}act({t:'pick',id:b.dataset.pick})});
+let allPick=false;
+document.addEventListener('click',e=>{if(e.target.id!=='bAllPick'||!G||MODE!=='ai')return;const st=G.seats[MY],tag=G.pickRound===1?'start':G.pickRound===6?'mid':'end',own=new Set(st.aug.map(a=>a.id));
+ const list=Y.AUGS.filter(a=>(a.tag==='g'||a.tag===tag)&&!own.has(a.id)&&a.id!=='redo');allPick=true;deadline=Date.now()+600000;
+ $('pickS').textContent=`${list.length}개 중에서 고르세요 · 이름이나 설명으로 검색`;$('pmine').innerHTML='';
+ $('pcards').innerHTML='<input id="augQ" class="augq" placeholder="증강 검색 (예: 콤보, 좀비)" autocomplete="off">'+list.map(A=>`<button class="pcard${A.tag!=='g'?' special':''}" data-pick="${A.id}" data-q="${esc((A.name+' '+A.d).toLowerCase())}"><span class="pc-i">${A.icon}</span><b>${esc(A.name)}</b><span>${esc(A.d)}</span></button>`).join('');
+ $('augQ').oninput=()=>{const q=$('augQ').value.trim().toLowerCase();$('pcards').querySelectorAll('[data-pick]').forEach(b=>b.style.display=!q||b.dataset.q.includes(q)?'':'none')};schedule()});
 // 채팅
 function showSay(s,m){const e=document.querySelector(`.ycard[data-seat="${s}"] .bubble`);if(!e)return;e.textContent=m;e.classList.remove('on');void e.offsetWidth;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),5000)}
 $('chatF').addEventListener('submit',e=>{e.preventDefault();const m=$('chatIn').value.trim().slice(0,60);if(!m||MY<0)return;$('chatIn').value='';showSay(MY,m);
@@ -744,9 +751,9 @@ function render(){
  $('log').innerHTML=G.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join('');
  if(G.lastThrow&&G.lastThrow.id!==lastThrowId){lastThrowId=G.lastThrow.id;const t=G.lastThrow,e=$('ythrow');e.innerHTML=`<div class="yt-sticks">${sticks(t.k,t.sticks||4,t.fl)}</div><b>${t.k}</b>${t.extra?'<small>한 번 더!</small>':''}`;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
  const st=me;if(p==='pick'&&st&&st.offers){const forced=Y.catForced(G,MY);$('pickT').textContent=`${G.pickRound}라운드 증강을 고르세요`;$('pickS').textContent=`3개 중 1개 · ${G.pickRound===1?'시작':G.pickRound===6?'중간':'마무리'} 전용 증강도 나옵니다${forced?' · 🐈 고양이를 꼭 골라야 합니다!':''}`;
-  $('pcards').innerHTML=st.offers.map(id=>{const A=Y.AUG[id];return`<button class="pcard${A.tag!=='g'?' special':''}" data-pick="${id}" ${forced&&id!=='cat'?'disabled':''}><span class="pc-i">${A.icon}</span><b>${esc(A.name)}</b><span>${esc(A.d)}</span><em>${TAGN[A.tag]}${A.use?` · 사용 ${A.use}회`:A.perTurn?' · 턴마다 사용':''}</em></button>`}).join('');
-  $('pmine').innerHTML=st.aug.length?'내 증강: '+st.aug.map(a=>Y.AUG[a.id].icon+' '+esc(Y.AUG[a.id].name)).join(', '):'';$('mPick').classList.add('on')}
- else{$('mPick').classList.remove('on');if(p==='pick')$('yhint').textContent='다른 사람이 증강을 고르는 중…'}
+  if(!allPick)$('pcards').innerHTML=st.offers.map(id=>{const A=Y.AUG[id];return`<button class="pcard${A.tag!=='g'?' special':''}" data-pick="${id}" ${forced&&id!=='cat'?'disabled':''}><span class="pc-i">${A.icon}</span><b>${esc(A.name)}</b><span>${esc(A.d)}</span><em>${TAGN[A.tag]}${A.use?` · 사용 ${A.use}회`:A.perTurn?' · 턴마다 사용':''}</em></button>`}).join('');
+  $('pmine').innerHTML=(st.aug.length?'내 증강: '+st.aug.map(a=>Y.AUG[a.id].icon+' '+esc(Y.AUG[a.id].name)).join(', '):'')+(MODE==='ai'&&!allPick?'<button class="btn wide" id="bAllPick" style="margin-top:10px">🔍 증강 직접 고르기 (연습 전용)</button>':'');$('mPick').classList.add('on')}
+ else{$('mPick').classList.remove('on');allPick=false;if(p==='pick')$('yhint').textContent='다른 사람이 증강을 고르는 중…'}
  if(p==='over'&&!$('mEnd').dataset.shown){$('mEnd').dataset.shown='1';const w=G.winner;const myR=me?me.rank:0;$('endBig').textContent=myR?`${MED[myR-1]||''} ${myR}위`:'게임 종료';$('endT').textContent='최종 순위';$('endP').innerHTML=G.ranks.map((x,i)=>`<div class="frank${x===MY?' me':''}"><b>${MED[i]||''} ${i+1}위</b><span>${esc(G.seats[x].name)}</span><small>${esc(G.seats[x].why||'')}</small></div>`).join('')+(G.solo?G.seats.map((x,o)=>o).filter(o=>!G.ranks.includes(o)).map(o=>`<div class="frank${o===MY?' me':''}"><b>순위 없음</b><span>${esc(G.seats[o].name)}</span><small>📜 계획대로</small></div>`).join(''):'');
   $('bAgain').textContent=host?'다시 하기':'확인';setTimeout(()=>$('mEnd').classList.add('on'),700);if(w===MY&&MODE==='net'&&!G.seats[MY].ai)reportWin()}
  if(p!=='over')delete $('mEnd').dataset.shown;
