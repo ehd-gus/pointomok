@@ -373,7 +373,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <section class="hand" id="hand"></section>
  <section class="acts">
   <button class="btn red" id="bL">◀ 왼쪽에 올리기</button><button class="btn red" id="bR">오른쪽에 올리기 ▶</button>
-  <button class="btn" id="bDraw">뽑기</button><button class="btn" id="bPeek">엿보기</button>
+  <button class="btn" id="bDraw">뽑기</button><button class="btn" id="bPeek">엿보기</button><button class="btn hide" id="bPass" style="grid-column:1/-1">넘기기 (손패 없음)</button>
  </section>
  <form class="chat" id="chatF"><input id="chatIn" maxlength="60" placeholder="상대에게 한마디" autocomplete="off" aria-label="채팅"><button class="btn red">보내기</button></form>
  <details class="log" open><summary>기록</summary><ol id="log"></ol></details>
@@ -382,9 +382,9 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <li>카드는 <b>−8 ~ −1, 0, +1 ~ +8</b>이 2장씩, 모두 34장입니다. 두 사람이 <b>7장씩</b> 받고, 1장은 <b>고정 카드</b>로 저울 한쪽에 뒷면으로 올라갑니다. 남은 카드는 뽑기 더미가 됩니다.</li>
  <li>왼쪽 접시와 오른쪽 접시는 각자 올라간 카드의 <b>합</b>을 가집니다. 합이 큰 쪽으로 저울이 기웁니다. 마이너스 카드는 그 접시의 합을 줄여서 반대쪽으로 기울게 합니다. 0은 아무 변화가 없습니다.</li>
  <li>저울 위 카드는 모두 뒷면이라, 화면에는 <b>어느 쪽으로 기울었는지만</b> 보입니다. 내가 올린 카드는 나만 숫자를 볼 수 있습니다.</li>
- <li>한 판은 <b>각자 6턴씩, 모두 12턴</b>입니다. 내 턴에는 셋 중 하나를 합니다.<br>① <b>카드 올리기</b>: 손의 카드 1장을 원하는 쪽에 뒷면으로 올립니다.<br>② <b>엿보기</b>: 저울 위 뒷면 카드 1장을 나만 몰래 봅니다. (한 판에 1번)<br>③ <b>뽑기</b>: 더미에서 1장을 가져옵니다.</li>
+ <li>한 판은 <b>두 사람 손패가 모두 없어질 때까지</b> 계속합니다. 내 턴에는 셋 중 하나를 합니다.<br>① <b>카드 올리기</b>: 손의 카드 1장을 원하는 쪽에 뒷면으로 올립니다.<br>② <b>엿보기</b>: 저울 위 뒷면 카드 1장을 나만 몰래 봅니다. (한 판에 1번)<br>③ <b>뽑기</b>: 더미에서 1장을 가져옵니다.<br>손패가 없으면 뽑거나 <b>넘기기</b>를 할 수 있습니다.</li>
  <li>카드를 올려서 <b>한쪽 접시의 합</b>이 <b>10보다 크거나 −10보다 작아지면</b> 저울이 엎어지고, 그 카드를 올린 사람이 그 판에서 집니다. (왼쪽·오른쪽 어느 접시든)</li>
- <li>12턴이 끝나면 카드를 모두 공개합니다. 카드를 올린 순간 <b>그 접시의 합을 10(또는 −10)에 가장 가깝게</b> 만든 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
+ <li>두 사람 손패가 모두 떨어지면 카드를 모두 공개합니다. 카드를 올린 순간 <b>그 접시의 합을 10(또는 −10)에 가장 가깝게</b> 만든 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
  <li><b>3판을 먼저 이긴 사람</b>이 승리합니다. 첫 판 선공은 무작위, 다음 판은 진 사람이 선공입니다.</li>
  <li>한 턴은 40초이고, 시간이 지나면 자동으로 행동합니다.</li>
 </ul><button class="btn red" data-close>닫기</button></div></div>
@@ -424,7 +424,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 <script>
 {
 const $=id=>document.getElementById(id);
-const TURNS=12,LIMIT=11,WINS=3,TLIM=40,HAND=7;
+const LIMIT=11,WINS=3,TLIM=40,HAND=7;
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
 const sgn=v=>v>0?'+'+v:String(v);const tw=T=>T===0?'수평':`${T>0?'왼쪽':'오른쪽'}으로 ${Math.abs(T)}`;
@@ -452,9 +452,9 @@ function act(s,a){const g=G;if(!g||g.phase!=='play'||g.turn!==s||!a)return false
   const d=10-Math.abs(S);if(!g.best||d<=g.best.d)g.best={d,by:s,S,side:a.side,t:g.t};}
  else if(a.t==='peek'){if(g.peek[s]<1)return false;const c=g.scale.find(x=>x.id===a.id);if(!c||c.by===s||g.seen[s].includes(c.id))return false;g.peek[s]--;g.seen[s].push(c.id);addLog(`${nm(s)}: 저울 위 카드 하나를 몰래 엿봤습니다.`)}
  else if(a.t==='draw'){if(!g.deck.length)return false;h.push(g.deck.pop());addLog(`${nm(s)}: 카드를 1장 뽑았습니다.`)}
- else if(a.t==='pass'){if(h.length||g.deck.length||(g.peek[s]>0&&peekable(g,s).length))return false;addLog(`${nm(s)}: 할 수 있는 게 없어 넘깁니다.`)}
+ else if(a.t==='pass'){if(h.length)return false;addLog(`${nm(s)}: 손패가 없어 넘깁니다.`)}
  else return false;
- g.t++;if(g.t>=TURNS){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (${PN[b.side]} 접시 합 ${b.S})`,tilt(g));return true}
+ g.t++;if(!g.hands[1].length&&!g.hands[2].length){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (${PN[b.side]} 접시 합 ${b.S})`,tilt(g));return true}
  g.turn=3-s;tick();return true}
 const peekable=(g,s)=>g.scale.filter(c=>c.by!==s&&!g.seen[s].includes(c.id));
 function endRound(w,why,T){const g=G;g.phase='rend';g.res={w,why,T,best:g.best,round:g.round};if(w)g.wins[w]++;addLog(`★ ${g.round}판: ${w?nm(w)+' 승리':'무승부'} — ${why}`);
@@ -468,19 +468,19 @@ function view(s){const g=G;if(!g)return null;const open=g.phase!=='play';
 /* ---- 수석 악마 (보이는 정보만 사용) ---- */
 function aiMove(v){const me=v.me,op=3-me,known=v.scale.filter(c=>c.v!=null);
  const pool=FULL.slice();const rm=x=>{const i=pool.indexOf(x);if(i>=0)pool.splice(i,1)};v.hand.forEach(rm);known.forEach(c=>rm(c.v));
- const unkN=v.scale.filter(c=>c.v==null).length,left=TURNS-v.t;
+ const unkN=v.scale.filter(c=>c.v==null).length,left=60;
  const cands=[];v.hand.forEach((x,i)=>['L','R'].forEach(side=>{if(!cands.some(c=>c.x===x&&c.side===side))cands.push({x,side,a:{t:'place',i,side}})}));
- if(v.deck>0)cands.push({draw:1,a:{t:'draw'}});
+ if(v.deck>0)cands.push({draw:1,a:{t:'draw'}});if(!v.hand.length)cands.push({pass:1,a:{t:'pass'}});
  if(!cands.length){const tg=v.scale.filter(c=>c.v==null&&c.by!==me);if(v.peek>0&&tg.length)return{t:'peek',id:tg[tg.length-1].id};return{t:'pass'}}
  const worlds=[];for(let k=0;k<1500&&worlds.length<70;k++){const p=shuffle(pool.slice());let j=0;const sc=v.scale.map(c=>({by:c.by,side:c.side,v:c.v==null?p[j++]:c.v}));
   const S={L:0,R:0};let best=null;sc.forEach((c,i)=>{S[c.side]+=c.v;if(i>0&&c.by){const d=10-Math.abs(S[c.side]);if(!best||d<=best.d)best={d,by:c.by}}});
   if(Math.sign(S.L-S.R)!==v.dir&&k<1200)continue;worlds.push({S,best,opp:p.slice(j,j+v.oppHand),deck:p.slice(j+v.oppHand)})}
- const greedy=(hand,S,deck)=>{let bi=-1,bs=null,bd=99;hand.forEach((x,i)=>['L','R'].forEach(sd=>{const S2=S[sd]+x;if(Math.abs(S2)>10)return;const d=10-Math.abs(S2)+Math.random()*.6;if(d<bd){bd=d;bi=i;bs=sd}}));return bi<0?(deck.length?{draw:1}:{force:1}):{i:bi,sd:bs}};
+ const greedy=(hand,S,deck)=>{if(!hand.length)return{pass:1};let bi=-1,bs=null,bd=99;hand.forEach((x,i)=>['L','R'].forEach(sd=>{const S2=S[sd]+x;if(Math.abs(S2)>10)return;const d=10-Math.abs(S2)+Math.random()*.6;if(d<bd){bd=d;bi=i;bs=sd}}));return bi<0?(deck.length?{draw:1}:{force:1}):{i:bi,sd:bs}};
  const roll=(w,c)=>{const S={...w.S};let best=w.best?{...w.best}:null;const H={[me]:v.hand.slice(),[op]:w.opp.slice()},deck=w.deck.slice();let turn=me,steps=left;
   const place=(s,i,sd)=>{const x=H[s].splice(i,1)[0];S[sd]+=x;if(Math.abs(S[sd])>10)return 3-s;const d=10-Math.abs(S[sd]);if(!best||d<=best.d)best={d,by:s};return 0};
-  let first=true;while(steps>0){let r=0;
-   if(first){first=false;if(c.draw){if(deck.length)H[me].push(deck.pop())}else{const i=H[me].indexOf(c.x);r=place(me,i,c.side)}}
-   else{const g=greedy(H[turn],S,deck);if(g.draw)H[turn].push(deck.pop());else if(g.force){if(H[turn].length)r=place(turn,0,'L')}else r=place(turn,g.i,g.sd)}
+  let first=true;while(steps>0&&(H[me].length||H[op].length||first)){let r=0;
+   if(first){first=false;if(c.pass){}else if(c.draw){if(deck.length)H[me].push(deck.pop())}else{const i=H[me].indexOf(c.x);r=place(me,i,c.side)}}
+   else{const g=greedy(H[turn],S,deck);if(g.pass){}else if(g.draw)H[turn].push(deck.pop());else if(g.force){if(H[turn].length)r=place(turn,0,'L')}else r=place(turn,g.i,g.sd)}
    if(r)return r;steps--;turn=3-turn}
   return best?best.by:0};
  let top=null;cands.forEach(c=>{let w=0;worlds.forEach(W=>{const r=roll(W,c);if(r===me)w++;else if(r===0)w+=.5});c.wr=w/Math.max(1,worlds.length)+(c.draw?-.02:0)+Math.random()*.01;if(!top||c.wr>top.wr)top=c});
@@ -516,7 +516,7 @@ function render(){const v=V,me=v?v.me:1,op=3-me,inG=!!v;
  $('wMe').innerHTML=winDots(v?v.wins[me]:0);$('wOp').innerHTML=winDots(v?v.wins[op]:0);
  $('iMe').textContent=v?`손패 ${v.hand.length} · 엿보기 ${v.peek}`:'';$('iOp').textContent=v?`손패 ${v.oppHand} · 엿보기 ${v.oppPeek}`:'';
  const my=v&&v.phase==='play'&&v.turn===me;$('plMe').classList.toggle('turn',!!my);$('plOp').classList.toggle('turn',!!(v&&v.phase==='play'&&v.turn===op));
- $('meta').textContent=v?`${v.round}판 · 턴 ${Math.min(v.t+1,TURNS)}/${TURNS} · 더미 ${v.deck}장 · ${WINS}판 먼저 이기면 승리`:'3판 먼저 이기면 승리';
+ $('meta').textContent=v?`${v.round}판 · 턴 ${v.t+1} · 더미 ${v.deck}장 · ${WINS}판 먼저 이기면 승리`:'3판 먼저 이기면 승리';
  $('banner').textContent=!v?'저울':v.phase==='over'?'게임 종료':v.phase==='rend'?'판 종료':my?(peekMode?'엿볼 카드를 누르세요':'내 차례'):`${v.names[op]||'상대'}의 차례`;
  drawScale(v);
  $('note').textContent=v&&v.phase==='play'?(v.dir===0?'저울이 수평입니다.':`저울이 ${v.dir>0?'왼쪽':'오른쪽'}으로 기울어 있습니다.`):'';
@@ -524,7 +524,7 @@ function render(){const v=V,me=v?v.me:1,op=3-me,inG=!!v;
  $('hand').innerHTML=v&&v.hand.length?v.hand.map((x,i)=>`<button class="cd${cls(x)}${i===sel?' sel':''}" data-i="${i}" ${my?'':'disabled'}>${sgn(x)}</button>`).join(''):'<span class="empty">손에 카드가 없습니다.</span>';
  $('bL').disabled=$('bR').disabled=!(my&&sel>=0);$('bDraw').disabled=!(my&&v.deck>0);$('bDraw').textContent=`뽑기 (${v?v.deck:0})`;
  const canPeek=my&&v.peek>0&&v.scale.some(c=>c.v==null&&c.by!==me);$('bPeek').disabled=!canPeek;$('bPeek').textContent=peekMode?'엿보기 취소':`엿보기 (${v?v.peek:1})`;
- if(my&&!v.hand.length&&!v.deck&&!canPeek)setTimeout(()=>doAct({t:'pass'}),600);
+ $('bPass').classList.toggle('hide',!(v&&!v.hand.length&&v.phase==='play'));$('bPass').disabled=!my;
  $('log').innerHTML=v?v.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join(''):'';
  if(v&&(v.phase==='rend'||v.phase==='over')&&v.res&&rdShown!==v.res.round){rdShown=v.res.round;showRound(v)}
  if(v&&v.phase==='over'&&!endShown){endShown=true;setTimeout(()=>showEnd(v),v.res?2500:0)}}
@@ -537,7 +537,7 @@ function showEnd(v){$('mRound').classList.remove('on');const w=v.winner===v.me;$
 /* ---- 조작 ---- */
 $('hand').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b||b.disabled)return;sel=+b.dataset.i===sel?-1:+b.dataset.i;peekMode=false;render()});
 $('bL').onclick=()=>{if(sel<0)return;doAct({t:'place',i:sel,side:'L'});sel=-1};$('bR').onclick=()=>{if(sel<0)return;doAct({t:'place',i:sel,side:'R'});sel=-1};
-$('bDraw').onclick=()=>{peekMode=false;doAct({t:'draw'})};
+$('bDraw').onclick=()=>{peekMode=false;doAct({t:'draw'})};$('bPass').onclick=()=>doAct({t:'pass'});
 $('bPeek').onclick=()=>{peekMode=!peekMode;sel=-1;render()};
 $('scale').addEventListener('click',e=>{if(!peekMode)return;const g=e.target.closest('g[data-id]');if(!g||!g.classList.contains('pk'))return;peekMode=false;doAct({t:'peek',id:+g.dataset.id})});
 $('bNext').onclick=()=>{$('mRound').classList.remove('on');if(V&&V.phase==='over'){showEnd(V);return}if(host&&G&&G.phase==='rend'){rdShown=-1;newRound()}};
