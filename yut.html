@@ -573,6 +573,7 @@ document.addEventListener('click',e=>{const sl=e.target.closest('.slot[data-aug]
 $('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if(!b||!myTurn())return;const id=b.dataset.use,A=Y.AUG[id],others=G.seats.map((s,i)=>i).filter(i=>i!==MY&&!G.seats[i].out);
  switch(A.tg){
   case'own':target={id,tg:'own'};flash(`${A.name}: 판 위의 내 말을 누르세요.`);render();break;
+  case'swap':target={id,tg:'swap',a:null};flash('자리 바꾸기: 먼저 판 위의 내 말을 누르세요.');render();break;
   case'two':target={id,tg:'two',a:null};flash('바둑: 같은 줄에 있는 내 말 두 개를 차례로 누르세요.');render();break;
   case'node':target={id,tg:'node'};flash('명사수: 조준할 칸(또는 말)을 누르세요.');render();break;
   case'opp':openList(`${A.name}: 상대를 고르세요`,others.map(o=>({l:G.seats[o].name,c:G.seats[o].color,f:()=>act({t:'use',id,x:{o}})})));break;
@@ -589,6 +590,8 @@ $('yaug').addEventListener('click',e=>{const b=e.target.closest('[data-use]');if
   default:act({t:'use',id})}});
 function targetClick(s,pi){const p=G.seats[s].pieces[pi];
  if(target.tg==='own'){if(s!==MY||!Y.onBoard(p)){flash('판 위에 있는 내 말을 누르세요.');return}act({t:'use',id:target.id,x:{pi}});target=null;render();return}
+ if(target.tg==='swap'){if(target.a==null){if(s!==MY||!Y.onBoard(p)){flash('판 위에 있는 내 말을 누르세요.');return}target.a=pi;flash('이제 바꿀 상대 말을 누르세요.');return}
+  if(s===MY||!Y.onBoard(p)){flash('판 위에 있는 상대 말을 누르세요.');return}act({t:'use',id:'swap',x:{a:target.a,o:s,b:pi}});target=null;render();return}
  if(target.tg==='two'){if(s!==MY||!Y.onBoard(p)){flash('판 위에 있는 내 말을 누르세요.');return}
   if(target.a==null){target.a=pi;flash('두 번째 내 말을 누르세요.');return}act({t:'use',id:'baduk',x:{a:target.a,b:pi}});target=null;render()}}
 function openList(title,items){$('tgT').textContent=title;$('tgList').innerHTML='';items.forEach(it=>{const b=document.createElement('button');b.className='btn wide';b.innerHTML=`<i class="ydot" style="background:${it.c}"></i>${esc(it.l)}`;b.onclick=()=>{$('mTarget').classList.remove('on');it.f()};$('tgList').appendChild(b)});$('mTarget').classList.add('on')}

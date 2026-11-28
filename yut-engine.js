@@ -83,6 +83,8 @@ const AUGS=[
  {id:'illusion',tag:'g',icon:'🐱',name:'착각',d:'상대 증강 하나를 3라운드 동안 고양이로 바꿉니다. (다 쓴 증강은 못 바꿈)',use:1,tg:'oppAug'},
  {id:'hit',tag:'g',icon:'🥏',name:'윷 맞히기',d:'상대 한 명에게 윷을 맞혀서, 그 사람의 턴 2번을 건너뛰게 합니다.',use:1,tg:'opp'},
  {id:'chaos',tag:'g',icon:'🌀',name:'혼돈의 말',d:'게임 내내 내 윷 결과로 상대 말도 움직일 수 있습니다. 상대 말이 도착한 칸에 있던 다른 말은 누구 것이든 잡힙니다. (상대 말로 잡으면 한 번 더 던지지 않음)'},
+ {id:'swap',tag:'g',icon:'🔀',name:'자리 바꾸기',d:'판 위 내 말 무리 하나와 상대 말 무리 하나의 자리를 서로 바꿉니다.',use:1,tg:'swap'},
+ {id:'reset',tag:'g',icon:'🔄',name:'리셋',d:'고르는 즉시 게임이 리셋됩니다. 모든 말(골인한 말 포함)이 집으로 돌아가고, 판 위 물건과 접힌 판도 원래대로 돌아옵니다. 증강은 그대로 남습니다.'},
  {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
@@ -159,6 +161,9 @@ function gain(G,s,id){const st=G.seats[s],A=AUG[id];st.aug.push({id});addLog(G,`
  const others=alive(G).filter(o=>o!==s);
  switch(id){
   case'poop':{const k=freeNode(G);if(k)G.poop[k]=s;break}
+  case'reset':{G.seats.forEach(x=>{if(x.out||x.done)return;x.pieces.forEach(p=>{p.n='H';p.prev=null;p.sh=0;p.lock=0;p.asn=0;p.dom=0})});
+   G.traps={};G.rewards={};G.poop={};G.fires={};G.marks=[];G.reaper=null;if(G.garlic)G.garlic.got=[];G.half=null;G.fold={dir:null,id:Math.random()};
+   addLog(G,'🔄 게임 리셋! 모든 말이 집으로 돌아갑니다.');break}
   case'reaper':G.reaper={n:'C',s};killAt(G,'C',s,{exceptSeat:s,cause:'💀 사신'});break;
   case'redbtn':DIAG.forEach(n=>killAt(G,n,s,{cause:'🔴 빨간 버튼'}));break;
   case'notme':{if(others.length){const o=pickR(G,others);const idx=G.seats[o].pieces.map((p,k)=>onBoard(p)?k:-1).filter(k=>k>=0);if(idx.length)killStack(G,o,idx,s,'🙈 나만 아니면 돼')}break}
@@ -364,6 +369,9 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'baduk':{if(!ownOn(t.a)||!ownOn(t.b))return false;const A1=st.pieces[t.a].n,B1=st.pieces[t.b].n;if(A1===B1)return false;
    const line=LINES.find(l=>l.includes(A1)&&l.includes(B1));if(!line)return false;let i=line.indexOf(A1),j=line.indexOf(B1);if(i>j)[i,j]=[j,i];
    let n=0;line.slice(i+1,j).forEach(nd=>{n+=killAt(G,nd,s,{exceptSeat:s,cause:'⚫ 바둑'})});G.throws+=n;break}
+  case'swap':{const ot=G.seats[t.o];if(!ownOn(t.a)||t.o===s||!ot||ot.out||ot.done||!ot.pieces[t.b]||!onBoard(ot.pieces[t.b]))return false;
+   const g1=groupOf(G,s,t.a),g2=groupOf(G,t.o,t.b),n1=st.pieces[t.a].n,n2=ot.pieces[t.b].n;if(n1===n2)return false;
+   g1.forEach(k=>{st.pieces[k].n=n2;st.pieces[k].prev=null});g2.forEach(k=>{ot.pieces[k].n=n1;ot.pieces[k].prev=null});addLog(G,`🔀 ${st.name}와(과) ${ot.name}의 말이 자리를 바꿨습니다.`);break}
   case'fix':{if(!KINDS.includes(t.k))return false;G.force[s]=t.k;break}
   case'flip':{const r=G.results[t.ri];if(!r||![1,-1].includes(t.d))return false;const f=FLATS[r.k]+t.d;if(f<0||f>4)return false;G.results[t.ri]=mk(BYFLATS[f],'슬쩍');break}
   case'lonely':G.force[s]='도';break;
