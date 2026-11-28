@@ -325,7 +325,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .hb .chat{display:flex;gap:8px}.hb .chat input{flex:1;min-width:0}
 .hb .bubble{position:absolute;left:10px;right:10px;top:100%;margin-top:6px;z-index:3}
 @media(max-width:420px){.tile{width:96px;height:96px;font-size:26px}.pl{padding:11px}.pl-score .num{font-size:34px}.lamps i{width:13px;height:13px}.lamps{gap:5px}}
-.room .rk.gyut{background:#3f7fd8;color:#fff}
+.room .rk.gyut{background:#3f7fd8;color:#fff}.room .rk.gsc{background:#c9a34a;color:#1a1314}
 .mx{position:fixed;top:14px;right:14px;z-index:10;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,14,15,.92);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}.mx:hover{background:#3a2a2b}
 </style>
 </head>
@@ -625,14 +625,14 @@ setInterval(pubTick,2000);
 $('bPub').onclick=()=>{WANTPUB=true;$('mWait').classList.add('pub');$('bCreate').onclick()};
 $('bCreate').addEventListener('pointerdown',()=>{WANTPUB=false;$('mWait').classList.remove('pub')});$('bCreate').addEventListener('keydown',()=>{WANTPUB=false;$('mWait').classList.remove('pub')});
 $('bJoin').addEventListener('pointerdown',()=>$('mWait').classList.remove('pub'));
-function joinRoom(g,c){if(g!==GAME){location.href=({'2p':'omok.html','3p':'3p.html','hb':'hb.html','yut':'yut.html'}[g])+'#join='+c;return}$('codeIn').value=c;WANTPUB=false;$('mWait').classList.add('pub');$('bJoin').onclick()}
+function joinRoom(g,c){if(g!==GAME){location.href=({'2p':'omok.html','3p':'3p.html','hb':'hb.html','yut':'yut.html','sc':'scale.html'}[g])+'#join='+c;return}$('codeIn').value=c;WANTPUB=false;$('mWait').classList.add('pub');$('bJoin').onclick()}
 async function loadRooms(){if(!$('mLobby').classList.contains('on'))return;const box=$('roomList');let txt='';
  try{const r=await fetch(ROOMT+'/json?poll=1&since=3m');if(!r.ok)throw 0;txt=await r.text()}catch(e){box.innerHTML='<p class="empty">공개 방 목록을 불러오지 못했습니다. 잠시 후 다시 시도합니다.</p>';return}
  const latest={};for(const line of txt.split('\n')){if(!line.trim())continue;try{const o=JSON.parse(line);if(o.event!=='message')continue;const m=JSON.parse(o.message);
-  if(m.v!==1||!['2p','3p','hb','yut'].includes(m.g)||!/^\d{4}$/.test(m.c))continue;const k=m.g+m.c;if(!latest[k]||o.time>=latest[k].time)latest[k]={...m,time:o.time}}catch(e){}}
+  if(m.v!==1||!['2p','3p','hb','yut','sc'].includes(m.g)||!/^\d{4}$/.test(m.c))continue;const k=m.g+m.c;if(!latest[k]||o.time>=latest[k].time)latest[k]={...m,time:o.time}}catch(e){}}
  const now=Date.now()/1000,rooms=Object.values(latest).filter(m=>m.t==='open'&&now-m.time<95).sort((a,b)=>(a.g===GAME?0:1)-(b.g===GAME?0:1)||b.time-a.time);
  if(!rooms.length){box.innerHTML='<p class="empty">지금 열린 공개 방이 없습니다. 공개 방을 만들어 보세요.</p>';return}
- box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':m.g==='yut'?' gyut':''}">${{'2p':'오목 2인','3p':'오목 3인 4목','hb':'흑과 백','yut':'마법 윷놀이'}[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,4)?m.p:1}/${({'3p':3,'yut':4})[m.g]||2}명</span><button class="btn red" data-g="${m.g}" data-c="${m.c}">들어가기</button></div>`).join('')}
+ box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':m.g==='yut'?' gyut':m.g==='sc'?' gsc':''}">${{'2p':'오목 2인','3p':'오목 3인 4목','hb':'흑과 백','yut':'마법 윷놀이','sc':'저울'}[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,4)?m.p:1}/${({'3p':3,'yut':4})[m.g]||2}명</span><button class="btn red" data-g="${m.g}" data-c="${m.c}">들어가기</button></div>`).join('')}
 $('roomList').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b)joinRoom(b.dataset.g,b.dataset.c)});
 setInterval(loadRooms,6000);loadRooms();
 const TIPS=["선은 상대의 흑·백을 보지 못하고 먼저 내야 해요. 대신 이기면 다음 라운드도 선이에요.", "후는 선의 흑·백과 표시등을 보고 낼 수 있어요. 선이 흑이면 10만 내도 반드시 이겨요.", "적은 차이로 이기고, 질 때는 크게 지는 게 핵심이에요. 질 라운드엔 0~1만 내서 아끼세요.", "표시등은 내는 순간 바뀌어요. 표시등 한 칸이 꺼지는 숫자를 내면 상대가 눈치챌 수 있어요.", "상대가 4점이면 한 판만 져도 끝나요. 그때는 아끼지 말고 크게 내야 해요.", "9라운드가 끝났을 때 승점이 같으면 33포인트로 3라운드를 더 해요.", "흑끼리, 백끼리 붙으면 누가 더 냈는지 끝까지 알 수 없어요. 숫자 심리전을 노려 보세요."];let tipI=Math.floor(Math.random()*TIPS.length);
