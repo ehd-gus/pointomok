@@ -109,6 +109,10 @@ const AUGS=[
  {id:'cannon',tag:'g',icon:'💣',name:'변환: 포',d:'1회: 판 위 내 일반 말 하나를 장기의 포로 바꿉니다. 매 차례 한 번, 포는 말이 있는 칸 하나를 뛰어넘어 그 줄을 따라 원하는 만큼 일직선으로 갈 수 있습니다. 상대 말이 있는 칸에 서면 잡습니다.',use:1,tg:'own'},
  {id:'spin',tag:'g',icon:'🎡',name:'돌려돌려 돌림판',d:'판을 무작위로 90°/180°/270° 회전시킵니다. 모든 말과 물건이 함께 돌아갑니다. 결과가 마음에 안 들면 한 번 더 돌릴 수 있습니다.',use:2},
  {id:'overflow',tag:'g',icon:'🎋',name:'과유불급',d:'윷 6개를 던집니다. 앞면 0개 = 모, 1 = 도, 2 = 개, 3 = 걸, 4·5 = 윷, 6개 모두 앞면 = 탈락!'},
+ {id:'queen',tag:'start',icon:'👑',name:'시작 변환: 중전마마',d:'말 하나가 중전마마가 되어 좌측 상단에서 시작합니다. 중전마마가 잡혀 목숨이 0이 되면 탈락하고, 내가 윷을 12번 던질 때까지 지키면 승리합니다. 중전마마는 골인할 수 없습니다. 다른 내 말이 골인할 때마다 목숨이 1개 늘어납니다. (처음 목숨 1)'},
+ {id:'monster',tag:'start',icon:'👾',name:'시작 변환: 괴물',d:'골인할 수 없는 괴물 하나만 가지고 시작합니다. (한 바퀴를 돌면 다시 돕니다) 괴물이 말을 12개 잡으면 승리합니다. 괴물은 잡혀도 죽지 않지만, 잡힐 때마다 목표 개수가 1개씩 늘어납니다.'},
+ {id:'star',tag:'start',icon:'⭐',name:'시작 변환: 1성',d:'말이 8개가 되고 모두 1성이 됩니다. 내 말끼리 업힐 때마다 하나로 합쳐지며 성급이 더해집니다. 8성을 만들면 승리합니다.'},
+ {id:'flick',tag:'g',icon:'🥌',name:'알까기',d:'1회: 내 차례(윷을 던지기 전)를 써서 알까기를 합니다. 판 위 내 말 하나와 방향을 고르고 힘을 정해 튕깁니다. 줄을 따라 날아가다 처음 부딪힌 상대 말을 쳐내고 그 자리에 섭니다. 너무 세게 튕겨 판 밖으로 나가면 내 말이 집으로 돌아갑니다.',use:1,tg:'flick'},
  {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
@@ -229,6 +233,9 @@ function gain(G,s,id){const st=G.seats[s],A=AUG[id];st.aug.push({id});addLog(G,`
  switch(id){
   case'poop':{const k=freeNode(G);if(k)G.poop[k]=s;break}
   case'overflow':st.sticks=6;break;
+  case'queen':{let k=st.pieces.findIndex(p=>p.n==='H'&&!p.t);if(k<0)k=st.pieces.findIndex(p=>p.n!=='F');if(k>=0){const p=st.pieces[k];p.t='queen';p.n='o10';p.prev=null}st.qLife=1;st.qThrows=0;addLog(G,`👑 ${st.name}: 중전마마가 좌측 상단에 등장했습니다. (목숨 1, 0/12)`);break}
+  case'monster':{const p=newPiece();p.t='mon';st.pieces=[p];st.monK=0;st.monNeed=12;addLog(G,`👾 ${st.name}: 괴물 하나만 남았습니다. (잡은 말 0/12)`);break}
+  case'star':{st.pieces=Array.from({length:8},()=>{const p=newPiece();p.lv=1;return p});addLog(G,`⭐ ${st.name}: 1성 말 8개!`);break}
   case'murder':if(!G.hp){G.hp=G.seats.map(()=>3);addLog(G,'🔪 모두에게 체력 3이 생겼습니다.')}break;
   case'demon':{let n=0;st.pieces.forEach(p=>{if(p.n!=='F'&&!p.t){p.t='cult';n++}});st.coin=st.coin||0;addLog(G,`👹 ${st.name}: 마신 소환! 광신도 ${n}명`);break}
   case'nunchi':G.nunchi={by:s};break;
@@ -292,8 +299,12 @@ function killStack(G,o,idx,by,cause){// o의 말 idx를 잡음. 반환: 잡힌 �
  if(has(G,o,'friend')&&idx.length>1){idx=[idx[0]];addLog(G,`🤝 동료 방패: ${ot.name}의 말 1개만 잡힙니다.`)}
  if(by!=null&&by!==o&&G.seats[by].pieces.some((q,k)=>q.t==='peli'&&q.n===ot.pieces[idx[0]].n)&&G.turn===by){const pk=G.seats[by].pieces.findIndex(q=>q.t==='peli'&&q.n===ot.pieces[idx[0]].n);const pel=G.seats[by].pieces[pk];
   idx.forEach(k=>{const q=ot.pieces[k];q.n='H';q.prev=null;q.lock=1e9;q.sw=1;(pel.belly=pel.belly||[]).push([o,k])});fx(G,'kill',pel.n,idx.length);addLog(G,`🦤 ${G.seats[by].name}의 펠리컨이 ${ot.name}의 말 ${idx.length}개를 삼켰습니다!`);G.ev++;return idx.length}
+ if(ot.pieces.some((q,k)=>idx.includes(k)&&q.t==='mon')){idx=idx.filter(k=>ot.pieces[k].t!=='mon');ot.monNeed=(ot.monNeed||12)+1;addLog(G,`👾 ${ot.name}의 괴물은 죽지 않습니다! 목표 +1 (${ot.monK||0}/${ot.monNeed})`);if(!idx.length){G.ev++;return 0}}
+ const qn=idx.some(k=>ot.pieces[k].t==='queen');
  const zom=by!=null&&by!==o&&G.seats[by].pieces.some(q=>q.t==='zomb'&&q.n===ot.pieces[idx[0]].n);
  fx(G,'kill',ot.pieces[idx[0]].n,idx.length);idx.forEach(k=>sendHome(G,o,k));
+ if(qn){const q=ot.pieces.find(x=>x.t==='queen');ot.qLife=(ot.qLife||1)-1;if(ot.qLife<=0){addLog(G,`👑 ${ot.name}의 중전마마가 잡혔습니다!`);eliminate(G,o,'👑 중전마마를 지키지 못했습니다.')}else{q.n='o10';q.prev=null;addLog(G,`👑 ${ot.name}의 중전마마가 잡혔지만 목숨이 남아 좌측 상단으로 돌아갑니다. (목숨 ${ot.qLife})`)}}
+ if(by!=null&&by!==o&&has(G,by,'monster')&&!G.seats[by].out&&!G.seats[by].done){const ms=G.seats[by];ms.monK=(ms.monK||0)+idx.length;addLog(G,`👾 ${ms.name}의 괴물: ${ms.monK}/${ms.monNeed||12}`);if(ms.monK>=(ms.monNeed||12))win(G,by,'👾 괴물이 목표만큼 말을 잡았습니다!')}
  if(zom){idx.forEach(k=>{ot.pieces[k].t='zomb'});addLog(G,`🧟‍♂️ ${ot.name}의 말 ${idx.length}개가 좀비가 되었습니다!`);zombieCheck(G)}
  addLog(G,`${cause?cause+': ':''}${by!=null&&by!==o?G.seats[by].name+'이(가) ':''}${ot.name}의 말 ${idx.length}개를 잡았습니다.`);
  if(by!=null&&by!==o){G.bets=G.bets.filter(b=>{const bb=G.seats[b.by];if(b.who===by){bb.bankRes.push(mk('모','도박사'),mk('모','도박사'));addLog(G,`🃏 ${bb.name}의 도박 적중! 다음 턴에 모 2개.`)}else addLog(G,`🃏 ${bb.name}의 도박은 빗나갔습니다.`);return false});
@@ -354,6 +365,7 @@ function throwYut(G,s,choose){if(G.phase!=='throw'||s!==G.turn||G.throws<=0)retu
  const res=mk(k,tag);G.results.push(res);G.turnRes.push(k);st.st.thrown[k]=1;if(k==='개')st.st.gae++;
  G.lastThrow={k,extra,id:Math.random(),s,sticks:st.sticks,fl};
  addLog(G,`${st.name}: ${k}${tag?' ('+tag+')':''}${extra?' · 한 번 더!':''}`);
+ if(has(G,s,'queen')&&st.pieces.some(p=>p.t==='queen')){st.qThrows=(st.qThrows||0)+1;if(st.qThrows>=12){win(G,s,'👑 중전마마를 12번 던질 때까지 지켰습니다!');if(G.phase!=='over'&&G.turn===s)endTurn(G);return res}}
  if(k==='걸'&&has(G,s,'jinmori')){st.st.geol++;if(st.st.geol%2===0){G.results.push(mk('개','장단'));addLog(G,`🥁 장단: 개를 하나 더 얻었습니다.`)}}
  if(k==='모'&&G.grail===s){G.ev++;eliminate(G,s,'🍷 독이 든 성배를 마신 뒤 모가 나왔습니다.');if(G.phase!=='over')endTurn(G);return res}
  if(has(G,s,'s777')&&G.turnRes.filter(x=>x===k).length>=3)win(G,s,`🎰 777: ${k}가 세 번!`);
@@ -377,7 +389,11 @@ function anyMove(G,s){return G.results.some(r=>G.seats[s].pieces.some((p,pi)=>ca
 function toMove(G){G.phase='move';if(!anyMove(G,G.turn)){if(G.results.length)addLog(G,'쓸 수 있는 결과가 없어 넘어갑니다.');endTurn(G)}}
 function moveLen(G,s,r){let v=r.v;if(v<0)return v;if(G.seats[s].pieces.some(p=>p.t==='van'&&onBoard(p)))v++;if(G.dance===s)v*=2;return v}
 function preview(G,s,ri,pi){const r=G.results[ri];if(!r||!canUse(G,s,r,pi))return null;const p=G.seats[s].pieces[pi],g=groupOf(G,s,pi);
- let v=moveLen(G,s,r);if(p.n==='H'&&v>0&&has(G,s,'rabbit'))v++;const path=v<0?[backOf(p)]:walk(p.n,v);return{dest:path[path.length-1],path,g,back:v<0}}
+ let v=moveLen(G,s,r);if(p.n==='H'&&v>0&&has(G,s,'rabbit'))v++;let path=v<0?[backOf(p)]:walk(p.n,v);
+ const fi=path.indexOf('FIN');if(fi>=0&&g.some(k=>G.seats[s].pieces[k].t==='queen'))return null;
+ if(fi>=0&&g.some(k=>G.seats[s].pieces[k].t==='mon')){const left=v-fi;path=path.slice(0,fi).concat(left>0?walk('H',left):['o1'])}
+ if(path.length&&path[path.length-1]==='H')return null;
+ return{dest:path[path.length-1],path,g,back:v<0}}
 function doMove(G,s,g,path,back){// 경로를 따라 이동하며 똥·자객 처리 후 도착 처리. 반환: 잡은 횟수
  const st=G.seats[s];let from=st.pieces[g[0]].n;
  for(let i=0;i<path.length;i++){const n=path[i];if(n==='FIN')break;const last=i===path.length-1;
@@ -388,7 +404,7 @@ function doMove(G,s,g,path,back){// 경로를 따라 이동하며 똥·자객 �
  if(dest==='FIN'){g.forEach(k=>{st.pieces[k].n='F';st.pieces[k].prev=null;st.pieces[k].asn=0});finished(G,s,g);return 0}
  g.forEach(k=>{st.pieces[k].n=dest;st.pieces[k].prev=back?null:prevNode});
  return land(G,s,g,dest,back)}
-function finished(G,s,g){const st=G.seats[s];g.forEach(k=>{const p=st.pieces[k];if(p.belly&&p.belly.length){const vs=[...new Set(p.belly.map(x=>x[0]))];p.belly=[];vs.forEach(o=>eliminate(G,o,`🦤 ${st.name}의 펠리컨에게 삼켜진 채로 골인했습니다.`))}});if(G.phase==='over')return;fx(G,'fin','o0',g.length);addLog(G,`🏠 ${st.name}의 말 ${g.length}개 골인!`);
+function finished(G,s,g){const st=G.seats[s];if(has(G,s,'queen')&&st.pieces.some(p=>p.t==='queen')){st.qLife=(st.qLife||0)+g.length;addLog(G,`👑 ${st.name}: 중전마마 목숨 +${g.length} (${st.qLife})`)}g.forEach(k=>{const p=st.pieces[k];if(p.belly&&p.belly.length){const vs=[...new Set(p.belly.map(x=>x[0]))];p.belly=[];vs.forEach(o=>eliminate(G,o,`🦤 ${st.name}의 펠리컨에게 삼켜진 채로 골인했습니다.`))}});if(G.phase==='over')return;fx(G,'fin','o0',g.length);addLog(G,`🏠 ${st.name}의 말 ${g.length}개 골인!`);
  G.duels.forEach(d=>{if(!d.done&&d.o===s){d.done=true;eliminate(G,d.by,`🤺 ${st.name}이(가) 골인해서 승부에서 졌습니다.`)}});
  if(g.some(k=>st.pieces[k].t==='mara'))return win(G,s,'🏃 마라토너 골인!');
  if(g.some(k=>st.pieces[k].t==='kim')&&st.st.kimTurns<=6)return win(G,s,`🛺 김첨지가 ${st.st.kimTurns}턴 만에 골인!`);
@@ -403,6 +419,8 @@ function land(G,s,g,dest,back){const st=G.seats[s];let caught=0;
   const n=killStack(G,o,vs,s);if(n){caught++;if(back&&has(G,s,'backwin'))win(G,s,'🐄 소 뒷걸음질: 빽도로 잡았습니다!');if(has(G,s,'treason')&&before>mine){G.throws++;addLog(G,'🗝️ 역모: 한 번 더!')}}});
  if(has(G,s,'cannibal')){const own=st.pieces.map((q,k)=>q.n===dest&&!g.includes(k)?k:-1).filter(k=>k>=0);if(own.length){own.forEach(k=>sendHome(G,s,k));addLog(G,`🍖 ${st.name}이(가) 자기 말을 잡았습니다.`);G.throws++}}
  if(caught)G.throws+=caught;
+ if(has(G,s,'star')&&dest!=='FIN'&&G.phase!=='over'){const here=st.pieces.map((q,k)=>q.n===dest&&!q.gone?k:-1).filter(k=>k>=0);if(here.length>1){const tot=here.reduce((a,k)=>a+(st.pieces[k].lv||1),0);
+  here.forEach((k,i)=>{const q=st.pieces[k];if(i===0)q.lv=tot;else{q.n='F';q.gone=1;q.lv=0;q.prev=null}});addLog(G,`⭐ ${st.name}: 합체! ${tot}성`);if(tot>=8)win(G,s,'⭐ 8성을 만들었습니다!')}}
  boardWins(G);return caught}
 function movePiece(G,s,ri,pi,o){if(G.phase!=='move'||s!==G.turn)return false;
  if(o!=null&&o!==s){const ot=G.seats[o];if(!has(G,s,'chaos')||!ot||ot.out||ot.done||!onBoard(ot.pieces[pi]||{}))return false;const pv=preview(G,o,ri,pi);if(!pv)return false;
@@ -443,7 +461,7 @@ function foldBoard(G,s,dir){const moved=[];// 접히는 쪽 말 옮기기
 /* ---- 직접 쓰는 증강 ---- */
 function usesLeft(G,s,id){const A=AUG[id];if(A.perTurn)return G.snTurn[s]===G.turnNo?0:1;return(A.use||0)-(G.seats[s].used[id]||0)}
 function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!has(G,s,id))return false;const A=AUG[id];if(!A.use&&!A.perTurn)return false;if(usesLeft(G,s,id)<=0)return false;
- const st=G.seats[s];t=t||{};const others=alive(G).filter(o=>o!==s);let ok=true;
+ const st=G.seats[s];t=t||{};const others=alive(G).filter(o=>o!==s);let ok=true,endAfter=false;
  const ownOn=pi=>st.pieces[pi]&&onBoard(st.pieces[pi]);
  switch(id){
   case'dogs':G.results.push(mk('개','개 풀기'));break;
@@ -480,6 +498,12 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'clone':{if(!ownOn(t.pi))return false;const k=st.pieces.findIndex(p=>p.n==='H'&&!p.t);if(k<0)return false;st.pieces[k].n=st.pieces[t.pi].n;st.pieces[k].prev=st.pieces[t.pi].prev;addLog(G,`👥 ${st.name}: 분신술!`);break}
   case'lifeswap':{const ot=G.seats[t.o];if(t.o===s||!ot||ot.out||ot.done)return false;const A=st.pieces.filter(p=>p.n!=='F'),B=ot.pieces.filter(p=>p.n!=='F');
    const na=A.map(p=>p.n),nb=B.map(p=>p.n);A.forEach((p,i)=>{p.n=nb[i]||'H';p.prev=null});B.forEach((p,i)=>{p.n=na[i]||'H';p.prev=null});addLog(G,`🎭 ${st.name}와(과) ${ot.name}이(가) 인생을 바꿨습니다!`);break}
+  case'flick':{if(G.phase!=='throw'||G.results.length||G.turnRes.length)return false;if(!ownOn(t.pi))return false;const pw=Math.max(1,Math.min(6,Math.round(+t.pw||1)));
+   const from=st.pieces[t.pi].n;let L=null,d=0,i=0;for(const l of LINES){const j=l.indexOf(from);if(j<0)continue;if(l[j+1]===t.to){L=l;d=1;i=j;break}if(l[j-1]===t.to){L=l;d=-1;i=j;break}}if(!L)return false;
+   const g=groupOf(G,s,t.pi),keep=G.half?HALF[G.half].keep:null;let j=i,stop=null,off=false;addLog(G,`🥌 ${st.name}: 알까기! (힘 ${pw})`);
+   for(let k=0;k<pw;k++){j+=d;if(j<0||j>=L.length||keep&&!keep.has(L[j])){off=true;break}const n=L[j];let hit=false;G.seats.forEach((x,o)=>{if(o===s||x.out)return;const vs=x.pieces.map((q,qi)=>q.n===n?qi:-1).filter(qi=>qi>=0);if(vs.length){hit=true;killStack(G,o,vs,s,'🥌 알까기')}});stop=n;if(hit)break}
+   if(off){g.forEach(k=>sendHome(G,s,k));addLog(G,`🥌 너무 세게 튕겨서 ${st.name}의 말이 판 밖으로 날아갔습니다!`)}else if(stop){g.forEach(k=>{st.pieces[k].n=stop;st.pieces[k].prev=null})}
+   endAfter=true;break}
   case'pd':{const ps=[t.a,t.b];if(t.a===t.b||ps.some(o=>!G.seats[o]||G.seats[o].out||G.seats[o].done))return false;G.vote={kind:'pd',voters:ps,votes:{},ret:G.phase};G.phase='vote';
    addLog(G,`⛓️ 죄수의 딜레마: ${G.seats[t.a].name} vs ${G.seats[t.b].name} — 몰래 협력/배신을 고르세요!`);break}
   case'bluff':{if(G.phase!=='throw'||G.throws<=0||G.bluffArm===s)return false;G.bluffArm=s;break}
@@ -515,6 +539,7 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
  addLog(G,`${A.icon} ${st.name}: ${A.name}${['prophet','gambler','plan'].includes(id)?' (예측은 비밀)':t.o!=null&&G.seats[t.o]?' → '+G.seats[t.o].name:''}`);
  G.ev++;if(G.catCheck){delete G.catCheck;checkCat(G);if(G.phase==='over')return true}
  if(st.done||st.out){endTurn(G);return true}
+ if(endAfter){if(G.phase!=='over'){G.throws=0;G.results=[];endTurn(G)}return true}
  if(G.phase==='vote'){}else if(G.phase==='move'&&G.throws>0)G.phase='throw';
  else if(G.phase==='throw'&&G.throws<=0)toMove(G);
  else if(G.phase==='move'&&!anyMove(G,s)&&G.phase!=='over'){if(G.results.length)addLog(G,'쓸 수 있는 결과가 없어 넘어갑니다.');endTurn(G)}
