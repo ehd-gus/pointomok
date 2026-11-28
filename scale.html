@@ -382,9 +382,9 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <li>카드는 <b>−8 ~ −1, 0, +1 ~ +8</b>이 2장씩, 모두 34장입니다. 두 사람이 <b>7장씩</b> 받고, 1장은 <b>고정 카드</b>로 저울 한쪽에 뒷면으로 올라갑니다. 남은 카드는 뽑기 더미가 됩니다.</li>
  <li>두 접시는 각자 올라간 카드의 <b>합</b>을 가집니다. 합이 큰 쪽으로 저울이 기웁니다. 마이너스 카드는 그 접시의 합을 줄여서 반대쪽으로 기울게 합니다. 0은 아무 변화가 없습니다.</li>
  <li>저울 위 카드는 모두 뒷면이라, 화면에는 <b>어느 쪽으로 기울었는지만</b> 보입니다. 내가 올린 카드는 나만 숫자를 볼 수 있습니다.</li>
- <li>한 판은 <b>두 사람 손패가 모두 없어질 때까지</b> 계속합니다. 내 턴에는 셋 중 하나를 합니다.<br>① <b>카드 올리기</b>: 손의 카드 1장을 원하는 쪽에 뒷면으로 올립니다.<br>② <b>엿보기</b>: 저울 위 뒷면 카드 1장을 나만 몰래 봅니다. (한 판에 1번)<br>③ <b>뽑기</b>: 더미에서 1장을 가져옵니다.<br>손패가 없으면 뽑거나 <b>넘기기</b>를 할 수 있습니다.</li>
+ <li>한 판은 <b>둘 중 한 사람의 손패가 다 없어질 때까지</b> 계속합니다. 내 턴에는 셋 중 하나를 합니다.<br>① <b>카드 올리기</b>: 손의 카드 1장을 원하는 쪽에 뒷면으로 올립니다.<br>② <b>엿보기</b>: 저울 위 뒷면 카드 1장을 나만 몰래 봅니다. (한 판에 1번)<br>③ <b>뽑기</b>: 더미에서 1장을 가져옵니다.</li>
  <li>카드를 올려서 <b>한쪽 접시의 합</b>이 <b>10보다 크거나 −10보다 작아지면</b> 저울이 엎어지고, 그 카드를 올린 사람이 그 판에서 집니다. (어느 접시든)</li>
- <li>두 사람 손패가 모두 떨어지면 카드를 모두 공개합니다. 카드를 올린 순간 <b>그 접시의 합을 10(또는 −10)에 가장 가깝게</b> 만든 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
+ <li>누구든 손패가 다 떨어지면 그 즉시 판이 끝나고 카드를 모두 공개합니다. 카드를 올린 순간 <b>그 접시의 합을 10(또는 −10)에 가장 가깝게</b> 만든 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
  <li><b>3판을 먼저 이긴 사람</b>이 승리합니다. 첫 판 선공은 무작위, 다음 판은 진 사람이 선공입니다.</li>
  <li>한 턴은 40초이고, 시간이 지나면 자동으로 행동합니다.</li>
 </ul><button class="btn red" data-close>닫기</button></div></div>
@@ -454,7 +454,7 @@ function act(s,a){const g=G;if(!g||g.phase!=='play'||g.turn!==s||!a)return false
  else if(a.t==='draw'){if(!g.deck.length)return false;h.push(g.deck.pop());addLog(`${nm(s)}: 카드를 1장 뽑았습니다.`)}
  else if(a.t==='pass'){if(h.length)return false;addLog(`${nm(s)}: 손패가 없어 넘깁니다.`)}
  else return false;
- g.t++;if(!g.hands[1].length&&!g.hands[2].length){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (그 접시 합 ${b.S})`,tilt(g));return true}
+ g.t++;if(!g.hands[1].length||!g.hands[2].length){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (그 접시 합 ${b.S})`,tilt(g));return true}
  g.turn=3-s;tick();return true}
 const peekable=(g,s)=>g.scale.filter(c=>c.by!==s&&!g.seen[s].includes(c.id));
 function endRound(w,why,T){const g=G;g.phase='rend';g.res={w,why,T,best:g.best,round:g.round};if(w)g.wins[w]++;addLog(`★ ${g.round}판: ${w?nm(w)+' 승리':'무승부'} — ${why}`);
@@ -478,7 +478,7 @@ function aiMove(v){const me=v.me,op=3-me,known=v.scale.filter(c=>c.v!=null);
  const greedy=(hand,S,deck)=>{if(!hand.length)return{pass:1};let bi=-1,bs=null,bd=99;hand.forEach((x,i)=>['L','R'].forEach(sd=>{const S2=S[sd]+x;if(Math.abs(S2)>10)return;const d=10-Math.abs(S2)+Math.random()*.6;if(d<bd){bd=d;bi=i;bs=sd}}));return bi<0?(deck.length?{draw:1}:{force:1}):{i:bi,sd:bs}};
  const roll=(w,c)=>{const S={...w.S};let best=w.best?{...w.best}:null;const H={[me]:v.hand.slice(),[op]:w.opp.slice()},deck=w.deck.slice();let turn=me,steps=left;
   const place=(s,i,sd)=>{const x=H[s].splice(i,1)[0];S[sd]+=x;if(Math.abs(S[sd])>10)return 3-s;const d=10-Math.abs(S[sd]);if(!best||d<=best.d)best={d,by:s};return 0};
-  let first=true;while(steps>0&&(H[me].length||H[op].length||first)){let r=0;
+  let first=true;while(steps>0&&((H[me].length&&H[op].length)||first)){let r=0;
    if(first){first=false;if(c.pass){}else if(c.draw){if(deck.length)H[me].push(deck.pop())}else{const i=H[me].indexOf(c.x);r=place(me,i,c.side)}}
    else{const g=greedy(H[turn],S,deck);if(g.pass){}else if(g.draw)H[turn].push(deck.pop());else if(g.force){if(H[turn].length)r=place(turn,0,'L')}else r=place(turn,g.i,g.sd)}
    if(r)return r;steps--;turn=3-turn}
