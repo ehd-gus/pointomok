@@ -303,7 +303,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .rlist li:nth-child(1) .rno{color:#e9c46a}.rlist li:nth-child(2) .rno{color:#d6d6d6}.rlist li:nth-child(3) .rno{color:#d99a5e}
 .rlist .rname{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rlist .rw{font-variant-numeric:tabular-nums;font-weight:700}.rlist .rw small{font-weight:500;color:var(--dim);margin-left:2px}
 .rnote{padding:16px;text-align:center;color:var(--dim);font-size:14px}
-.room .rk.gyut{background:#3f7fd8;color:#fff}
+.room .rk.gyut{background:#3f7fd8;color:#fff}.room .rk.gsc{background:#c9a34a;color:#1a1314}
 .rtabs button{font-size:13px}
 </style>
 </head>
@@ -320,10 +320,14 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  </a>
  <a class="gcard" href="yut.html">
   <svg class="gart" viewBox="0 0 92 92" aria-hidden="true"><rect width="92" height="92" fill="#1e1415"/><g stroke="#d8b26a" stroke-opacity=".55" stroke-width="1.4" fill="none"><rect x="14" y="14" width="64" height="64"/><path d="M14 14L78 78M78 14L14 78"/></g><g fill="#2a1d1e" stroke="#d8b26a" stroke-width="1"><circle cx="14" cy="14" r="5"/><circle cx="78" cy="14" r="5"/><circle cx="14" cy="78" r="5"/><circle cx="78" cy="78" r="5"/><circle cx="46" cy="46" r="5"/></g><circle cx="78" cy="46" r="5" fill="#d8443f" stroke="#fff"/><circle cx="35" cy="35" r="5" fill="#3f7fd8" stroke="#fff"/><circle cx="46" cy="78" r="5" fill="#3fae5c" stroke="#fff"/><text x="66" y="34" font-size="15">✨</text></svg>
-  <div class="gtxt"><b>마법 윷놀이</b><span>증강을 골라 규칙을 비틀고, 말 4개를 먼저 골인시키세요.</span><div class="gtags"><i>2~4인</i><i>증강 22종</i><i>혼자 연습</i></div></div><span class="go" aria-hidden="true">›</span>
+  <div class="gtxt"><b>마법 윷놀이</b><span>증강을 골라 규칙을 비틀고, 말 4개를 먼저 골인시키세요.</span><div class="gtags"><i>2~4인</i><i>증강 90종+</i><i>혼자 연습</i></div></div><span class="go" aria-hidden="true">›</span>
+ </a>
+ <a class="gcard" href="scale.html">
+  <svg class="gart" viewBox="0 0 92 92" aria-hidden="true"><rect width="92" height="92" fill="#1b1412"/><polygon points="43,80 49,80 47,26 45,26" fill="#8a6a3c"/><rect x="30" y="78" width="32" height="5" rx="2" fill="#5a4426"/><g transform="rotate(-10 46 26)"><rect x="12" y="23" width="68" height="5" rx="2.5" fill="#d8b26a"/></g><circle cx="46" cy="26" r="4" fill="#e9c46a"/><g stroke="#a88a4a"><path d="M15 32L8 58M15 32L26 58"/><path d="M77 20L68 46M77 20L86 46"/></g><path d="M5 58Q17 64 29 58Z" fill="#7a6235"/><path d="M65 46Q77 52 89 46Z" fill="#7a6235"/><rect x="11" y="45" width="9" height="12" rx="1.5" fill="#f3e9d8"/><text x="15.5" y="54" font-size="7" font-weight="800" text-anchor="middle" fill="#b3343a">-3</text><rect x="72" y="33" width="9" height="12" rx="1.5" fill="#3a2d24" stroke="#c9b38f" stroke-width=".6"/><text x="76.5" y="42" font-size="7" font-weight="800" text-anchor="middle" fill="#c9b38f">?</text></svg>
+  <div class="gtxt"><b>저울</b><span>숨긴 카드로 저울을 기울여 10에 가장 가깝게. 11을 넘기면 엎어집니다.</span><div class="gtags"><i>2인</i><i>3판 먼저</i><i>혼자 연습</i></div></div><span class="go" aria-hidden="true">›</span>
  </a>
  <h2 id="rank">랭킹 · 온라인 대전 승리 수</h2>
- <div class="rank"><div class="rtabs" role="tablist"><button class="on" data-g="all">전체</button><button data-g="2p">오목 2인</button><button data-g="3p">오목 3인</button><button data-g="hb">흑과 백</button><button data-g="yut">윷놀이</button></div><ol class="rlist" id="rlist"><li class="rnote">랭킹을 불러오는 중…</li></ol></div>
+ <div class="rank"><div class="rtabs" role="tablist"><button class="on" data-g="all">전체</button><button data-g="2p">오목 2인</button><button data-g="3p">오목 3인</button><button data-g="hb">흑과 백</button><button data-g="yut">윷놀이</button><button data-g="sc">저울</button></div><ol class="rlist" id="rlist"><li class="rnote">랭킹을 불러오는 중…</li></ol></div>
  <h2>열려 있는 공개 방</h2>
  <div class="rooms" id="roomList" style="max-height:none"><p class="empty">공개 방을 찾는 중…</p></div>
 </main>
@@ -342,14 +346,14 @@ const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
 const LOGT='https://ntfy.sh/pomok-log-7f3a9c2e51b84d06';
 try{fetch(LOGT,{method:'POST',body:JSON.stringify({k:'첫 화면 접속',n:(()=>{try{return localStorage.getItem('pomok-name')}catch(e){return ''}})()||'(이름 없음)'})}).catch(()=>{})}catch(e){}
 {let taps=0,tapT=null;$('hubT').addEventListener('click',()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5)location.href='omok.html#log'})}
-const ROOMT='https://ntfy.sh/pomok-rooms-b6e19d42a7c3',PAGE={'2p':'omok.html','3p':'3p.html','hb':'hb.html','yut':'yut.html'},LABEL={'2p':'오목 2인','3p':'오목 3인 4목','hb':'흑과 백','yut':'마법 윷놀이'};
+const ROOMT='https://ntfy.sh/pomok-rooms-b6e19d42a7c3',PAGE={'2p':'omok.html','3p':'3p.html','hb':'hb.html','yut':'yut.html','sc':'scale.html'},LABEL={'2p':'오목 2인','3p':'오목 3인 4목','hb':'흑과 백','yut':'마법 윷놀이','sc':'저울'};
 async function loadRooms(){const box=$('roomList');let txt='';
  try{const r=await fetch(ROOMT+'/json?poll=1&since=3m');if(!r.ok)throw 0;txt=await r.text()}catch(e){box.innerHTML='<p class="empty">공개 방 목록을 불러오지 못했습니다. 잠시 후 다시 시도합니다.</p>';return}
  const latest={};for(const line of txt.split('\n')){if(!line.trim())continue;try{const o=JSON.parse(line);if(o.event!=='message')continue;const m=JSON.parse(o.message);
   if(m.v!==1||!PAGE[m.g]||!/^\d{4}$/.test(m.c))continue;const k=m.g+m.c;if(!latest[k]||o.time>=latest[k].time)latest[k]={...m,time:o.time}}catch(e){}}
  const now=Date.now()/1000,rooms=Object.values(latest).filter(m=>m.t==='open'&&now-m.time<95).sort((a,b)=>b.time-a.time);
  if(!rooms.length){box.innerHTML='<p class="empty">지금 열린 공개 방이 없습니다. 게임을 골라 공개 방을 만들어 보세요.</p>';return}
- box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':m.g==='yut'?' gyut':''}">${LABEL[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,4)?m.p:1}/${({'3p':3,'yut':4})[m.g]||2}명</span><a class="btn red" href="${PAGE[m.g]}#join=${m.c}" style="display:inline-flex;align-items:center;text-decoration:none;color:#fff">들어가기</a></div>`).join('')}
+ box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':m.g==='yut'?' gyut':m.g==='sc'?' gsc':''}">${LABEL[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,4)?m.p:1}/${({'3p':3,'yut':4})[m.g]||2}명</span><a class="btn red" href="${PAGE[m.g]}#join=${m.c}" style="display:inline-flex;align-items:center;text-decoration:none;color:#fff">들어가기</a></div>`).join('')}
 setInterval(loadRooms,6000);loadRooms();
 /* ---- 앱 설치 ---- */
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -373,7 +377,7 @@ async function loadRank(){const FB=(window.POMOK_FB||'').replace(/\/+$/,''),box=
  try{const r=await fetch(FB+'/ranking.json');if(!r.ok)throw 0;RK=await r.json()||{}}catch(e){box.innerHTML='<li class="rnote">랭킹을 불러오지 못했습니다. 잠시 후 다시 시도합니다.</li>';return}
  drawRank()}
 function drawRank(){const box=$('rlist');if(!RK)return;const tot={};
- for(const g of['2p','3p','hb','yut']){if(RG!=='all'&&RG!==g)continue;const t=RK[g]||{};for(const k in t){const v=t[k];if(!v||typeof v.n!=='string'||v.n.startsWith('__')||!isInt(v.w,1,1e6))continue;const n=v.n.slice(0,12);tot[n]=(tot[n]||0)+v.w}}
+ for(const g of['2p','3p','hb','yut','sc']){if(RG!=='all'&&RG!==g)continue;const t=RK[g]||{};for(const k in t){const v=t[k];if(!v||typeof v.n!=='string'||v.n.startsWith('__')||!isInt(v.w,1,1e6))continue;const n=v.n.slice(0,12);tot[n]=(tot[n]||0)+v.w}}
  const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).slice(0,30);
  if(!list.length){box.innerHTML='<li class="rnote">아직 기록이 없습니다. 온라인 대전에서 이기면 이름이 올라가요.</li>';return}
  let rank=0,prev=null;box.innerHTML=list.map(([n,w],i)=>{if(w!==prev){rank=i+1;prev=w}return`<li><span class="rno">${rank}</span><span class="rname">${esc(n)}</span><span class="rw">${w}<small>승</small></span></li>`}).join('')}
