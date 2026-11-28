@@ -380,11 +380,11 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 </main>
 <div class="modal" id="mRule"><button class="mx" data-close aria-label="닫기">✕</button><div class="mbox"><h2>저울 규칙</h2><ul>
  <li>카드는 <b>−8 ~ −1, 0, +1 ~ +8</b>이 2장씩, 모두 34장입니다. 두 사람이 <b>7장씩</b> 받고, 1장은 <b>고정 카드</b>로 저울 한쪽에 뒷면으로 올라갑니다. 남은 카드는 뽑기 더미가 됩니다.</li>
- <li><b>플러스 카드</b>는 놓은 쪽으로, <b>마이너스 카드</b>는 반대쪽으로 기울게 합니다. 0은 아무 변화가 없습니다.</li>
+ <li>왼쪽 접시와 오른쪽 접시는 각자 올라간 카드의 <b>합</b>을 가집니다. 합이 큰 쪽으로 저울이 기웁니다. 마이너스 카드는 그 접시의 합을 줄여서 반대쪽으로 기울게 합니다. 0은 아무 변화가 없습니다.</li>
  <li>저울 위 카드는 모두 뒷면이라, 화면에는 <b>어느 쪽으로 기울었는지만</b> 보입니다. 내가 올린 카드는 나만 숫자를 볼 수 있습니다.</li>
  <li>한 판은 <b>각자 6턴씩, 모두 12턴</b>입니다. 내 턴에는 셋 중 하나를 합니다.<br>① <b>카드 올리기</b>: 손의 카드 1장을 원하는 쪽에 뒷면으로 올립니다.<br>② <b>엿보기</b>: 저울 위 뒷면 카드 1장을 나만 몰래 봅니다. (한 판에 1번)<br>③ <b>뽑기</b>: 더미에서 1장을 가져옵니다.</li>
- <li>카드를 올려서 저울이 <b>어느 쪽으로든 11 이상</b> 기울면 저울이 엎어지고, 그 카드를 올린 사람이 그 판에서 집니다.</li>
- <li>12턴이 끝나면 카드를 모두 공개합니다. 카드를 올린 순간 저울을 <b>어느 쪽으로든 10에 가장 가깝게</b> 기울인 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
+ <li>카드를 올려서 <b>한쪽 접시의 합</b>이 <b>10보다 크거나 −10보다 작아지면</b> 저울이 엎어지고, 그 카드를 올린 사람이 그 판에서 집니다. (왼쪽·오른쪽 어느 접시든)</li>
+ <li>12턴이 끝나면 카드를 모두 공개합니다. 카드를 올린 순간 <b>그 접시의 합을 10(또는 −10)에 가장 가깝게</b> 만든 사람이 이깁니다. 똑같이 가까우면 나중에 놓은 사람이 이깁니다.</li>
  <li><b>3판을 먼저 이긴 사람</b>이 승리합니다. 첫 판 선공은 무작위, 다음 판은 진 사람이 선공입니다.</li>
  <li>한 턴은 40초이고, 시간이 지나면 자동으로 행동합니다.</li>
 </ul><button class="btn red" data-close>닫기</button></div></div>
@@ -436,7 +436,9 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()
 const FULL=(()=>{const d=[];for(let v=-8;v<=8;v++)d.push(v,v);return d})();
 
 /* ---- 규칙 엔진 (방장만 실행) ---- */
-function tilt(g){return g.scale.reduce((s,c)=>s+c.v*(c.side==='L'?1:-1),0)}
+function pans(g){const o={L:0,R:0};g.scale.forEach(c=>o[c.side]+=c.v);return o}
+function tilt(g){const o=pans(g);return o.L-o.R}
+const PN={L:'왼쪽',R:'오른쪽'};
 function newMatch(){G={round:0,wins:{1:0,2:0},first:Math.random()<.5?1:2,phase:'play',log:[],nid:1,names:{1:'',2:''}};newRound()}
 function newRound(){const g=G;g.round++;g.deck=shuffle(FULL.slice());g.hands={1:g.deck.splice(0,HAND),2:g.deck.splice(0,HAND)};
  g.scale=[{id:g.nid++,v:g.deck.pop(),side:Math.random()<.5?'L':'R',by:0}];g.peek={1:1,2:1};g.seen={1:[],2:[]};g.t=0;g.turn=g.first;g.best=null;g.res=null;g.phase='play';g.dirs=[Math.sign(tilt(g))];
@@ -445,14 +447,14 @@ function addLog(t){G.log.push(t);if(G.log.length>80)G.log.shift()}
 function nm(s){return G.names[s]||(s===1?'방장':'상대')}
 function act(s,a){const g=G;if(!g||g.phase!=='play'||g.turn!==s||!a)return false;const h=g.hands[s];
  if(a.t==='place'){if(!isInt(a.i,0,h.length-1)||!['L','R'].includes(a.side))return false;const v=h.splice(a.i,1)[0];const c={id:g.nid++,v,side:a.side,by:s};g.scale.push(c);
-  const T=tilt(g);g.dirs.push(Math.sign(T));addLog(`${nm(s)}: ${a.side==='L'?'왼쪽':'오른쪽'}에 카드를 올렸습니다.`);
-  if(Math.abs(T)>=LIMIT){endRound(3-s,`${nm(s)}이(가) 올린 ${sgn(v)} 때문에 저울이 엎어졌습니다! (${tw(T)})`,T);return true}
-  const d=10-Math.abs(T);if(!g.best||d<=g.best.d)g.best={d,by:s,T,t:g.t};}
+  const T=tilt(g),S=pans(g)[a.side];g.dirs.push(Math.sign(T));addLog(`${nm(s)}: ${PN[a.side]}에 카드를 올렸습니다.`);
+  if(Math.abs(S)>10){endRound(3-s,`${nm(s)}이(가) 올린 ${sgn(v)} 때문에 저울이 엎어졌습니다! (${PN[a.side]} 접시 합 ${S})`,T);return true}
+  const d=10-Math.abs(S);if(!g.best||d<=g.best.d)g.best={d,by:s,S,side:a.side,t:g.t};}
  else if(a.t==='peek'){if(g.peek[s]<1)return false;const c=g.scale.find(x=>x.id===a.id);if(!c||c.by===s||g.seen[s].includes(c.id))return false;g.peek[s]--;g.seen[s].push(c.id);addLog(`${nm(s)}: 저울 위 카드 하나를 몰래 엿봤습니다.`)}
  else if(a.t==='draw'){if(!g.deck.length)return false;h.push(g.deck.pop());addLog(`${nm(s)}: 카드를 1장 뽑았습니다.`)}
  else if(a.t==='pass'){if(h.length||g.deck.length||(g.peek[s]>0&&peekable(g,s).length))return false;addLog(`${nm(s)}: 할 수 있는 게 없어 넘깁니다.`)}
  else return false;
- g.t++;if(g.t>=TURNS){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 저울을 ${tw(b.T)}만큼 기울여 10에 가장 가까웠습니다.`,tilt(g));return true}
+ g.t++;if(g.t>=TURNS){const b=g.best;if(!b)endRound(0,'아무도 카드를 올리지 않았습니다. 무승부!',tilt(g));else endRound(b.by,`${nm(b.by)}이(가) 10에 가장 가깝게 만들었습니다. (${PN[b.side]} 접시 합 ${b.S})`,tilt(g));return true}
  g.turn=3-s;tick();return true}
 const peekable=(g,s)=>g.scale.filter(c=>c.by!==s&&!g.seen[s].includes(c.id));
 function endRound(w,why,T){const g=G;g.phase='rend';g.res={w,why,T,best:g.best,round:g.round};if(w)g.wins[w]++;addLog(`★ ${g.round}판: ${w?nm(w)+' 승리':'무승부'} — ${why}`);
@@ -471,14 +473,14 @@ function aiMove(v){const me=v.me,op=3-me,known=v.scale.filter(c=>c.v!=null);
  if(v.deck>0)cands.push({draw:1,a:{t:'draw'}});
  if(!cands.length){const tg=v.scale.filter(c=>c.v==null&&c.by!==me);if(v.peek>0&&tg.length)return{t:'peek',id:tg[tg.length-1].id};return{t:'pass'}}
  const worlds=[];for(let k=0;k<1500&&worlds.length<70;k++){const p=shuffle(pool.slice());let j=0;const sc=v.scale.map(c=>({by:c.by,side:c.side,v:c.v==null?p[j++]:c.v}));
-  let T=0,best=null;sc.forEach((c,i)=>{T+=c.v*(c.side==='L'?1:-1);if(i>0&&c.by){const d=10-Math.abs(T);if(!best||d<=best.d)best={d,by:c.by}}});
-  if(Math.sign(T)!==v.dir&&k<1200)continue;worlds.push({T,best,opp:p.slice(j,j+v.oppHand),deck:p.slice(j+v.oppHand)})}
- const greedy=(hand,T,deck)=>{let bi=-1,bs=null,bd=99;hand.forEach((x,i)=>[1,-1].forEach(sg=>{const T2=T+x*sg;if(Math.abs(T2)>=LIMIT)return;const d=10-Math.abs(T2)+Math.random()*.6;if(d<bd){bd=d;bi=i;bs=sg}}));return bi<0?(deck.length?{draw:1}:{x:hand.length?0:null,sg:1,force:1}):{i:bi,sg:bs}};
- const roll=(w,c)=>{let T=w.T,best=w.best?{...w.best}:null;const H={[me]:v.hand.slice(),[op]:w.opp.slice()},deck=w.deck.slice();let turn=me,steps=left;
-  const place=(s,i,sg)=>{const x=H[s].splice(i,1)[0];T+=x*sg;if(Math.abs(T)>=LIMIT)return 3-s;const d=10-Math.abs(T);if(!best||d<=best.d)best={d,by:s};return 0};
+  const S={L:0,R:0};let best=null;sc.forEach((c,i)=>{S[c.side]+=c.v;if(i>0&&c.by){const d=10-Math.abs(S[c.side]);if(!best||d<=best.d)best={d,by:c.by}}});
+  if(Math.sign(S.L-S.R)!==v.dir&&k<1200)continue;worlds.push({S,best,opp:p.slice(j,j+v.oppHand),deck:p.slice(j+v.oppHand)})}
+ const greedy=(hand,S,deck)=>{let bi=-1,bs=null,bd=99;hand.forEach((x,i)=>['L','R'].forEach(sd=>{const S2=S[sd]+x;if(Math.abs(S2)>10)return;const d=10-Math.abs(S2)+Math.random()*.6;if(d<bd){bd=d;bi=i;bs=sd}}));return bi<0?(deck.length?{draw:1}:{force:1}):{i:bi,sd:bs}};
+ const roll=(w,c)=>{const S={...w.S};let best=w.best?{...w.best}:null;const H={[me]:v.hand.slice(),[op]:w.opp.slice()},deck=w.deck.slice();let turn=me,steps=left;
+  const place=(s,i,sd)=>{const x=H[s].splice(i,1)[0];S[sd]+=x;if(Math.abs(S[sd])>10)return 3-s;const d=10-Math.abs(S[sd]);if(!best||d<=best.d)best={d,by:s};return 0};
   let first=true;while(steps>0){let r=0;
-   if(first){first=false;if(c.draw){if(deck.length)H[me].push(deck.pop())}else{const i=H[me].indexOf(c.x);r=place(me,i,c.side==='L'?1:-1)}}
-   else{const g=greedy(H[turn],T,deck);if(g.draw)H[turn].push(deck.pop());else if(g.force){if(H[turn].length)r=place(turn,0,1)}else r=place(turn,g.i,g.sg)}
+   if(first){first=false;if(c.draw){if(deck.length)H[me].push(deck.pop())}else{const i=H[me].indexOf(c.x);r=place(me,i,c.side)}}
+   else{const g=greedy(H[turn],S,deck);if(g.draw)H[turn].push(deck.pop());else if(g.force){if(H[turn].length)r=place(turn,0,'L')}else r=place(turn,g.i,g.sd)}
    if(r)return r;steps--;turn=3-turn}
   return best?best.by:0};
  let top=null;cands.forEach(c=>{let w=0;worlds.forEach(W=>{const r=roll(W,c);if(r===me)w++;else if(r===0)w+=.5});c.wr=w/Math.max(1,worlds.length)+(c.draw?-.02:0)+Math.random()*.01;if(!top||c.wr>top.wr)top=c});
@@ -526,7 +528,7 @@ function render(){const v=V,me=v?v.me:1,op=3-me,inG=!!v;
  $('log').innerHTML=v?v.log.slice().reverse().map(t=>`<li>${esc(t)}</li>`).join(''):'';
  if(v&&(v.phase==='rend'||v.phase==='over')&&v.res&&rdShown!==v.res.round){rdShown=v.res.round;showRound(v)}
  if(v&&v.phase==='over'&&!endShown){endShown=true;setTimeout(()=>showEnd(v),v.res?2500:0)}}
-function showRound(v){const r=v.res,me=v.me;$('rdT').textContent=`${r.round}판 결과`;$('rdBig').textContent=r.w===0?'무승부':r.w===me?'승리!':'패배';$('rdP').textContent=r.why+(r.best&&r.w!==0&&!/엎어/.test(r.why)?'':'')+` 마지막 저울: ${tw(r.T)}.`;
+function showRound(v){const r=v.res,me=v.me;$('rdT').textContent=`${r.round}판 결과`;$('rdBig').textContent=r.w===0?'무승부':r.w===me?'승리!':'패배';$('rdP').textContent=r.why+(r.best&&r.w!==0&&!/엎어/.test(r.why)?'':'')+` 왼쪽 접시 합 ${v.scale.filter(c=>c.side==='L').reduce((a,c)=>a+c.v,0)}, 오른쪽 접시 합 ${v.scale.filter(c=>c.side==='R').reduce((a,c)=>a+c.v,0)}.`;
  const col=side=>v.scale.filter(c=>c.side===side).map(c=>`<span class="mini${cls(c.v)}${c.by===0?' fx':c.by===me?' me':' op'}">${sgn(c.v)}</span>`).join('');
  $('rdC').innerHTML=`<div><small>왼쪽</small><div class="pan">${col('L')}</div></div><div><small>오른쪽</small><div class="pan">${col('R')}</div></div>`;
  $('bNext').textContent=v.phase==='over'?'결과 보기':host?'다음 판':'다음 판 (방장이 시작)';$('bNext').disabled=!host&&v.phase!=='over';$('mRound').classList.add('on')}
@@ -624,7 +626,7 @@ async function loadRooms(){if(!$('mLobby').classList.contains('on'))return;const
  box.innerHTML=rooms.map(m=>`<div class="room"><span class="rk${m.g==='3p'?' g3':m.g==='hb'?' ghb':m.g==='yut'?' gyut':m.g==='sc'?' gsc':''}">${{'2p':'오목 2인','3p':'오목 3인 4목','hb':'흑과 백','yut':'마법 윷놀이','sc':'저울'}[m.g]}</span><span class="rn">${esc(String(m.n||'이름 없음').slice(0,12))}의 방</span><span class="rp">${isInt(m.p,1,4)?m.p:1}/${({'3p':3,'yut':4})[m.g]||2}명</span><button class="btn red" data-g="${m.g}" data-c="${m.c}">들어가기</button></div>`).join('')}
 $('roomList').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b)joinRoom(b.dataset.g,b.dataset.c)});
 setInterval(loadRooms,6000);loadRooms();
-const TIPS=["저울은 어느 쪽으로 기울었는지만 보여요. 상대가 올린 카드가 플러스인지 마이너스인지 방향 변화로 추리하세요.","마이너스 카드는 놓은 반대쪽으로 기울게 해요. 저울을 되돌리거나 상대를 속일 때 쓰세요.","카드를 올린 순간 저울이 10에 가깝게 기울수록 좋아요. 하지만 11 이상 기울면 엎어져서 바로 져요.","엿보기는 한 판에 1번이에요. 고정 카드나 상대가 마지막에 올린 카드를 보면 저울 값을 거의 알 수 있어요.","위험할 땐 뽑기로 턴을 넘기세요. 상대가 먼저 아슬아슬한 카드를 올리게 만들 수 있어요.","0 카드는 저울을 바꾸지 않지만, 상대는 무슨 카드인지 몰라요."];let tipI=Math.floor(Math.random()*TIPS.length);
+const TIPS=["저울은 어느 쪽으로 기울었는지만 보여요. 상대가 올린 카드가 플러스인지 마이너스인지 방향 변화로 추리하세요.","마이너스 카드는 놓은 반대쪽으로 기울게 해요. 저울을 되돌리거나 상대를 속일 때 쓰세요.","카드를 올린 접시의 합이 10에 가까울수록 좋아요. 하지만 한쪽 접시 합이 10을 넘으면(또는 −10 아래로 가면) 엎어져서 바로 져요.","엿보기는 한 판에 1번이에요. 고정 카드나 상대가 마지막에 올린 카드를 보면 저울 값을 거의 알 수 있어요.","위험할 땐 뽑기로 턴을 넘기세요. 상대가 먼저 아슬아슬한 카드를 올리게 만들 수 있어요.","0 카드는 저울을 바꾸지 않지만, 상대는 무슨 카드인지 몰라요."];let tipI=Math.floor(Math.random()*TIPS.length);
 function showTip(){$('tipT').textContent=TIPS[tipI];$('tipN').textContent=(tipI+1)+'/'+TIPS.length}
 $('tipBox').onclick=()=>{tipI=(tipI+1)%TIPS.length;showTip()};showTip();
 /* ---- 랭킹: 온라인 대전에서 이기면 1승 기록 (혼자 연습 제외) ---- */
