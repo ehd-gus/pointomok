@@ -85,6 +85,13 @@ const AUGS=[
  {id:'chaos',tag:'g',icon:'🌀',name:'혼돈의 말',d:'게임 내내 내 윷 결과로 상대 말도 움직일 수 있습니다. 상대 말이 도착한 칸에 있던 다른 말은 누구 것이든 잡힙니다. (상대 말로 잡으면 한 번 더 던지지 않음)'},
  {id:'swap',tag:'g',icon:'🔀',name:'자리 바꾸기',d:'판 위 내 말 무리 하나와 상대 말 무리 하나의 자리를 서로 바꿉니다.',use:1,tg:'swap'},
  {id:'reset',tag:'g',icon:'🔄',name:'리셋',d:'고르는 즉시 게임이 리셋됩니다. 모든 말(골인한 말 포함)이 집으로 돌아가고, 판 위 물건과 접힌 판도 원래대로 돌아옵니다. 증강은 그대로 남습니다.'},
+ {id:'magnet',tag:'g',icon:'🧲',name:'자석',d:'판 위에 있는 모든 상대 말이 1칸씩 뒤로 끌려옵니다.',use:1},
+ {id:'tele',tag:'g',icon:'✨',name:'순간이동',d:'고른 내 말 무리가 바로 3칸 앞으로 갑니다. 도착한 칸에 상대 말이 있으면 잡습니다.',use:1,tg:'own'},
+ {id:'tornado',tag:'g',icon:'🌪️',name:'회오리',d:'판 위에 있는 모든 말 무리(내 말 포함)의 자리를 무작위로 섞습니다.',use:1},
+ {id:'ice',tag:'g',icon:'🧊',name:'얼음',d:'상대 한 명을 고릅니다. 그 사람의 판 위 말은 다음 라운드가 끝날 때까지 움직일 수 없습니다.',use:1,tg:'opp'},
+ {id:'clover',tag:'g',icon:'🍀',name:'네잎클로버',d:'빽도가 나오지 않습니다.'},
+ {id:'rabbit',tag:'g',icon:'🐇',name:'토끼',d:'집에서 새로 출발하는 말은 1칸 더 갑니다.'},
+ {id:'gift',tag:'g',icon:'🎁',name:'선물 상자',d:'판 위 빈 칸 3곳에 보상 상자를 놓습니다. 상자 칸에 멈춘 말은 3칸 더 갑니다. (누구든)',use:1},
  {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
@@ -263,8 +270,8 @@ function endTurn(G){if(G.phase==='over')return;const s=G.turn,st=G.seats[s];st.s
 function rollKind(G,s){const st=G.seats[s];
  if(G.force[s]){const k=G.force[s];delete G.force[s];return[k,'조작']}
  if(has(G,s,'modo'))return[rnd(G)<.45?'모':'도',''];
- if(st.sticks===3){const r=rnd(G)*8;return[r<1?'모':r<2?'빽도':r<4?'도':r<7?'개':'걸','']}
- const w=[1,3,6,4,1,1];let r=rnd(G)*16,i=0;while(r>=w[i]){r-=w[i];i++}return[KINDS[i],'']}
+ if(st.sticks===3){const r=rnd(G)*8;return[r<1?'모':r<2?(has(G,s,'clover')?'도':'빽도'):r<4?'도':r<7?'개':'걸','']}
+ const w=has(G,s,'clover')?[0,3,6,4,1,1]:[1,3,6,4,1,1];let r=rnd(G)*w.reduce((a,b)=>a+b),i=0;while(r>=w[i]){r-=w[i];i++}return[KINDS[i],'']}
 function throwYut(G,s,choose){if(G.phase!=='throw'||s!==G.turn||G.throws<=0)return null;const st=G.seats[s];
  let k,tag;if(has(G,s,'dogae')&&!G.force[s]){k=choose==='개'?'개':choose==='도'?'도':(rnd(G)<.5?'도':'개');tag='도개'}else[k,tag]=rollKind(G,s);
  G.throws--;let extra=0;if(k==='윷'||k==='모')extra++;G.throws+=extra;
@@ -294,7 +301,7 @@ function anyMove(G,s){return G.results.some(r=>G.seats[s].pieces.some((p,pi)=>ca
 function toMove(G){G.phase='move';if(!anyMove(G,G.turn)){if(G.results.length)addLog(G,'쓸 수 있는 결과가 없어 넘어갑니다.');endTurn(G)}}
 function moveLen(G,s,r){let v=r.v;if(v<0)return v;if(G.seats[s].pieces.some(p=>p.t==='van'&&onBoard(p)))v++;if(G.dance===s)v*=2;return v}
 function preview(G,s,ri,pi){const r=G.results[ri];if(!r||!canUse(G,s,r,pi))return null;const p=G.seats[s].pieces[pi],g=groupOf(G,s,pi);
- const v=moveLen(G,s,r);const path=v<0?[backOf(p)]:walk(p.n,v);return{dest:path[path.length-1],path,g,back:v<0}}
+ let v=moveLen(G,s,r);if(p.n==='H'&&v>0&&has(G,s,'rabbit'))v++;const path=v<0?[backOf(p)]:walk(p.n,v);return{dest:path[path.length-1],path,g,back:v<0}}
 function doMove(G,s,g,path,back){// 경로를 따라 이동하며 똥·자객 처리 후 도착 처리. 반환: 잡은 횟수
  const st=G.seats[s];let from=st.pieces[g[0]].n;
  for(let i=0;i<path.length;i++){const n=path[i];if(n==='FIN')break;const last=i===path.length-1;
@@ -372,6 +379,14 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
   case'swap':{const ot=G.seats[t.o];if(!ownOn(t.a)||t.o===s||!ot||ot.out||ot.done||!ot.pieces[t.b]||!onBoard(ot.pieces[t.b]))return false;
    const g1=groupOf(G,s,t.a),g2=groupOf(G,t.o,t.b),n1=st.pieces[t.a].n,n2=ot.pieces[t.b].n;if(n1===n2)return false;
    g1.forEach(k=>{st.pieces[k].n=n2;st.pieces[k].prev=null});g2.forEach(k=>{ot.pieces[k].n=n1;ot.pieces[k].prev=null});addLog(G,`🔀 ${st.name}와(과) ${ot.name}의 말이 자리를 바꿨습니다.`);break}
+  case'magnet':{let n=0;others.forEach(o=>G.seats[o].pieces.forEach(p=>{if(onBoard(p)&&p.n!=='o0'){p.n=backOf(p);p.prev=null;n++}}));if(!n)return false;addLog(G,`🧲 ${st.name}: 상대 말 ${n}개를 1칸씩 끌어당겼습니다.`);break}
+  case'tele':{if(!ownOn(t.pi))return false;const g=groupOf(G,s,t.pi);addLog(G,`✨ ${st.name}의 말이 순간이동!`);doMove(G,s,g,walk(st.pieces[t.pi].n,3),false);break}
+  case'tornado':{const grp={};G.seats.forEach((x,o)=>{if(x.out)return;x.pieces.forEach((p,k)=>{if(onBoard(p)){const key=o+'|'+p.n;(grp[key]=grp[key]||[]).push([o,k])}})});
+   const gs=Object.values(grp);if(gs.length<2)return false;const ns=gs.map(g=>G.seats[g[0][0]].pieces[g[0][1]].n);
+   for(let i=ns.length-1;i>0;i--){const j=Math.floor(rnd(G)*(i+1));[ns[i],ns[j]]=[ns[j],ns[i]]}
+   gs.forEach((g,i)=>g.forEach(([o,k])=>{const p=G.seats[o].pieces[k];p.n=ns[i];p.prev=null}));addLog(G,`🌪️ ${st.name}: 회오리! 말들의 자리가 뒤섞였습니다.`);break}
+  case'ice':{const ot=G.seats[t.o];if(t.o===s||!ot||ot.out||ot.done)return false;ot.pieces.forEach(p=>{if(onBoard(p))p.lock=G.round+1});addLog(G,`🧊 ${ot.name}의 말이 얼어붙었습니다.`);break}
+  case'gift':{let n=0;for(let i=0;i<3;i++){const k=freeNode(G);if(k){G.rewards[k]=1;n++}}if(!n)return false;addLog(G,`🎁 ${st.name}: 선물 상자 ${n}개를 놓았습니다.`);break}
   case'fix':{if(!KINDS.includes(t.k))return false;G.force[s]=t.k;break}
   case'flip':{const r=G.results[t.ri];if(!r||![1,-1].includes(t.d))return false;const f=FLATS[r.k]+t.d;if(f<0||f>4)return false;G.results[t.ri]=mk(BYFLATS[f],'슬쩍');break}
   case'lonely':G.force[s]='도';break;
