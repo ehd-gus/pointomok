@@ -94,7 +94,7 @@ const AUGS=[
  {id:'gift',tag:'g',icon:'🎁',name:'선물 상자',d:'판 위 빈 칸 3곳에 보상 상자를 놓습니다. 상자 칸에 멈춘 말은 3칸 더 갑니다. (누구든)',use:1},
  {id:'mirror',tag:'g',icon:'🪞',name:'거울 세계',d:'판을 거울에 비춘 것처럼 좌우로 뒤집습니다. 모든 말과 물건이 반대편 같은 자리로 옮겨집니다.',use:1},
  {id:'timemachine',tag:'g',icon:'⏳',name:'타임머신',d:'모든 말을 한 라운드 전 자리로 되돌립니다. (골인한 말은 그대로)',use:1},
- {id:'ghost',tag:'g',icon:'👻',name:'유령',d:'내 말은 다른 말과 부딪히지 않습니다. 같은 칸에 서도 잡히지 않고, 내가 잡지도 못합니다.'},
+ {id:'ghost',tag:'g',icon:'👻',name:'유령',d:'내 말이 잡히면, 잡은 상대 말 무리도 원한을 품은 유령에게 끌려가 함께 집으로 돌아갑니다.'},
  {id:'slot',tag:'g',icon:'🎰',name:'슬롯머신',d:'릴 3개를 돌립니다. 7️⃣7️⃣7️⃣ = 가장 앞선 내 말 무리가 즉시 골인 / 같은 그림 3개 = 모 2개 / 2개 = 개 1개 / 꽝',use:2},
  {id:'clone',tag:'g',icon:'👥',name:'분신술',d:'판 위 내 말을 고르면, 집에 있는 내 말 하나가 그 말의 분신으로 같은 칸에 나타납니다.',use:1,tg:'own'},
  {id:'lifeswap',tag:'g',icon:'🎭',name:'인생 교환',d:'상대 한 명과 판 위·집에 있는 말 자리를 통째로 맞바꿉니다. (골인한 말 수는 그대로)',use:1,tg:'opp'},
@@ -219,8 +219,9 @@ function nunchiEnd(G){const N=G.nunchi;N.on=false;N.done=true;const cnt={};for(c
   const ks=bs.pieces.map((p,k)=>k).filter(k=>bs.pieces[k].n!=='F'&&bs.pieces[k].t!=='pawn').sort((a,b)=>(bs.pieces[a].n==='H'?99:distFin(bs.pieces[a].n))-(bs.pieces[b].n==='H'?99:distFin(bs.pieces[b].n))).slice(0,2);
   ks.forEach(k=>{const p=bs.pieces[k];p.n='F';p.prev=null});if(ks.length){fx(G,'fin','o0',ks.length);addLog(G,`👀 ${bs.name}: 눈치싸움 성공! 말 ${ks.length}개 골인!`)}boardWins(G)}}
 function offersFor(G,s,tag){const st=G.seats[s],own=new Set(st.aug.map(a=>a.id));
- const pool=AUGS.filter(a=>(a.tag==='g'||a.tag===tag)&&!own.has(a.id)&&!(st.redoUsed&&a.id==='redo')&&!(a.id==='bronze'&&(G.seats.length<3||G.ranks[2]!=null))).map(a=>a.id);
- const off=[];while(off.length<3&&pool.length)off.push(pool.splice(Math.floor(rnd(G)*pool.length),1)[0]);return off}
+ const EXC=[['dogae','modo','overflow']],bad=new Set();EXC.forEach(gp=>{if(gp.some(x=>own.has(x)))gp.forEach(x=>bad.add(x))});
+ const pool=AUGS.filter(a=>(a.tag==='g'||a.tag===tag)&&!own.has(a.id)&&!bad.has(a.id)&&!(st.redoUsed&&a.id==='redo')&&!(a.id==='bronze'&&(G.seats.length<3||G.ranks[2]!=null))).map(a=>a.id);
+ const off=[];while(off.length<3&&pool.length){const x=pool.splice(Math.floor(rnd(G)*pool.length),1)[0];off.push(x);const gp=EXC.find(g=>g.includes(x));if(gp)for(let i=pool.length-1;i>=0;i--)if(gp.includes(pool[i]))pool.splice(i,1)}return off}
 function catForced(G,s){const st=G.seats[s];return!!(st.offers&&st.offers.includes('cat')&&(has(G,s,'cat_me')||G.seats.some((x,i)=>has(G,i,'cat_all'))))}
 function pickAug(G,s,id){const st=G.seats[s];if(G.phase!=='pick'||!st.offers||!st.offers.includes(id))return false;
  if(catForced(G,s)&&id!=='cat')return false;
@@ -300,9 +301,10 @@ function killStack(G,o,idx,by,cause){// o의 말 idx를 잡음. 반환: 잡힌 �
  if(by!=null&&by!==o&&G.seats[by].pieces.some((q,k)=>q.t==='peli'&&q.n===ot.pieces[idx[0]].n)&&G.turn===by){const pk=G.seats[by].pieces.findIndex(q=>q.t==='peli'&&q.n===ot.pieces[idx[0]].n);const pel=G.seats[by].pieces[pk];
   idx.forEach(k=>{const q=ot.pieces[k];q.n='H';q.prev=null;q.lock=1e9;q.sw=1;(pel.belly=pel.belly||[]).push([o,k])});fx(G,'kill',pel.n,idx.length);addLog(G,`🦤 ${G.seats[by].name}의 펠리컨이 ${ot.name}의 말 ${idx.length}개를 삼켰습니다!`);G.ev++;return idx.length}
  if(ot.pieces.some((q,k)=>idx.includes(k)&&q.t==='mon')){idx=idx.filter(k=>ot.pieces[k].t!=='mon');ot.monNeed=(ot.monNeed||12)+1;addLog(G,`👾 ${ot.name}의 괴물은 죽지 않습니다! 목표 +1 (${ot.monK||0}/${ot.monNeed})`);if(!idx.length){G.ev++;return 0}}
- const qn=idx.some(k=>ot.pieces[k].t==='queen');
+ const qn=idx.some(k=>ot.pieces[k].t==='queen'),cnode=ot.pieces[idx[0]].n;
  const zom=by!=null&&by!==o&&G.seats[by].pieces.some(q=>q.t==='zomb'&&q.n===ot.pieces[idx[0]].n);
  fx(G,'kill',ot.pieces[idx[0]].n,idx.length);idx.forEach(k=>sendHome(G,o,k));
+ if(has(G,o,'ghost')&&by!=null&&by!==o&&!G.seats[by].out){const bs=G.seats[by],ks=bs.pieces.map((q,k)=>q.n===cnode?k:-1).filter(k=>k>=0&&bs.pieces[k].t!=='mon');if(ks.length){ks.forEach(k=>sendHome(G,by,k));addLog(G,`👻 ${ot.name}의 유령이 ${bs.name}의 말 ${ks.length}개를 끌고 갑니다!`)}}
  if(qn){const q=ot.pieces.find(x=>x.t==='queen');ot.qLife=(ot.qLife||1)-1;if(ot.qLife<=0){addLog(G,`👑 ${ot.name}의 중전마마가 잡혔습니다!`);eliminate(G,o,'👑 중전마마를 지키지 못했습니다.')}else{q.n='o10';q.prev=null;addLog(G,`👑 ${ot.name}의 중전마마가 잡혔지만 목숨이 남아 좌측 상단으로 돌아갑니다. (목숨 ${ot.qLife})`)}}
  if(by!=null&&by!==o&&has(G,by,'monster')&&!G.seats[by].out&&!G.seats[by].done){const ms=G.seats[by];ms.monK=(ms.monK||0)+idx.length;addLog(G,`👾 ${ms.name}의 괴물: ${ms.monK}/${ms.monNeed||12}`);if(ms.monK>=(ms.monNeed||12))win(G,by,'👾 괴물이 목표만큼 말을 잡았습니다!')}
  if(zom){idx.forEach(k=>{ot.pieces[k].t='zomb'});addLog(G,`🧟‍♂️ ${ot.name}의 말 ${idx.length}개가 좀비가 되었습니다!`);zombieCheck(G)}
@@ -414,7 +416,7 @@ function land(G,s,g,dest,back){const st=G.seats[s];let caught=0;
  if(G.traps[dest]!=null&&G.traps[dest]!==s){delete G.traps[dest];fx(G,'kill',dest,g.length);g.forEach(k=>sendHome(G,s,k));addLog(G,`🪤 ${st.name}의 말이 함정에 빠져 집으로!`);return 0}
  if(G.rewards[dest]){delete G.rewards[dest];addLog(G,`🎁 보상! ${st.name}의 말이 3칸 더 갑니다.`);return doMove(G,s,g,walk(dest,3),false)}
  if(G.garlic&&G.garlic.s===s&&G.garlic.nodes.includes(dest)&&!G.garlic.got.includes(dest)){G.garlic.got.push(dest);addLog(G,`🧄 ${st.name}: 마늘 ${G.garlic.got.length}/4`);if(G.garlic.got.length>=4){win(G,s,'🧄 웅녀: 마늘 4개를 모았습니다!');return 0}}
- G.seats.forEach((ot,o)=>{if(o===s||G.phase==='over'||has(G,o,'ghost')||has(G,s,'ghost'))return;const vs=ot.pieces.map((q,k)=>q.n===dest?k:-1).filter(k=>k>=0);if(!vs.length)return;
+ G.seats.forEach((ot,o)=>{if(o===s||G.phase==='over')return;const vs=ot.pieces.map((q,k)=>q.n===dest?k:-1).filter(k=>k>=0);if(!vs.length)return;
   const before=G.seats[o].pieces.filter(q=>q.n==='F').length,mine=st.pieces.filter(q=>q.n==='F').length;
   const n=killStack(G,o,vs,s);if(n){caught++;if(back&&has(G,s,'backwin'))win(G,s,'🐄 소 뒷걸음질: 빽도로 잡았습니다!');if(has(G,s,'treason')&&before>mine){G.throws++;addLog(G,'🗝️ 역모: 한 번 더!')}}});
  if(has(G,s,'cannibal')){const own=st.pieces.map((q,k)=>q.n===dest&&!g.includes(k)?k:-1).filter(k=>k>=0);if(own.length){own.forEach(k=>sendHome(G,s,k));addLog(G,`🍖 ${st.name}이(가) 자기 말을 잡았습니다.`);G.throws++}}
