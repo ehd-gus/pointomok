@@ -92,6 +92,12 @@ const AUGS=[
  {id:'clover',tag:'g',icon:'🍀',name:'네잎클로버',d:'빽도가 나오지 않습니다.'},
  {id:'rabbit',tag:'g',icon:'🐇',name:'토끼',d:'집에서 새로 출발하는 말은 1칸 더 갑니다.'},
  {id:'gift',tag:'g',icon:'🎁',name:'선물 상자',d:'판 위 빈 칸 3곳에 보상 상자를 놓습니다. 상자 칸에 멈춘 말은 3칸 더 갑니다. (누구든)',use:1},
+ {id:'mirror',tag:'g',icon:'🪞',name:'거울 세계',d:'판을 거울에 비춘 것처럼 좌우로 뒤집습니다. 모든 말과 물건이 반대편 같은 자리로 옮겨집니다.',use:1},
+ {id:'timemachine',tag:'g',icon:'⏳',name:'타임머신',d:'모든 말을 한 라운드 전 자리로 되돌립니다. (골인한 말은 그대로)',use:1},
+ {id:'ghost',tag:'g',icon:'👻',name:'유령',d:'내 말은 다른 말과 부딪히지 않습니다. 같은 칸에 서도 잡히지 않고, 내가 잡지도 못합니다.'},
+ {id:'slot',tag:'g',icon:'🎰',name:'슬롯머신',d:'릴 3개를 돌립니다. 7️⃣7️⃣7️⃣ = 가장 앞선 내 말 무리가 즉시 골인 / 같은 그림 3개 = 모 2개 / 2개 = 개 1개 / 꽝',use:2},
+ {id:'clone',tag:'g',icon:'👥',name:'분신술',d:'판 위 내 말을 고르면, 집에 있는 내 말 하나가 그 말의 분신으로 같은 칸에 나타납니다.',use:1,tg:'own'},
+ {id:'lifeswap',tag:'g',icon:'🎭',name:'인생 교환',d:'상대 한 명과 판 위·집에 있는 말 자리를 통째로 맞바꿉니다. (골인한 말 수는 그대로)',use:1,tg:'opp'},
  {id:'fold',tag:'g',icon:'📄',name:'판 접기',d:'윷판을 진짜로 반으로 접습니다. 접은 쪽 칸이 사라져서 판이 절반(한 바퀴 20칸 → 10칸)이 되고, 그쪽에 있던 말과 물건은 반대편으로 넘어갑니다. 넘어간 자리에 있던 상대 말은 깔려서 잡힙니다. 판은 한 번만 접을 수 있습니다.',use:1,tg:'fold'},
  {id:'redo',tag:'g',icon:'✋',name:'이의 있음',d:'고르는 즉시 이번 증강 선택을 새 선택지로 다시 합니다. 자리를 차지하지 않습니다.'},
  {id:'bystander',tag:'g',icon:'🎣',name:'어부지리',d:'내 턴이 아닐 때 다른 사람의 말이 2개 잡힐 때마다 개를 하나 받습니다. (다음 내 턴에 사용)'},
@@ -234,7 +240,7 @@ function killStack(G,o,idx,by,cause){// o의 말 idx를 잡음. 반환: 잡힌 �
 function killAt(G,node,by,opt){opt=opt||{};let n=0;G.seats.forEach((st,o)=>{if(opt.exceptSeat===o)return;const idx=st.pieces.map((p,k)=>p.n===node?k:-1).filter(k=>k>=0);if(idx.length)n+=killStack(G,o,idx,by,opt.cause)});return n}
 
 /* ---- 턴 ---- */
-function beginTurn(G){
+function beginTurn(G){G.hist=(G.hist||[]).slice(-15);G.hist.push(G.seats.map(x=>x.pieces.map(p=>p.n)));
  if(G.phase!=='over')G.phase='wait';
  for(let guard=0;guard<30&&G.phase!=='over';guard++){const s=G.turn,st=G.seats[s];
   if(st.out||st.done){advance(G);if(G.phase==='pick'||G.phase==='over')return;continue}
@@ -322,7 +328,7 @@ function land(G,s,g,dest,back){const st=G.seats[s];let caught=0;
  if(G.traps[dest]!=null&&G.traps[dest]!==s){delete G.traps[dest];fx(G,'kill',dest,g.length);g.forEach(k=>sendHome(G,s,k));addLog(G,`🪤 ${st.name}의 말이 함정에 빠져 집으로!`);return 0}
  if(G.rewards[dest]){delete G.rewards[dest];addLog(G,`🎁 보상! ${st.name}의 말이 3칸 더 갑니다.`);return doMove(G,s,g,walk(dest,3),false)}
  if(G.garlic&&G.garlic.s===s&&G.garlic.nodes.includes(dest)&&!G.garlic.got.includes(dest)){G.garlic.got.push(dest);addLog(G,`🧄 ${st.name}: 마늘 ${G.garlic.got.length}/4`);if(G.garlic.got.length>=4){win(G,s,'🧄 웅녀: 마늘 4개를 모았습니다!');return 0}}
- G.seats.forEach((ot,o)=>{if(o===s||G.phase==='over')return;const vs=ot.pieces.map((q,k)=>q.n===dest?k:-1).filter(k=>k>=0);if(!vs.length)return;
+ G.seats.forEach((ot,o)=>{if(o===s||G.phase==='over'||has(G,o,'ghost')||has(G,s,'ghost'))return;const vs=ot.pieces.map((q,k)=>q.n===dest?k:-1).filter(k=>k>=0);if(!vs.length)return;
   const before=G.seats[o].pieces.filter(q=>q.n==='F').length,mine=st.pieces.filter(q=>q.n==='F').length;
   const n=killStack(G,o,vs,s);if(n){caught++;if(back&&has(G,s,'backwin'))win(G,s,'🐄 소 뒷걸음질: 빽도로 잡았습니다!');if(has(G,s,'treason')&&before>mine){G.throws++;addLog(G,'🗝️ 역모: 한 번 더!')}}});
  if(has(G,s,'cannibal')){const own=st.pieces.map((q,k)=>q.n===dest&&!g.includes(k)?k:-1).filter(k=>k>=0);if(own.length){own.forEach(k=>sendHome(G,s,k));addLog(G,`🍖 ${st.name}이(가) 자기 말을 잡았습니다.`);G.throws++}}
@@ -387,6 +393,23 @@ function useAug(G,s,id,t){if(s!==G.turn||!['throw','move'].includes(G.phase)||!h
    gs.forEach((g,i)=>g.forEach(([o,k])=>{const p=G.seats[o].pieces[k];p.n=ns[i];p.prev=null}));addLog(G,`🌪️ ${st.name}: 회오리! 말들의 자리가 뒤섞였습니다.`);break}
   case'ice':{const ot=G.seats[t.o];if(t.o===s||!ot||ot.out||ot.done)return false;ot.pieces.forEach(p=>{if(onBoard(p))p.lock=G.round+1});addLog(G,`🧊 ${ot.name}의 말이 얼어붙었습니다.`);break}
   case'gift':{let n=0;for(let i=0;i<3;i++){const k=freeNode(G);if(k){G.rewards[k]=1;n++}}if(!n)return false;addLog(G,`🎁 ${st.name}: 선물 상자 ${n}개를 놓았습니다.`);break}
+  case'mirror':{const h=G.half?HALF[G.half]:null;const m=n=>{if(!POS[n])return n;const[x,y]=POS[n];const k=AT[Math.round(100-x)+','+Math.round(y)]||n;return h?nearKeep(h,k):k};
+   G.seats.forEach(x=>x.pieces.forEach(p=>{if(onBoard(p)){p.n=m(p.n);p.prev=null}}));
+   const mo=o=>{const r={};for(const k in o)r[m(k)]=o[k];return r};G.traps=mo(G.traps);G.rewards=mo(G.rewards);G.poop=mo(G.poop);G.fires=mo(G.fires);if(G.reaper)G.reaper.n=m(G.reaper.n);
+   addLog(G,`🪞 ${st.name}: 거울 세계! 판이 좌우로 뒤집혔습니다.`);break}
+  case'timemachine':{const back=alive(G).length;const H=G.hist||[];const snap=H[H.length-1-back];if(!snap)return false;const h=G.half?HALF[G.half]:null;
+   G.seats.forEach((x,o)=>{if(x.out||x.done)return;x.pieces.forEach((p,k)=>{const n=snap[o]&&snap[o][k];if(!n||p.n==='F'||n==='F')return;p.n=n==='H'?'H':(h?nearKeep(h,n):n);p.prev=null})});
+   addLog(G,`⏳ ${st.name}: 타임머신! 모든 말이 한 라운드 전으로 돌아갑니다.`);break}
+  case'slot':{const sy=['🍒','🔔','7️⃣'],rl=[0,1,2].map(()=>Math.floor(rnd(G)*3)),txt=rl.map(i=>sy[i]).join('');
+   const same=rl[0]===rl[1]&&rl[1]===rl[2],two=!same&&(rl[0]===rl[1]||rl[1]===rl[2]||rl[0]===rl[2]);
+   if(same&&rl[0]===2){let k=-1,d=99;st.pieces.forEach((p,i)=>{if(onBoard(p)&&distFin(p.n)<d){d=distFin(p.n);k=i}});if(k<0)k=st.pieces.findIndex(p=>p.n==='H'&&p.t!=='pawn');
+    addLog(G,`🎰 ${txt} 잭팟!!`);if(k>=0)doMove(G,s,groupOf(G,s,k),['FIN'],false)}
+   else if(same){G.results.push(mk('모','슬롯'),mk('모','슬롯'));addLog(G,`🎰 ${txt} 모 2개!`)}
+   else if(two){G.results.push(mk('개','슬롯'));addLog(G,`🎰 ${txt} 개 1개`)}
+   else addLog(G,`🎰 ${txt} 꽝...`);break}
+  case'clone':{if(!ownOn(t.pi))return false;const k=st.pieces.findIndex(p=>p.n==='H'&&!p.t);if(k<0)return false;st.pieces[k].n=st.pieces[t.pi].n;st.pieces[k].prev=st.pieces[t.pi].prev;addLog(G,`👥 ${st.name}: 분신술!`);break}
+  case'lifeswap':{const ot=G.seats[t.o];if(t.o===s||!ot||ot.out||ot.done)return false;const A=st.pieces.filter(p=>p.n!=='F'),B=ot.pieces.filter(p=>p.n!=='F');
+   const na=A.map(p=>p.n),nb=B.map(p=>p.n);A.forEach((p,i)=>{p.n=nb[i]||'H';p.prev=null});B.forEach((p,i)=>{p.n=na[i]||'H';p.prev=null});addLog(G,`🎭 ${st.name}와(과) ${ot.name}이(가) 인생을 바꿨습니다!`);break}
   case'fix':{if(!KINDS.includes(t.k))return false;G.force[s]=t.k;break}
   case'flip':{const r=G.results[t.ri];if(!r||![1,-1].includes(t.d))return false;const f=FLATS[r.k]+t.d;if(f<0||f>4)return false;G.results[t.ri]=mk(BYFLATS[f],'슬쩍');break}
   case'lonely':G.force[s]='도';break;
