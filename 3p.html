@@ -294,6 +294,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .center>.info>strong::after{content:"·";margin-left:8px;color:var(--dim);font-weight:400}
 .room .rk.ghb{background:#f2ede4;color:#141011}
 .room .rk.gyut{background:#3f7fd8;color:#fff}
+.mx{position:fixed;top:14px;right:14px;z-index:10;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,14,15,.92);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}.mx:hover{background:#3a2a2b}
 </style>
 </head>
 <body>
@@ -334,7 +335,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
   <svg viewBox="0 0 110 260"><ellipse cx="55" cy="250" rx="50" ry="8" fill="#0c0909"/><path d="M14 232h82l-6 16H20Z" fill="#2a2122"/><ellipse cx="55" cy="232" rx="41" ry="7" fill="#3a2e2f"/><rect x="38" y="110" width="34" height="122" rx="4" fill="#d9cdb8"/><path d="M55 110v-8" stroke="#222" stroke-width="2"/><g class="flame"><path d="M55 104c-9-12-4-28 0-44 4 16 9 32 0 44Z" fill="#f2b04a"/><path d="M55 100c-4-7-2-17 0-26 2 9 4 19 0 26Z" fill="#fff3c4"/></g></svg>
  </div>
 </main>
-<div class="modal" id="mRule"><div class="mbox"><h2>3인 규칙</h2><div class="goalbox">3인 게임은 5목이 아니라 4목입니다</div><ul>
+<div class="modal" id="mRule"><button class="mx" data-close aria-label="닫기">✕</button><div class="mbox"><h2>3인 규칙</h2><div class="goalbox">3인 게임은 5목이 아니라 4목입니다</div><ul>
  <li>15×15 판에서 <b>흑·백·적</b> 세 사람이 겨룹니다. 가로·세로·대각선으로 <b>네 개(4목)</b>를 먼저 잇는 사람이 이깁니다. <b>다섯 개 이상(장목)은 승리가 아니며</b> 게임이 그대로 이어집니다.</li>
  <li>선택된 세 점은 한 줄이라서, 한 사람이 세 점을 모두 가져가면 옆에 있는 자기 돌과 이어져 <b>바로 4목</b>이 되기 쉽습니다. 세 점 중 하나는 꼭 막으세요.</li>
  <li>선택권은 <b>흑 → 백 → 적</b> 순서로 돌아갑니다. 선택자는 한 줄로 이어진 빈 점 세 개(A·B·C)를 고릅니다.</li>

@@ -284,6 +284,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .center>.info>strong::after{content:"·";margin-left:8px;color:var(--dim);font-weight:400}
 .room .rk.ghb{background:#f2ede4;color:#141011}
 .room .rk.gyut{background:#3f7fd8;color:#fff}
+.mx{position:fixed;top:14px;right:14px;z-index:10;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,14,15,.92);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}.mx:hover{background:#3a2a2b}
 </style>
 </head>
 <body>
@@ -334,7 +335,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
   <svg viewBox="0 0 110 240"><path d="M100 8C60 30 30 90 24 168l8 2C44 100 70 50 100 8Z" fill="#4a4142"/><path d="M100 8C80 40 52 100 34 168" stroke="#7d7273" stroke-width="1.4" fill="none"/><path d="M28 168l-4 30" stroke="#8a7f80" stroke-width="2"/><path d="M8 200h44l6 30H2Z" fill="#231c1d"/><ellipse cx="30" cy="200" rx="22" ry="5" fill="#0c0909"/></svg>
  </div>
 </main>
-<div class="modal" id="mRule"><div class="mbox"><h2>규칙</h2><ul>
+<div class="modal" id="mRule"><button class="mx" data-close aria-label="닫기">✕</button><div class="mbox"><h2>규칙</h2><ul>
  <li>15×15 판에서 흑(나)과 백(수석 악마)이 겨룹니다. 가로·세로·대각선으로 정확히 다섯 개를 먼저 잇는 쪽이 이깁니다. 여섯 개 이상(장목)은 인정되지 않습니다.</li>
  <li>라운드마다 선택권이 번갈아 넘어갑니다. 선택자는 한 줄로 이어진 빈 점 세 개(A·B·C)를 고릅니다.</li>
  <li>두 사람은 세 점에 포인트를 몰래 나눠 겁니다. 점마다 최소 1포인트입니다.</li>

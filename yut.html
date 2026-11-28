@@ -362,6 +362,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .yc-top small.rk{border-color:var(--gold);color:var(--gold);font-weight:700}.ycard.done{border-color:var(--gold2);opacity:.85}
 .frank{display:flex;align-items:baseline;gap:10px;padding:8px 4px;border-bottom:1px solid #2a2021;text-align:left}.frank b{width:70px;flex:none}.frank span{font-weight:600;color:var(--ink)}.frank small{margin-left:auto;font-size:12px;color:var(--dim)}.frank.me span{color:var(--gold)}
 #board.folding{animation:yfold .9s ease}#board.folding[data-dir=up],#board.folding[data-dir=down]{animation-name:yfoldY}@keyframes yfold{0%{transform:scaleX(1)}45%{transform:scaleX(.55) skewY(4deg)}100%{transform:none}}@keyframes yfoldY{0%{transform:scaleY(1)}45%{transform:scaleY(.55) skewX(4deg)}100%{transform:none}}
+.mx{position:fixed;top:14px;right:14px;z-index:10;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,14,15,.92);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}.mx:hover{background:#3a2a2b}
 </style>
 </head>
 <body>
@@ -387,7 +388,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 </main>
 <div class="modal" id="mPick"><div class="mbox ypick"><h2 id="pickT">증강을 고르세요</h2><p class="ypick-s" id="pickS"></p><div class="pcards" id="pcards"></div><div class="pmine" id="pmine"></div></div></div>
 <div class="modal" id="mTarget"><div class="mbox"><h2 id="tgT">대상을 고르세요</h2><div class="tglist" id="tgList"></div><button class="btn wide" data-close>닫기</button></div></div>
-<div class="modal" id="mRule"><div class="mbox"><h2>마법 윷놀이 규칙</h2><ul>
+<div class="modal" id="mRule"><button class="mx" data-close aria-label="닫기">✕</button><div class="mbox"><h2>마법 윷놀이 규칙</h2><ul>
  <li><b>2~4명</b>이 각자 말 <b>4개</b>를 가지고, 말 4개를 먼저 모두 골인시키는 사람이 이깁니다.</li>
  <li>윷을 던져 <b>도 1 · 개 2 · 걸 3 · 윷 4 · 모 5</b>칸을 갑니다. <b>빽도</b>는 뒤로 1칸입니다. <b>윷·모</b>가 나오면 한 번 더 던집니다.</li>
  <li>던진 결과를 다 모은 뒤, 결과를 하나씩 골라 어떤 말을 움직일지 정합니다.</li>

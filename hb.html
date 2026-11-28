@@ -326,6 +326,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
 .hb .bubble{position:absolute;left:10px;right:10px;top:100%;margin-top:6px;z-index:3}
 @media(max-width:420px){.tile{width:96px;height:96px;font-size:26px}.pl{padding:11px}.pl-score .num{font-size:34px}.lamps i{width:13px;height:13px}.lamps{gap:5px}}
 .room .rk.gyut{background:#3f7fd8;color:#fff}
+.mx{position:fixed;top:14px;right:14px;z-index:10;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,14,15,.92);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}.mx:hover{background:#3a2a2b}
 </style>
 </head>
 <body>
@@ -356,7 +357,7 @@ body:has(#instBar:not(.hide)) .modal:not(#mInstall){padding-bottom:96px}body:has
  <form class="chat" id="chatF"><input id="chatIn" maxlength="60" placeholder="상대에게 한마디" autocomplete="off" aria-label="채팅"><button class="btn red">보내기</button></form>
  <details class="log"><summary>지난 라운드 기록</summary><ol id="log"></ol></details>
 </main>
-<div class="modal" id="mRule"><div class="mbox"><h2>흑과 백 규칙</h2><ul>
+<div class="modal" id="mRule"><button class="mx" data-close aria-label="닫기">✕</button><div class="mbox"><h2>흑과 백 규칙</h2><ul>
  <li>두 사람이 각각 <b>99포인트</b>를 받고 <b>9라운드</b>를 겨룹니다.</li>
  <li>라운드마다 <b>선 플레이어</b>가 먼저 포인트를 냅니다. 숫자는 공개되지 않고, <b>0~9면 흑, 10 이상이면 백</b>으로만 표시됩니다.</li>
  <li>후 플레이어는 선 플레이어의 흑·백과 표시등을 보고 포인트를 냅니다. 후 플레이어의 포인트도 흑·백으로만 표시됩니다.</li>
